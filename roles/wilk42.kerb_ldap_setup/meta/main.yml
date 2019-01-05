@@ -1,0 +1,23 @@
+galaxy_info:
+  author: "Sean Sullivan"
+  description: "Kerberos setup for ansible control node to prep for Windows Ldap and WinRM "
+  company: Red Hat
+
+  license: MIT
+
+  min_ansible_version: 2.2
+
+  platforms:
+  - name: EL
+    versions:
+      - 7
+  - name: Fedora
+    versions:
+      - 26
+
+  galaxy_tags:
+    - Kerberos
+    - WinRM
+
+
+dependencies: []

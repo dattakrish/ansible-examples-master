@@ -1,0 +1,10 @@
+Enable-PSRemoting –force
+winrm set winrm/config/service/auth '@{Basic="false"}'
+winrm set winrm/config/service '@{AllowUnencrypted="false"}'
+winrm set winrm/config/client/auth '@{Basic="false"}'
+winrm set winrm/config/client '@{AllowUnencrypted="false"}'
+winrm set winrm/config/client/auth '@{Kerberos="true"}'
+winrm set winrm/config/client '@{Negotiate="true"}'
+winrm set winrm/config/client '@{Certificate="true"}'
+winrm set winrm/config/service/auth '@{Kerberos="true"}'
+winrm set winrm/config/service '@{Negotiate="true"}'
