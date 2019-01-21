@@ -1,0 +1,15 @@
+---
+# tasks file for check-ad-join
+- name: Check AD
+  win_domain_membership:
+    dns_domain_name: uk.experian.local
+    domain_admin_user: c56509a@uk.experian.local
+    domain_admin_password: passwd@123
+    state: domain
+  register: domain_state
+
+- name: Reboot after Join
+  win_reboot:
+   msg: "Joining Domain.Rebooting..."
+   pre_reboot_delay: 15
+  when: domain_state.reboot_required

@@ -1,0 +1,21 @@
+---
+# This script will validate if datacenter is in vCenter
+- name: Get datacenters from vCenter
+  uri:
+    url: "https://{{ VC_Server_Name }}/rest/vcenter/datacenter"
+    force_basic_auth: yes
+    validate_certs: "False"
+    headers:
+      Cookie: "{{ login.set_cookie }}"
+  register: vDatacenters
+
+- name: Validating datacenters in the given vCenter
+  set_fact:
+    datacenter_exists: True
+  with_items: "{{ vDatacenters.json.value }}"
+  when: item.name == VC_Data_Center_Name
+- fail:
+    msg: "Datacenter[{{ VC_Data_Center_Name }}] not present in the vCenter Server[{{ VC_Server_Name }}]"
+  when: not datacenter_exists
+- debug:
+    msg: "Datacenter[{{ VC_Data_Center_Name }}] present in the vCenter Server[{{ VC_Server_Name }}]"

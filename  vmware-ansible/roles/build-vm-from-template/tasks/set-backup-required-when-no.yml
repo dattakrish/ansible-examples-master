@@ -1,0 +1,8 @@
+---
+- name: If the backup required is no
+  set_fact:
+   Backup_IP_Address: 192.168.0.100
+   Backup_Subnet_Mask: 255.255.255.0
+  when: Backup_Required|lower == "no"
+- debug:
+    msg: "Backup is not required so just adding a dummy address"

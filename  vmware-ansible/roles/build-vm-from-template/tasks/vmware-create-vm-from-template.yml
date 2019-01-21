@@ -1,0 +1,45 @@
+---
+# This is the script that creates the VM from template
+- name: Creating Virtual Machine from Windows template
+  vmware_guest:
+    annotation: "VM[{{ VM_Name }}] created on {{ ansible_date_time.date }}  {{ ansible_date_time.time }} by {{ Build_Engineer_Email }} using Ansible."
+    hostname: "{{ VC_Server_Name }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: False
+    folder: "/Fairham/vm/{{ Inventory_Location }}"
+    state: poweredon
+    datacenter: "{{ VC_Data_Center_Name }}"    
+    cluster: "{{ VC_Cluster_Name }}"
+    datastore: "{{ DataStore_Cluster_Name }}"
+    name: "{{ VM_Name }}"
+    template: "{{ VM_Template_Name }}"
+    hardware:
+      #12288 MB = 12 GB
+      memory_mb: "{{ Memory_GB|int * 1024 }}" 
+      num_cpus: "{{ CPU_Sockets }}"
+      num_cpu_cores_per_socket: "{{ CPU_Cores_Per_Socket }}"
+    #customization:
+      #domain: "{{  Windows_Domain }}"
+      #autologon: True
+      #domainadmin: "{{ domain_admin }}"
+      #domainpassword: "{{ domain_password }}"
+      #joindomain: "{{  Windows_Domain }}"
+    networks:
+    - name: "{{ Primary_VLAN }}"
+      ip: "{{ Primary_IP_Address }}"
+      netmask: "{{ Primary_Subnet_Mask }}"
+      gateway: "{{ Primary_Default_Gateway }}"
+      dns_servers:
+      - "{{ Primary_DNS }}"
+      - "{{ Secondary_DNS }}"
+    - name: "{{ Backup_VLAN }}"
+      ip: "{{ Backup_IP_Address }}"
+      netmask: "{{ Backup_Subnet_Mask }}"
+      domain: "{{ Windows_Domain }}"
+      type: static
+    wait_for_ip_address: True
+  delegate_to: localhost
+  register: vm_details
+- debug:
+    msg: "{{ vm_details }}"

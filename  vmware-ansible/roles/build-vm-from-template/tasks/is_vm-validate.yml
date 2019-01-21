@@ -1,0 +1,11 @@
+---
+# Validate Is_VM passed from SNOW
+# If "Yes" then continue, otherwise fail the job
+- name: If the server we are deploying is not a VM 
+  fail:
+   msg: "The server we are deploying is not a VM"
+  when: Is_VM|lower == "no"
+- name: If the server we are deploying is a VM
+  debug:
+    msg: "The server we are deploying is a VM"
+  when: Is_VM|lower == "yes"

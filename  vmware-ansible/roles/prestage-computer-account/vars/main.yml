@@ -1,0 +1,13 @@
+---
+# vars file for prestage-computer-account
+server_list: []
+experian_stage_hostnode_01: UKFHTDCDDI01
+experian_stage_hostnode_02: UKFHTDCDDI01
+experianuk_hostnode_01: CORP-NOT-UKDC01
+experianuk_hostnode_02: CORP-NOT-UKDC02
+gdc_hostnode_01: CORP-NOT-GDC01
+gdc_hostnode_02: CORP-NOT-GDC02
+ipani_hostnode_01: CORP-NOT-IPDC01
+ipani_hostnode_02: CORP-NOT-IPDC02
+windows_temp_path: 'C:\tmp\'
+file_name: PreStage-CompAcct.ps1

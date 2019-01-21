@@ -1,0 +1,11 @@
+---
+# This script have a credentail details for Rest API scripts
+- name: Login into vCenter
+  uri:
+    url: https://ukfhpcbvcs02.uk.experian.local/rest/com/vmware/cis/session
+    force_basic_auth: yes
+    validate_certs: False
+    method: POST
+    user: 'EXPERIANUK\BladeLogicVMware'
+    password: 4hQzYa7F5hNFmLvj
+  register: login

@@ -1,0 +1,8 @@
+---
+## tasks file for build-vm-from-template
+- include_tasks: common-validation.yml
+- include_tasks: vcenter-validation.yml
+- include_tasks: set-backup-required-when-no.yml
+- include_tasks: set-customization-spec.yml
+- include_tasks: vmware-create-vm-folder.yml
+- include_tasks: vmware-create-vm-from-template.yml
