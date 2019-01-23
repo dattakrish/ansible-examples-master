@@ -1,9 +1,15 @@
 ---
 ## vars file for build-vm-from-template
-vcenter_username: 'EXPERIANUK\BladeLogicVMware' # This should be put in a vault file
-vcenter_password: 4hQzYa7F5hNFmLvj # This should be put in a vault file
-domain_admin: "Administrator" # This should be put in a vault file
-domain_password: "unknown" # This should be put in a vault file
+vcenter_username: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}" # Tower network credential BladeLogicVMWare is used
+vcenter_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}" # Tower network credential BladeLogicVMWare is used
+domain_admin_uk_experian_local: "SSC-IAAS-Auto-UK" # This should be put in a vault file
+domain_password_uk_experian_local: "XXXXXXXXXX" # This should be put in a vault file
+domain_admin_gdc_local: "SSC-IAAS-Auto-GDC" # This should be put in a vault file
+domain_password_gdc_local: "XXXXXXXXX" # This should be put in a vault file
+domain_admin_ipani_experian_local: "SSC-IAAS-Auto-IPANI" # This should be put in a vault file
+domain_password_ipani_experian_local: "XXXXXXXXX" # This should be put in a vault file
+domain_admin_uk_experian_staging: "SSC-IAAS-Auto-UK" # This should be put in a vault file
+domain_password_uk_experian_staging: "XXXXXXXXX" # This should be put in a vault file
 ################ Input from SNOW Start #####################
 #VC_Server_Name: "" # This will come as an input from SNOW; e.g. ukfhpcbvcs02.uk.experian.local
 #VC_Data_Center_Name: "Fairham" # This will come as an input from SNOW
@@ -37,6 +43,11 @@ cluster_exists: False
 free_space: {}
 vm_name_exists: False # This is used to check that the vm is already present in the mentioned vCenter host
 ip_address_present: True
+primary_network_exists: False
+backup_network_exists: False
+domain_admin_user: ""
+domain_admin_pwd: ""
+timezone_value: 85
 ########## Customization variable initialization start ################
 Customization_Spec_Name: ""
 Primary_DNS: "10.215.252.10"

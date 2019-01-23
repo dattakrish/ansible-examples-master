@@ -31,11 +31,11 @@ Windows_Domain="uk.experian.local" # This will come as an input from SNOW
 Is_VM="Yes" # This will come as an input from SNOW. Values can be Yes|No
 VM_Template_Name="IAAS-GTS-2016-DC-Template-FH" # This will come as an input from SNOW
 Primary_VLAN="CORPNET|Layer2-Xsite|2579" # This will come as an input from SNOW
-Primary_IP_Address="10.188.240.160" # This will come as an input from SNOW
+Primary_IP_Address="10.188.240.165" # This will come as an input from SNOW
 Primary_Subnet_Mask="255.255.255.192" # This will come as an input from SNOW
 Primary_Default_Gateway="10.188.240.190" # This will come as an input from SNOW
 Backup_VLAN="SBN|backup|clients" # This will come as an input from SNOW
-Backup_IP_Address="10.188.240.161" # This will come as an input from SNOW
+Backup_IP_Address="10.188.240.166" # This will come as an input from SNOW
 Backup_Subnet_Mask="255.255.255.192" # This will come as an input from SNOW
 Memory_GB="12" # This will come as an input from SNOW
 CPU_Sockets="4" # This will come as an input from SNOW
@@ -44,6 +44,7 @@ Build_Engineer_Email="krishnendu.datta@experian.com" # This will come as an inpu
 Backup_Required="Yes" # This will come as an input from SNOW
 Y_Drive_Required="yes" # This will come as an input from SNOW
 Inventory_Location="ETIG" # This may come from SNOW as input. Default value assigned if nothing passed
+start_time=`date`
 
 echo $Primary_VLAN
 echo $Primary_IP_Address
@@ -68,6 +69,7 @@ echo $Inventory_Location
 echo $Is_VM
 echo $Y_Drive_Required
 
-echo "Started vm build process on `date`"
-ansible-playbook build-vm-from-template.yml -e "VC_Server_Name=$VC_Server_Name VC_Data_Center_Name=$VC_Data_Center_Name VC_Cluster_Name=$VC_Cluster_Name DataStore_Cluster_Name=$DataStore_Cluster_Name VM_Name=$VM_Name Windows_Domain=$Windows_Domain VM_Template_Name=$VM_Template_Name Primary_VLAN=$Primary_VLAN Primary_IP_Address=$Primary_IP_Address Primary_Subnet_Mask=$Primary_Subnet_Mask Primary_Default_Gateway=$Primary_Default_Gateway Backup_VLAN=$Backup_VLAN Backup_IP_Address=$Backup_IP_Address Backup_Subnet_Mask=$Backup_Subnet_Mask Is_VM=$Is_VM Memory_GB=$Memory_GB CPU_Sockets=$CPU_Sockets CPU_Cores_Per_Socket=$CPU_Cores_Per_Socket Build_Engineer_Email=$Build_Engineer_Email Backup_Required=$Backup_Required Y_Drive_Required=$Y_Drive_Required Inventory_Location=$Inventory_Location"
-echo "Completed vm build process on `date`"
+echo "Started vm build process on $start_time"
+ansible-playbook build-vm-from-template.yml -e "VC_Server_Name=$VC_Server_Name VC_Data_Center_Name=$VC_Data_Center_Name VC_Cluster_Name=\"$VC_Cluster_Name\" DataStore_Cluster_Name=\"$DataStore_Cluster_Name\" VM_Name=$VM_Name Windows_Domain=$Windows_Domain VM_Template_Name=\"$VM_Template_Name\" Primary_VLAN=\"$Primary_VLAN\" Primary_IP_Address=$Primary_IP_Address Primary_Subnet_Mask=$Primary_Subnet_Mask Primary_Default_Gateway=$Primary_Default_Gateway Backup_VLAN=\"$Backup_VLAN\" Backup_IP_Address=$Backup_IP_Address Backup_Subnet_Mask=$Backup_Subnet_Mask Is_VM=$Is_VM Memory_GB=$Memory_GB CPU_Sockets=$CPU_Sockets CPU_Cores_Per_Socket=$CPU_Cores_Per_Socket Build_Engineer_Email=$Build_Engineer_Email Backup_Required=$Backup_Required Y_Drive_Required=$Y_Drive_Required Inventory_Location=$Inventory_Location"
+echo "Completed vm build process. Started on $start_time, completed on `date`"
+

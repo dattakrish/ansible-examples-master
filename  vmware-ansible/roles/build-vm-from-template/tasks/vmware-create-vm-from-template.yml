@@ -2,7 +2,7 @@
 # This is the script that creates the VM from template
 - name: Creating Virtual Machine from Windows template
   vmware_guest:
-    annotation: "VM[{{ VM_Name }}] created on {{ ansible_date_time.date }}  {{ ansible_date_time.time }} by {{ Build_Engineer_Email }} using Ansible."
+    annotation: "VM[{{ VM_Name }}] created on {{ ansible_date_time.date }} at {{ ansible_date_time.time }} by {{ Build_Engineer_Email }} using Ansible."
     hostname: "{{ VC_Server_Name }}"
     username: "{{ vcenter_username }}"
     password: "{{ vcenter_password }}"
@@ -13,18 +13,21 @@
     cluster: "{{ VC_Cluster_Name }}"
     datastore: "{{ DataStore_Cluster_Name }}"
     name: "{{ VM_Name }}"
-    template: "{{ VM_Template_Name }}"
+    template: "{{ VM_Template_Name }}"    
     hardware:
       #12288 MB = 12 GB
       memory_mb: "{{ Memory_GB|int * 1024 }}" 
       num_cpus: "{{ CPU_Sockets }}"
       num_cpu_cores_per_socket: "{{ CPU_Cores_Per_Socket }}"
-    #customization:
+    customization:
       #domain: "{{  Windows_Domain }}"
-      #autologon: True
-      #domainadmin: "{{ domain_admin }}"
-      #domainpassword: "{{ domain_password }}"
+      #autologon: True      
+      #domainadmin: "{{ domain_admin_user }}" 
+      #domainadminpassword: "{{ domain_admin_pwd }}"      
       #joindomain: "{{  Windows_Domain }}"
+      timezone: 85
+      #runonce:
+      #- powershell.exe -ExecutionPolicy Unrestricted -File C:\Windows\Temp\ConfigureRemotingForAnsible.ps1 -ForceNewSSLCert -EnableCredSSP
     networks:
     - name: "{{ Primary_VLAN }}"
       ip: "{{ Primary_IP_Address }}"
@@ -36,10 +39,8 @@
     - name: "{{ Backup_VLAN }}"
       ip: "{{ Backup_IP_Address }}"
       netmask: "{{ Backup_Subnet_Mask }}"
-      domain: "{{ Windows_Domain }}"
       type: static
     wait_for_ip_address: True
   delegate_to: localhost
   register: vm_details
-- debug:
-    msg: "{{ vm_details }}"
+  
