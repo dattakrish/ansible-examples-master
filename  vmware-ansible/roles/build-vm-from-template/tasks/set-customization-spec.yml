@@ -54,4 +54,4 @@
     domain_admin_pwd: "{{ domain_password_uk_experian_staging }}"
   when: Windows_Domain is defined and Windows_Domain == 'uk.experian.staging'
 - debug:
-    msg: "Primary_DNS[{{ Primary_DNS }}],Secondary_DNS[{{ Secondary_DNS }}],Primary_WINS[{{ Primary_WINS }}],Secondary_WINS[{{ Secondary_WINS }}],domain_admin_user[{{ domain_admin_user }}]"
+    msg: "{{ domain_admin_uk_experian_local }},VCenter Username{{ vcenter_username }},Primary_DNS[{{ Primary_DNS }}],Secondary_DNS[{{ Secondary_DNS }}],Primary_WINS[{{ Primary_WINS }}],Secondary_WINS[{{ Secondary_WINS }}],domain_admin_user[{{ domain_admin_user }}]"

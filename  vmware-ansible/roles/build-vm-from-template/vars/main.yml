@@ -2,12 +2,13 @@
 ## vars file for build-vm-from-template
 vcenter_username: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}" # Tower network credential BladeLogicVMWare is used
 vcenter_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}" # Tower network credential BladeLogicVMWare is used
-domain_admin_uk_experian_local: "SSC-IAAS-Auto-UK" # This should be put in a vault file
-domain_password_uk_experian_local: "XXXXXXXXXX" # This should be put in a vault file
-domain_admin_gdc_local: "SSC-IAAS-Auto-GDC" # This should be put in a vault file
-domain_password_gdc_local: "XXXXXXXXX" # This should be put in a vault file
-domain_admin_ipani_experian_local: "SSC-IAAS-Auto-IPANI" # This should be put in a vault file
-domain_password_ipani_experian_local: "XXXXXXXXX" # This should be put in a vault file
+domain_admin_uk_experian_local: "{{ UK_EXPERIAN_DOMAIN }}" # Tower custom credential is used
+domain_password_uk_experian_local: "{{ UK_EXPERIAN_DOMAIN_PASSWORD }}" # Tower custom credential is used
+domain_admin_gdc_local: "{{ GDC_DOMAIN }}" # Tower custom credential  is used
+domain_password_gdc_local: "{{ GDC_DOMAIN_PASSWORD }}" # Tower custom credential is used
+domain_admin_ipani_experian_local: "{{ IPANI_DOMAIN }}" # Tower custom credential is used
+domain_password_ipani_experian_local: "{{ IPANI_DOMAIN_PASSWORD }}" # Tower custom credential is used
+
 domain_admin_uk_experian_staging: "SSC-IAAS-Auto-UK" # This should be put in a vault file
 domain_password_uk_experian_staging: "XXXXXXXXX" # This should be put in a vault file
 ################ Input from SNOW Start #####################
