@@ -1,0 +1,8 @@
+---
+- hosts: all
+  tasks:
+    - name: removing {{serverName}} from inventory
+      tower_host:
+        name: "{{serverName}}"
+        inventory: "Server Builds"
+        state: absent

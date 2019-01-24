@@ -1,0 +1,27 @@
+---
+# Updated by Michael Barron 23/01/2019
+# Java JDK install
+# Command Line options https://docs.oracle.com/javase/7/docs/webnotes/install/windows/jdk-installation-windows.html#notation
+
+- hosts: all
+  tasks:
+    - name: copying Java JDK installation media to server
+      win_copy:
+        src: "{{ sourcePath }}{{ installer }}"
+        dest: c:\temp\
+
+    - name: installing JavaJDK
+      win_shell:
+        path: C:\temp\{{ installer }} /s
+        state: present
+       # This will need to be updated everytime the Java version is updated!
+    - name: Update %PATH% Variable
+      win_path:
+        elements:
+        - 'C:\Program Files\Java\jdk2.0.2\bin'
+        state: present
+       
+    - name: removing Java JDK installation media
+      win_file:
+        path: C:\temp\{{ installer }}
+        state: absent

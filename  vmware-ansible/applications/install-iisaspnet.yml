@@ -1,0 +1,102 @@
+---
+# Modified by Michael Barron 21/01/2019
+# IIS Windows Feature install with ASP.NET
+
+# Check if D: drive exists? (Should be a disk add in build for when IIS selected? if yes this can be removed)
+- hosts: windows
+  tasks:
+    - name: Check if D drive path exists
+      win_disk_facts:
+        stat:
+         path: D:\
+         register: D
+    - debug:
+        msg: "D: Exists!"
+        when: D.stat.exists
+
+# Install IIS + Management Tools.
+    - name: Install IIS
+      win_feature:
+       name: "Web-Server"
+       state: present
+       restart: no
+       include_sub_features: yes
+       include_management_tools: yes
+
+# ASP.NET 4.6 if required (optional).
+    - name: Install IIS with ASP.NET 4.6
+      win_feature:
+       name: "Web-Asp-Net45"
+       state: present
+       restart: no
+       include_sub_features: yes
+       include_management_tools: no
+
+#Interrogate Network adapters find Primary adapter and retrieve the IP!
+
+# Create new webroot directory.
+    - name: Creates IIS directory
+      file:
+       path: D:\wwwroot\ 
+       state: directory
+
+# Create new 'Default Web Site' and bind to IP of Primary adapter.
+
+    - name: Set IIS Primary IP
+      win_iis_website:
+       name: “Set IIS Primary IP”
+       state: started
+       port: 80
+       ip: "{{ ansible_enp0s3.ipv4.address }}"
+       hostname: Web root
+       application_pool: Web root
+       physical_path: D:\wwwroot\Web Root
+       parameters: logfile.directory:D:\IISLogs
+       register: website
+
+# Remove Default Web Site and the standard port 80 binding
+    - name: Remove Default Web Site
+      win_iis_website:
+       name: "Default Web Site"
+       state: absent
+
+# Create D:\IISLogs.
+    - name: Create Logs directory
+      file:
+       path: D:\IISLogs
+       state: directory
+
+# Remove HTTP Header responses.
+    - name: Set IIS Log server wide defaults
+      xml:
+       path: C:\Windows\System32\inetsrv\config\applicationHost.config
+       xpath: \system.applicationHost\sites\siteDefaults\logfile\directory
+       #xpath: "system.applicationHost".sites.siteDefaults.logfile.directory
+       value: D:\IISLogs
+       #xpath: "system.applicationHost".sites.siteDefaults.tracefailedrequestslogging.directory
+       xpath: \system.applicationHost\sites\siteDefaults\tracefailedrequestslogging\directory
+       value: D:\IISLogs
+
+# set individual site defaults
+    - name: Set IIS Log individual site defaults
+      xml:
+       path: C:\Windows\System32\inetsrv\config\applicationHost.config
+       #xpath: "system.applicationHost".log.centralW3CLogFile.directory
+       xpath: \system.applicationHost\log\centralW3CLogFile\directory
+       value: D:\IISLogs
+       #xpath: "system.applicationHost".log.centralBinaryLogFile.directory
+       xpath: \system.applicationHost\log\centralBinaryLogFile\directory
+       value: D:\IISLogs
+
+# Remove Default HTTP errors IIS.
+    - name: Remove Default HTTP errors IIS
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe clear config -section:system.webserver/httperrors
+
+# Disable dangerous verbs IIS.
+    - name: Disable dangerous verbs IIS
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs.”[verb='TRACE',allowed='false']”
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='TRACK',allowed='false']"
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='DELETE',allowed='false']"
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='PUT',allowed='false']"
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='WRITE',allowed='false']"
+      win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='DEBUG',allowed='false']"

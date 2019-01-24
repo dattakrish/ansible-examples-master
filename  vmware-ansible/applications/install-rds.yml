@@ -1,0 +1,17 @@
+---
+# Created by Scott W
+- hosts: all
+  tasks:
+
+  - name: Installing Remote Desktop Services Feature
+    win_feature:
+      name: RDS-RD-Server
+      state: present
+      include_sub_features: yes
+    register: win_feature
+
+  - debug:
+      msg: "{{win_feature}}"
+
+  - win_reboot:
+    when: win_feature.reboot_required

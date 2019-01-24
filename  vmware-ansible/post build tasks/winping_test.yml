@@ -1,0 +1,9 @@
+###ping test
+---
+- name: Test WinRM
+  hosts: all
+  gather_facts: no
+  tasks:
+
+  - win_ping:
+    ignore_unreachable: yes

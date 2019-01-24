@@ -1,0 +1,81 @@
+###########################################################################
+#   SSC Automation - Windows Build - GSA User Group Creation
+#   Confluence:
+#   Create GSA User Groups in Domain
+#   Author: Barry Field
+#   Creation Date: 07/01/19
+#   Last Update Date: 22/01/19
+###########################################################################
+#Domain Controllers
+#experianukdclist=( corp-not-ukdc09 corp-not-ukdc02 corp-not-ukdc10 )
+#ipanidclist=( corp-not-ipdc01 corp-not-ipdc02 corp-not-ipdc03 )
+#gdcdclist=( corp-not-gdc01 corp-not-gdc02 )
+
+
+---
+- name: AD Group Creation Domain Controller Selection 1
+  hosts: "{{ dc1 }}"
+  gather_facts: no
+  tasks:
+
+  - name: Test connection to DC1
+    win_ping:
+    ignore_unreachable: yes
+    register: result1
+
+  - debug:
+      var: result1
+
+  - name: Create Administrator Group
+    win_domain_group:
+      state: present
+      name: "{{ adm_group }}"
+      description: "Windows Server Local Administrator access group"
+      scope: global
+      organizational_unit: "{{ ou }}"
+    when: result1 is success
+
+  - name: Create Remote Desktop Group
+    win_domain_group:
+     state: present
+     name: "{{std_group}}"
+     description: "Windows Server Local RDP access group"
+     scope: global
+     organizational_unit: "{{ ou }}"
+    when: result1 is success
+
+
+- name: AD Group Creation Domain Controller Selection 2
+  hosts: "{{ dc2 }}"
+  gather_facts: no
+  tasks:
+
+  - name: Test connection to DC2
+    win_ping:
+    register: result2
+    when: hostvars['{{ dc1 }}']['result1'] is failed
+
+  - debug:
+      var: result2
+
+  - name: Create Administrator Group
+    win_domain_group:
+      state: present
+      name: "{{ adm_group }}"
+      description: "Windows Server Local Administrator access group"
+      scope: global
+      organizational_unit: "{{ ou }}"
+    when: result2 is success
+
+  - name: Create Remote Desktop Group
+    win_domain_group:
+     state: present
+     name: "{{std_group}}"
+     description: "Windows Server Local RDP access group"
+     scope: global
+     organizational_unit: "{{ ou }}"
+    when: result2 is success
+
+  - fail:
+      msg: "No live Domain Contoller could be found."
+    when: hostvars['{{ dc1 }}']['result1'] is failed and hostvars['{{ dc2 }}']['result2'] is failed

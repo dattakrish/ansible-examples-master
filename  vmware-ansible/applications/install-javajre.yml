@@ -1,0 +1,32 @@
+---
+# Updated by Michael Barron 23/01/2019
+# Java JRE install
+# Command Line options https://docs.oracle.com/javase/8/docs/technotes/guides/install/windows_installer_options.html
+# Config File Options https://docs.oracle.com/javase/8/docs/technotes/guides/install/config.html#table_config_file_options
+
+- hosts: all
+  tasks:
+    - name: copying Java JRE config file to server
+      win_copy:
+        src: "{{ sourcePath }}{{ configfile }}"
+        dest: c:\temp\
+        
+    - name: copying Java JRE installation media to server
+      win_copy:
+        src: "{{ sourcePath }}{{ installer }}"
+        dest: c:\temp\
+
+    - name: installing JavaJRE
+      win_shell:
+       path: C:\temp\{{ installer }} INSTALLCFG=C:\temp\{{ configfile }} /s
+       state: present
+       
+    - name: removing Java JRE installation media
+      win_file:
+       path: C:\temp\{{ installer }}
+       state: absent
+
+    - name: removing Java JRE config file
+      win_file:
+       path: C:\temp\{{ configfile }}
+       state: absent
