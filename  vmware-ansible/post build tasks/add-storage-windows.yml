@@ -1,0 +1,26 @@
+###########################################################################
+# Post-Build - Windows - Add Storage to Windows
+# Author: Tom Meer
+# Creation Date: 28/01/19
+# Last Update Date: 29/01/19
+###########################################################################
+
+---
+
+- hosts: all
+  tasks:
+
+  - name: Deploy PowerShell file
+    win_copy:
+      src: "{{ powershell_source }}"
+      dest: "{{ powershell_path }}"
+    
+  - name: Execute PowerShell
+    win_shell: "{{ powershell_path }} -driveLetter {{ drive_letter }} -driveLabel {{ drive_label }} -size {{ drive_size }} -sizeUnit GB -task new -unitAllocation {{ unit_allocation }}"
+
+  - name: Remove PowerShell file
+    win_file:
+      path: "{{ powershell_path }}"
+      state: absent
+
+...

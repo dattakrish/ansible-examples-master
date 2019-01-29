@@ -14,8 +14,11 @@
 
 ---
 - name: AD Group Creation Scripthost Ping
-  hosts: UKFHPSHTIG01
+  hosts: "{{ scripthost1 }}"
   gather_facts: no
+  vars:
+    netuser: "{{lookup('env', 'ANSIBLE_NET_USERNAME')}}"
+    netpassword: "{{lookup('env', 'ANSIBLE_NET_USERNAME')}}"
   tasks:
 
   - name: Test connection to Scripthost
@@ -30,8 +33,10 @@
     win_domain_group:
       state: present
       name: "{{ adm_group }}"
-      domain_server: corp-not-ukdc09.uk.experian.local
       description: "Windows Server Local Administrator access group"
+      domain_username: "{{ netuser }}"
+      domain_password: "{{ netpassword }}"
+      domain_server: "{{ dc1 }}"
       scope: global
       organizational_unit: "{{ ou }}"
     when: result1 is success
@@ -40,7 +45,9 @@
     win_domain_group:
      state: present
      name: "{{std_group}}"
-     domain_server: corp-not-ukdc09.uk.experian.local
+     domain_username: "{{ netuser }}"
+     domain_password: "{{ netpassword }}"
+     domain_server: "{{ dc1 }}"
      description: "Windows Server Local RDP access group"
      scope: global
      organizational_unit: "{{ ou }}"
@@ -48,14 +55,14 @@
 
 
 - name: AD Group Creation Domain Controller Selection 2
-  hosts: UKFHPSHTIG02
+  hosts: "{{ scripthost2 }}"
   gather_facts: no
   tasks:
 
   - name: Test connection to DC2
     win_ping:
     register: result2
-    when: hostvars['UKFHPSHTIG01']['result1'] is failed
+    when: hostvars['scripthost1']['result1'] is failed
 
   - debug:
       var: result2
@@ -64,6 +71,7 @@
     win_domain_group:
       state: present
       name: "{{ adm_group }}"
+      domain_server: "{{ dc1 }}"
       description: "Windows Server Local Administrator access group"
       scope: global
       organizational_unit: "{{ ou }}"
@@ -73,6 +81,7 @@
     win_domain_group:
      state: present
      name: "{{std_group}}"
+     domain_server: "{{ dc1 }}"
      description: "Windows Server Local RDP access group"
      scope: global
      organizational_unit: "{{ ou }}"
@@ -80,4 +89,4 @@
 
   - fail:
       msg: "No live Domain Contoller could be found."
-    when: hostvars['UKFHPSHTIG01']['result1'] is failed and hostvars['UKFHPSHTIG01']['result2'] is failed
+    when: hostvars['scripthost1']['result1'] is failed and hostvars['scripthost2']['result2'] is failed

@@ -1,23 +1,39 @@
 ---
-# Modified by Michael Barron 21/01/2019
+# Modified by Michael Barron 28/01/2019
 # IIS Windows Feature install with ASP.NET
 
 # Check if D: drive exists? (Should be a disk add in build for when IIS selected? if yes this can be removed)
-- hosts: windows
+- hosts: all
   tasks:
     - name: Check if D drive path exists
       win_disk_facts:
         stat:
          path: D:\
-         register: D
-    - debug:
-        msg: "D: Exists!"
-        when: D.stat.exists
+         register: d
+
+# SXS Source for 2016
+    - name: Define SXS Source for 2016
+      set_fact:
+        sxs_source: "/resources/BladeLogic/Storage/file_deploy/Windows/Windows 2016 SXS/sxs"
+      when: "'2016' in ansible_os_name"
+
+# SXS Source for 2012
+    - name: Define SXS Source for 2012
+      set_fact:
+        sxs_source: "/resources/BladeLogic/Storage/file_deploy/Windows/Windows 2012 R2 SXS/sxs"
+      when: "'2012 R2' in ansible_os_name"
+
+# Copy SXS Folder to Target Server.
+    - name: Copy SXS Directory
+      win_copy:
+        src: "{{ sxs_source }}"
+        dest: C:\Temp
 
 # Install IIS + Management Tools.
     - name: Install IIS
       win_feature:
        name: "Web-Server"
+       source: C:\Temp\sxs
        state: present
        restart: no
        include_sub_features: yes
@@ -27,21 +43,19 @@
     - name: Install IIS with ASP.NET 4.6
       win_feature:
        name: "Web-Asp-Net45"
+       source: C:\Temp\sxs
        state: present
        restart: no
        include_sub_features: yes
        include_management_tools: no
 
-#Interrogate Network adapters find Primary adapter and retrieve the IP!
-
 # Create new webroot directory.
     - name: Creates IIS directory
-      file:
+      win_file:
        path: D:\wwwroot\ 
        state: directory
 
 # Create new 'Default Web Site' and bind to IP of Primary adapter.
-
     - name: Set IIS Primary IP
       win_iis_website:
        name: “Set IIS Primary IP”
@@ -62,7 +76,7 @@
 
 # Create D:\IISLogs.
     - name: Create Logs directory
-      file:
+      win_file:
        path: D:\IISLogs
        state: directory
 
@@ -72,7 +86,7 @@
        path: C:\Windows\System32\inetsrv\config\applicationHost.config
        xpath: \system.applicationHost\sites\siteDefaults\logfile\directory
        #xpath: "system.applicationHost".sites.siteDefaults.logfile.directory
-       value: D:\IISLogs
+       #value: D:\IISLogs
        #xpath: "system.applicationHost".sites.siteDefaults.tracefailedrequestslogging.directory
        xpath: \system.applicationHost\sites\siteDefaults\tracefailedrequestslogging\directory
        value: D:\IISLogs
@@ -83,7 +97,7 @@
        path: C:\Windows\System32\inetsrv\config\applicationHost.config
        #xpath: "system.applicationHost".log.centralW3CLogFile.directory
        xpath: \system.applicationHost\log\centralW3CLogFile\directory
-       value: D:\IISLogs
+       #value: D:\IISLogs
        #xpath: "system.applicationHost".log.centralBinaryLogFile.directory
        xpath: \system.applicationHost\log\centralBinaryLogFile\directory
        value: D:\IISLogs
@@ -100,3 +114,7 @@
       win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='PUT',allowed='false']"
       win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='WRITE',allowed='false']"
       win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='DEBUG',allowed='false']"
+
+    - fail:
+        msg: "D Doesnt Exist!"
+      when: d.stat.exists == False

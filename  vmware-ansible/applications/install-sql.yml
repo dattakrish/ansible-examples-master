@@ -1,0 +1,32 @@
+###########################################################################
+#   SSC Automation - Windows Build - SQL Pre-Reqs
+#   Confluence:
+#   Move SQL Install Files
+#   Author: Barry Field
+#   Creation Date: 28/01/19
+#   Last Update Date: 28/01/19
+###########################################################################
+
+---
+- name: Copy SQL Install Files to Server
+  hosts: all
+  tasks:
+
+  - name: Copy Source Files Directory
+    win_copy:
+      src: "{{ sourcePath }}" #/resources/BladeLogic/Storage/file_deploy/Windows/
+      dest: "{{ destination }}"
+      state: present
+
+  - name: create local sqladmin account
+    win_user:
+      name: sqladmin
+      password: test
+      password_never_expires: yes
+      description: SQL account used by the installation.
+      groups:
+        - Administrators
+      state: present
+
+  - name: check and install .net #SXS folder required?
+#  - name: install sql

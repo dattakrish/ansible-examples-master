@@ -53,7 +53,7 @@
   - name: Test connection to DC2
     win_ping:
     register: result2
-    when: hostvars['{{ dc1 }}']['result1'] is failed
+    when: hostvars[dc1]['result1'] is failed
 
   - debug:
       var: result2
@@ -65,7 +65,7 @@
       description: "Windows Server Local Administrator access group"
       scope: global
       organizational_unit: "{{ ou }}"
-    when: result2 is success
+    when: hostvars[dc1]['result1'] is failed
 
   - name: Create Remote Desktop Group
     win_domain_group:
@@ -74,8 +74,8 @@
      description: "Windows Server Local RDP access group"
      scope: global
      organizational_unit: "{{ ou }}"
-    when: result2 is success
+    when: hostvars[dc1]['result1'] is failed
 
   - fail:
       msg: "No live Domain Contoller could be found."
-    when: hostvars['{{ dc1 }}']['result1'] is failed and hostvars['{{ dc2 }}']['result2'] is failed
+    when: hostvars[dc1]['result1'] is failed and hostvars[dc2]['result2'] is failed
