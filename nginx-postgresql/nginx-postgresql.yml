@@ -1,0 +1,20 @@
+---
+- name: NGinx
+  hosts: host01
+  become: True
+  tasks:
+    - name: Install NGinx
+      apt: name=nginx state=present update_cache=true
+    - name: Check Started
+      service: name=nginx state=started
+
+
+- name: PostgreSQL
+  hosts: host01
+  become: True
+  tasks:
+    - name: Install PostgreSQL
+      apt: name=postgresql state=present update_cache=true
+    - name: Check PostgreSQL Started
+      service: name=postgresql state=started
+...
