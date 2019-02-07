@@ -1,0 +1,11 @@
+---
+# Validate that the vm name sent from SNOW is <= 15 characters
+- name: Checking the length the the vm name if greater then 15
+  fail:
+   msg: "Server Name: [{{ VM_Name }}] should be less than or equal to 15 characters"
+  when: VM_Name|length > 15     
+- name: Checking of the length of the character
+  debug: 
+   msg: "Server Name: [{{ VM_Name }}] is valid"
+  when: VM_Name|length <= 15
+  

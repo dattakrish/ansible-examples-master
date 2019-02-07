@@ -1,0 +1,34 @@
+###########################################################################
+#   SSC Automation - Windows Build - SQL Pre-Reqs
+#   Confluence:
+#   Move SQL Install Files
+#   Author: Barry Field
+#   Creation Date: 28/01/19
+#   Last Update Date: 28/01/19
+###########################################################################
+
+---
+- name: SQL Pre-Requisites
+  hosts: all
+  gather_facts: no
+  tasks:
+
+  - name: Copy Source Files Directory
+    win_copy:
+      src: "{{ sourcePath }}" #determined by SNow based on SQL version selected. Files needed - Install source folder, ini, cmd file, password file, PS scripts
+      dest: C:\tmp
+      force: no
+      state: present
+
+  - name: Copy SXS Directory
+    win_copy:
+      src: "{{ sxs_source }}"
+      dest: C:\tmp
+      force: no
+      state: present
+
+  - name: install AD PS Module
+    win_feature:
+      name: RSAT-AD-Powershell
+      source: C:\tmp\sxs
+      state: present

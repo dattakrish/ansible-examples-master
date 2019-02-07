@@ -1,0 +1,6 @@
+---
+- name: Create AD group
+  hosts: windows
+  gather_facts: False
+  roles:
+  - role: create-ad-groups

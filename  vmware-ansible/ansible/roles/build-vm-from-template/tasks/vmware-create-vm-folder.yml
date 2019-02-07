@@ -1,0 +1,15 @@
+# Create a VM Folder if it does not exist
+- name: Create a VM folder on given datacenter if it does not exist
+  vcenter_folder:
+    hostname: "{{ VC_Server_Name }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    datacenter: "{{ VC_Data_Center_Name }}"
+    folder_name: "{{ Inventory_Location }}"
+    folder_type: vm
+    validate_certs: False
+    state: present
+  register: vm_folder_creation_result
+  delegate_to: localhost
+- debug:
+    msg: "{{ vm_folder_creation_result }}"

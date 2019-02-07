@@ -1,0 +1,146 @@
+---
+# Updated by Michael Barron 07/02/2019
+
+- hosts: all
+  tasks:
+
+# Install Telnet Client all features
+    - name: Install Telnet Client
+      win_feature:
+       name: "Telnet-Client"
+       #source: C:\Temp\sxs
+       state: present
+       restart: no
+       include_sub_features: yes
+       include_management_tools: yes
+
+# Install SNMP Service all features
+    - name: Install SNMP Service
+      win_feature:
+       name: "SNMP-Service"
+       #source: C:\Temp\sxs
+       state: present
+       restart: no
+       include_sub_features: yes
+       include_management_tools: yes
+
+# Install Windows Server Backup all features
+    - name: Install Windows Server Backup
+      win_feature:
+       name: "Windows-Server-Backup"
+       #source: C:\Temp\sxs
+       state: present
+       restart: no
+       include_sub_features: yes
+       include_management_tools: yes
+
+# Testing condition
+#    - name: Test condition using set Variable false
+#      debug:
+#        msg: "Server is Not a VM {{ ansible_system_vendor }}"
+#       #isvm: false
+#      when: "'VMWare' not in ansible_system_vendor"
+
+#    - name: Test condition using set Variable true
+#      debug:
+#        msg: "Server is a VM {{ ansible_system_vendor }}"
+       #isvm: true
+#      when: "'VMWare' in ansible_system_vendor"
+
+# Install MPIO if its not a VM
+# This always installs!!
+#    - name: Install MPIO if not a VM
+#      win_feature:
+#       name: "MultiPath-IO"
+#       state: present
+#       restart: no
+#       include_sub_features: yes
+#       include_management_tools: yes
+#      when: not isvm
+
+# Need to finish converting this! (PowerShell)
+# New-MSDSMSupportedHW -VendorId "HITACHI" -ProductId "OPEN-V"
+# Update-MPIOClaimedHW -Confirm:$false
+
+# Uninstall Windows Defender Feature
+    - name: Uninstall Windows Defender Feature
+      win_feature:
+       name: "Windows-Defender-Features"
+       #source: C:\Temp\sxs
+       state: absent
+       restart: no
+       #include_sub_features: yes
+       #include_management_tools: yes
+
+# Uninstall SMB v1 Feature
+    - name: uninstall SMB v1 Feature
+      win_feature:
+       name: "FS-SMB1"
+       #source: C:\Temp\sxs
+       state: absent
+       restart: no
+       #include_sub_features: yes
+       #include_management_tools: yes
+
+# "File and Printer Sharing" Rules Test
+    - name: Enable File and Printer Sharing (SMB-In)
+      win_firewall_rule:
+       name: File and Printer Sharing
+       localport: 445
+       action: allow
+       direction: in
+       protocol: tcp
+       state: present
+       enabled: yes
+
+# Enable Remote Desktop Firewall Rule
+#    - name: Firewall rule to allow RDP on TCP port 3389
+#      win_firewall_rule:
+#       name: Remote Desktop
+#       localport: 3389
+#       action: allow
+#       direction: in
+#       protocol: tcp
+#       #profiles: private
+#       state: present
+#       enabled: yes
+
+# Change time for services startup from 30 to 90 seconds
+
+    - name: Change time for services startup from 30 to 90 seconds
+      win_regedit:
+       path: HKLM:\SYSTEM\CurrentControlSet\Control
+       name: ServicesPipeTimeout
+       data: 90000
+       type: dword
+
+# Check if Server Core
+    - name: Checking if Server Core 
+      win_reg_stat:
+       path: HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion
+       name: installationtype
+      register: os_current_version
+
+# Check if Server Core
+    - name: Debug  
+      debug:
+       msg: "O/S Type is {{ os_current_version.value }}"
+      when: "'Core' in os_current_version.value"
+
+# Condition test
+    - name: Testing Condition O/S Version
+      debug:
+       msg: "O/S Version is {{ ansible_os_name }}"
+      when: "'2016' in ansible_os_name"
+
+# VM Condition test
+    - name: Testing VM Condition
+      #debug:
+      # msg: "Server product is {{ ansible_product_name }}"
+      win_feature:
+       name: "MultiPath-IO"
+       state: present
+       restart: no
+       include_sub_features: yes
+       include_management_tools: yes
+      when: "'VMware' not in ansible_product_name"

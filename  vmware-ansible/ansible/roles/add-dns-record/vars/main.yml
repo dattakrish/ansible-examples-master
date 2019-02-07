@@ -1,0 +1,8 @@
+---
+# vars file for Add-DNS
+serverList: []
+experianuk_hostnode_01: CORP-NOT-UKDC01
+experianuk_hostnode_02: CORP-NOT-UKDC02
+windows_temp_path: 'C:\temp'
+#file_name: Add-DNS-Entry.ps1
+file_name: test.ps1

@@ -1,0 +1,7 @@
+---
+- name: Test Windows Connection
+  hosts: windows
+
+  tasks:
+  - name: Test connection
+    win_ping:

@@ -1,0 +1,13 @@
+---
+# tasks file for create-ad-groups
+#
+- name: Add group to the domain
+  win_domain_group:
+    name: "{{ item }}"
+    domain_admin_user: c56509a@uk.experian.local
+    domain_admin_password: passwd@123
+    path: 'OU=Groups, DC=uk.experian, DC=local'
+    scope: global
+  with_items:
+    - groupa
+    - groupb

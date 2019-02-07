@@ -1,0 +1,40 @@
+---
+- name: Create a Virtual Machine from Windows template 
+  hosts: localhost
+  connection: local
+  gather_facts: True
+  vars:
+    vcenter_hostname: ukfhpcbvcs02.uk.experian.local
+    vcenter_username: 'EXPERIANUK\BladeLogicVMware'
+    vcenter_password: 4hQzYa7F5hNFmLvj
+    datacenter: 'Fairham'
+    vc_cluster_name: 'FH 40-Core Linux 01'
+
+  tasks:
+    - name: Creating Virtual Machine from Windows template 
+      vmware_guest:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        validate_certs: False
+        folder: /Fairham/vm/ETIG
+        state: poweredon
+        datacenter: '{{ datacenter }}'
+        cluster: '{{ vc_cluster_name }}'
+        name: ETIG-TESTVM01
+        template: IAAS-GTS-2016-DC-Template-FH
+        networks:
+        - name: CORPNET|Layer2-Xsite|2579
+          ip: 10.188.240.160
+          netmask: 255.255.255.192
+          gateway: 10.188.240.190
+          dns_servers:
+          - 10.215.252.10
+          - 10.173.251.106
+        - name: SBN|backup|clients
+          ip: 10.188.240.161
+          netmask: 255.255.255.192
+          domain: uk.experian.local
+          type: static
+      delegate_to: localhost
+      register: vm_details
