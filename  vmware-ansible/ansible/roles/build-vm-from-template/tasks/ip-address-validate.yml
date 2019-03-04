@@ -1,7 +1,7 @@
 ---
 # Check that server IP does not ping which would indicate that in use IP has been provided.
-- name: "Check that the server can ping the address {{ Primary_IP_Address }}"
-  command: ping -c 4 "{{ Primary_IP_Address }}"
+- name: "Check if the server can ping the address {{ Primary_IP_Address }}"
+  command: ping -c 4 {{ Primary_IP_Address }}
   ignore_errors: yes
   register: ping_result
 

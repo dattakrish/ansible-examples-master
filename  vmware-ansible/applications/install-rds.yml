@@ -1,5 +1,13 @@
+###########################################################################
+#   SSC Automation - Windows Build - install Remote Desktop Services
+#   Confluence:
+#   Remote Desktop Services
+#   Author: Michael Barron
+#   Creation Date: 25/01/19
+#   Last Update Date: 25/01/19
+###########################################################################
 ---
-# Created by Scott W
+
 - hosts: all
   tasks:
 
@@ -8,10 +16,39 @@
       name: RDS-RD-Server
       state: present
       include_sub_features: yes
-    register: win_feature
+    register: rds_feature
 
-  - debug:
-      msg: "{{win_feature}}"
+  - name: Installing Remote Desktop Services Licensing Feature
+    win_feature:
+      name: RDS-Licensing
+      state: present
+      include_sub_features: no
+    when: isRDSLicenseServer
+
+  - name: Installing Remote Desktop Services Licensing Feature UI
+    win_feature:
+      name: RDS-Licensing-UI
+      state: present
+      include_sub_features: no
+    when: isRDSLicenseServer
+
+  - name: Copy Remote_Desktop_Install.ps1 to server
+    win_copy:
+     src: Remote_Desktop_Install.ps1
+     dest: c:\tmp\
+
+  - name: Run Remote_Desktop_Install.ps1 without target License Server
+    win_shell: "C:/tmp/{{ rdsps1 }} -isRDSLicenseServer \"{{ isRDSLicenseServer }}\" -licenseMode \"{{ licenseMode }}\""
+    when: isRDSLicenseServer
+
+  - name: Run Remote_Desktop_Install.ps1 With target License Server
+    win_shell: "C:/tmp/{{ rdsps1 }} -isRDSLicenseServer \"{{ isRDSLicenseServer }}\" -targetLicenseServer \"{{ targetLicenseServer }}\" -licenseMode \"{{ licenseMode }}\""
+    when: not isRDSLicenseServer
+
+  - name: remove Remote_Desktop_Install.ps1 from target server
+    win_file:
+     path: C:\tmp\{{ rdsps1 }}
+     state: absent
 
   - win_reboot:
-    when: win_feature.reboot_required
+    when: rds_feature.reboot_required

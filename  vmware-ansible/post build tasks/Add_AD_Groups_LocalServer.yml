@@ -6,27 +6,94 @@
 #   Creation Date: 11/01/19
 #   Last Update Date: 22/01/19
 ###########################################################################
-
 ---
-- name: Add GSA AD Groups to Local Server
+- name: Add AD Groups to Local Server
   hosts: "{{ servername }}"
   gather_facts: no
   tasks:
 
-  - name: Add GSA Admin Group to Local Admin
+## Adds to local Administrators Groups
+  - name: Add to Local Administrator Group GDC.Local
     win_group_membership:
-     name: Administrators
-     members:
-        - "{{ domain }}"\"{{ adm_group }}"
-     state: present
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ adm_group }}"
+         - "{{ domain }}\\{{ gdcadmgroup1 }}"
+         - "{{ domain }}\\{{ gdcadmgroup2 }}"
+         - "{{ domain }}\\{{ gdcadmgroup3 }}"
+         - "{{ domain }}\\{{ gdcadmgroup4 }}"
+      state: present
+    when: domain == 'GDC'
 
-  - name: Add GSA Admin Group to Remote Desktop Users
+  - name: Add to Local Administrator Group ExperianUK
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ adm_group }}"
+         - "{{ domain }}\\{{ expukadmgroup1 }}"
+         - "{{ domain }}\\{{ expukadmgroup2 }}"
+         - "{{ domain }}\\{{ admgroup1 }}"
+         - "{{ domain }}\\{{ admgroup2 }}"
+      state: present
+    when: domain == 'EXPERIANUK'
+
+  - name: Add to Local Administrator Group ipaniuk
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ adm_group }}"
+         - "{{ domain }}\\{{ admgroup1 }}"
+         - "{{ domain }}\\{{ admgroup2 }}"
+         - "{{ domain }}\\{{ ipaniadmgroup1 }}"
+      state: present
+    when: domain == 'IPANIUK'
+
+##Add to Event Log Reader Groups
+  - name: Add GDC Event Log Reader Groups
+    win_group_membership:
+      name: 'Event Log Readers'
+      members:
+         - "{{ domain}}\\{{ gdcelrgroup1 }}"
+      state: present
+    when: domain == 'GDC'
+
+  - name: Add ExpUK/IPANI Event Log Reader Groups
+    win_group_membership:
+      name: 'Event Log Readers'
+      members:
+         - "{{ domain}}\\{{ elrgroup1 }}"
+      state: present
+    when: (domain == 'EXPERIANUK' or domain == 'IPANIUK')
+
+##Add to local Remote Desktop Users Group
+  - name: Add to local Remote Desktop Users
     win_group_membership:
      name: 'Remote Desktop Users'
      members:
-        - "{{ domain }}"\"{{ std_group }}"
+        - "{{ domain }}\\{{ rdpgroup1 }}"
+        - "{{ domain }}\\{{ std_group }}"
      state: present
+    when: (domain == 'EXPERIANUK' or domain == 'IPANIUK')
 
+  - name: Add to local Remote Desktop Users
+    win_group_membership:
+     name: 'Remote Desktop Users'
+     members:
+        - "{{ domain }}\\{{ std_group }}"
+     state: present
+    when: domain == 'GDC'
 
-
-# future dev - add domain specific accounts/groups as above with 'when: domain == gdc.local' etc ?
+##Remove AD Groups
+  - name: Remove from Admin Group
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ domain_admins }}"
+        # - "{{ removegp1 }}"
+         - "{{ removegp2 }}"
+         - "{{ removegp3 }}"
+         - "{{ removegp4 }}"
+         - "{{ removegp5 }}"
+        # - "{{ removegp6 }}"
+         - "{{ removegp7 }}"
+      state: absent

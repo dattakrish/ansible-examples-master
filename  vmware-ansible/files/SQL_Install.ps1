@@ -1,5 +1,5 @@
 ###########################################################################
-#   SSC Automation - Windows Build - SQL Install
+#   ETIG Automation - Windows Build - SQL Install
 #   Confluence:
 #   Author: Barry Field
 #   Creation Date: 29/01/19
@@ -13,23 +13,26 @@
 # - edit INI file for installation with new accounts + sql collation
 # - start installation of SQL
 
+#read params
+Param ([string] $cmdFile, [string] $workingDIr, [string] $installTemplate, [string] $sqladminKey, [string] $sqladminPw, [string] $sqlCollation, [string] $keyFile, [string] $txtFile)
+
 # Params
-$cmdfile = "C:\tmp\SQLold\SQL2016\SQL2016Standalone.cmd" #location of CMD file for SQL install
-$workingDir = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2" #location of .tmp file for SQL install
-$installtemplate = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2\SQL2016Standalone.ini" #standalone INI File
-$sqladmin_key = "C:\tmp\SQLold\SQL2016\Keys\SQLAdmin.key" #key file location for sqladmin pw
-$sqladmin_pw = "C:\tmp\SQL\SQL2016\Keys\Password.txt" #pw file location for sqladmin pw
-$sqlcollation = "SQL_Latin1_General_CP1_CI_AS" #Take input from SNOW
-$KeyFile = "C:\tmp\SQLold\SQL2016\Keys\ansiblead.key" #Take input from SNOW
-$File = "C:\tmp\SQLold\SQL2016\Keys\ansiblead.txt" #Take input from SNOW
+#$cmdFile = "C:\tmp\SQLold\SQL2016\SQL2016Standalone.cmd" #location of CMD file for SQL install
+#$workingDir = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2" #location of .tmp file for SQL install
+#$installTemplate = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2\SQL2016Standalone.ini" #standalone INI File
+#$sqladminKey = "C:\tmp\SQLold\SQL2016\Keys\SQLAdmin.key" #key file location for sqladmin pw
+#$sqladminPw = "C:\tmp\SQL\SQL2016\Keys\Password.txt" #pw file location for sqladmin pw
+#$sqlcollation = "SQL_Latin1_General_CP1_CI_AS" #Take input from SNOW
+#$KeyFile = "C:\tmp\SQLold\SQL2016\Keys\ansiblead.key" #Take input from SNOW
+#$txtFile = "C:\tmp\SQLold\SQL2016\Keys\ansiblead.txt" #Take input from SNOW
 $key = get-content $keyfile
 
 #region Create-Local-SQLAdmin-Account
 $computername = $env:computername
 $username = 'sqladmin'
 $desc = 'SQL Admin Account'
-$key = get-content $sqladmin_key
-$password = get-content $sqladmin_pw | ConvertTo-SecureString -key $Key
+$key = get-content $sqladminKey
+$password = get-content $sqladminPw | ConvertTo-SecureString -key $sqladminKey
 $SQLPassword = (New-Object PSCredential "user",$Password).GetNetworkCredential().Password
 
 $computer = [ADSI]"WinNT://$computername,computer"
@@ -404,8 +407,7 @@ import-module ActiveDirectory
 
 if (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "uk.experian.local"}) {
 $username = "experianuk\ansible_ad"
-$mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $file | ConvertTo-SecureString -key $Key)
-
+$mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $txtFile | ConvertTo-SecureString -key $keyFile
 New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path 'OU=Service Accounts,OU=Accounts,DC=uk,DC=experian,DC=local' -Description $Descriptionsql -PasswordNeverExpires $true
 New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path 'OU=Service Accounts,OU=Accounts,DC=uk,DC=experian,DC=local' -Description $Descriptionagt -PasswordNeverExpires $true
 Add-LoginToLocalPrivilege "experianuk\$usernamesql" "SeLockMemoryPrivilege"
@@ -415,7 +417,7 @@ Add-LoginToLocalPrivilege "experianuk\$usernamesql" "SeManageVolumePrivilege"
 
 Elseif (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "gdc.local"}) {
 $username = "gdc\ansible_ad"
-$mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $file | ConvertTo-SecureString -key $Key)
+$mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $txtFile | ConvertTo-SecureString -key $keyFile)
 New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path 'OU=Service Accounts,OU=Accounts,DC=gdc,DC=local' -Description $Descriptionsql -PasswordNeverExpires $true
 New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path 'OU=Service Accounts,OU=Accounts,DC=gdc,DC=local' -Description $Descriptionagt -PasswordNeverExpires $true
 Add-LoginToLocalPrivilege "gdc\$usernamesql" "SeLockMemoryPrivilege"
@@ -424,7 +426,7 @@ Add-LoginToLocalPrivilege "gdc\$usernamesql" "SeManageVolumePrivilege"}
 
 Else {(Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "ipani.uk.experian.com"})
 $username = "ipaniuk\ansible_ad"
-$mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $file | ConvertTo-SecureString -key $Key)
+$mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $txtFile | ConvertTo-SecureString -key $keyFile)
 New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path 'OU=Service Accounts,OU=Accounts,DC=ipani,DC=uk,experian,DC=com' -Description $Descriptionsql -PasswordNeverExpires $true
 New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path 'OU=Service Accounts,OU=Accounts,DC=ipani,DC=uk,experian,DC=com' -Description $Descriptionagt -PasswordNeverExpires $true
 Add-LoginToLocalPrivilege "ipaniuk\$usernamesql" "SeLockMemoryPrivilege"
@@ -434,17 +436,17 @@ Add-LoginToLocalPrivilege "ipaniuk\$usernamesql" "SeManageVolumePrivilege"}
 
 #region Modify-Unattended-Install-File
 if (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "uk.experian.local"}) {
-    (get-content $installtemplate) | foreach-object {$_ -replace "@domain@", "experianuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installtemplate
+    (get-content $installTemplate) | foreach-object {$_ -replace "@domain@", "experianuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installTemplate
     }
 
     Elseif (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "gdc.local"}) {
-    (get-content $installtemplate) | foreach-object {$_ -replace "@domain@", "gdc" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation" -replace "ts command centre all users", "ADMIN EGOC Operations" -replace "ts-t-hs-serverops", "ADMIN DSG Engineers" } | set-content $installtemplate
+    (get-content $installTemplate) | foreach-object {$_ -replace "@domain@", "gdc" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation" -replace "ts command centre all users", "ADMIN EGOC Operations" -replace "ts-t-hs-serverops", "ADMIN DSG Engineers" } | set-content $installTemplate
     }
     Else {(Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "ipani.uk.experian.com"})
-    (get-content $installtemplate) | foreach-object {$_ -replace "@domain@", "ipaniuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installtemplate
+    (get-content $installTemplate) | foreach-object {$_ -replace "@domain@", "ipaniuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installTemplate
     }
 
 #endregion Modify-Unattended-Install-File
 
 #### Start the Installation process
-Start-Process -FilePath $cmdfile -WorkingDirectory $workingDir
+Start-Process -FilePath $cmdFile -WorkingDirectory $workingDir

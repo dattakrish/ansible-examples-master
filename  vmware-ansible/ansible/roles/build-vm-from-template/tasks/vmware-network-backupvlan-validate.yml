@@ -1,9 +1,18 @@
 ---
 # This script will validate the backup network vLan in vCenter
+- name: Get Network Backup Vlan from vCenter
+  uri:
+    url: https://{{ VC_Server_Name }}/rest/vcenter/network?filter.names.1={{ Backup_VLAN }}
+    force_basic_auth: yes
+    validate_certs: False
+    headers:
+      Cookie: "{{ login.set_cookie }}"
+  register: vBackupNetwork
+
 - name: Validating backup vLan in vCenter
   set_fact:
     backup_network_exists: True
-  with_items: "{{ vNetwork.json.value }}"
+  with_items: "{{ vBackupNetwork.json.value }}"
   when: item.name == Backup_VLAN
 - fail:
     msg: "Backup Network[{{ Backup_VLAN }}] not present in the vCenter Server[{{ VC_Server_Name }}]"

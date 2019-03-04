@@ -3,7 +3,7 @@
 # and validate whether the to be created vm name already exists
 - name: Get ALL VMs from vCenter
   uri:
-    url: "https://{{ VC_Server_Name }}/rest/vcenter/vm"
+    url: "https://{{ VC_Server_Name }}/rest/vcenter/vm?filter.names.1={{ VM_Name }}"
     force_basic_auth: yes
     validate_certs: False
     headers:
@@ -20,4 +20,3 @@
   when: vm_name_exists
 - debug:
     msg: "The VM Server[{{ VM_Name }}] name does not exists in vCenter Server[{{ VC_Server_Name }}]"
-       

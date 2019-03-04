@@ -1,11 +1,10 @@
 ---
 # This script will validate the vCenter cluster
-
 - name: Get cluster details from vCenter
   uri:
     url: https://{{ VC_Server_Name }}/rest/vcenter/cluster
     force_basic_auth: yes
-    validate_certs: "False"
+    validate_certs: False
     headers:
       Cookie: "{{ login.set_cookie }}"
   register: vClusters

@@ -33,6 +33,7 @@
       description: "Windows Server Local Administrator access group"
       scope: global
       organizational_unit: "{{ ou }}"
+#      managed_by:
     when: result1 is success
 
   - name: Create Remote Desktop Group
@@ -42,6 +43,7 @@
      description: "Windows Server Local RDP access group"
      scope: global
      organizational_unit: "{{ ou }}"
+#      managed_by:
     when: result1 is success
 
 
@@ -65,6 +67,7 @@
       description: "Windows Server Local Administrator access group"
       scope: global
       organizational_unit: "{{ ou }}"
+#      managed_by:
     when: hostvars[dc1]['result1'] is failed
 
   - name: Create Remote Desktop Group
@@ -74,6 +77,7 @@
      description: "Windows Server Local RDP access group"
      scope: global
      organizational_unit: "{{ ou }}"
+#      managed_by:
     when: hostvars[dc1]['result1'] is failed
 
   - fail:

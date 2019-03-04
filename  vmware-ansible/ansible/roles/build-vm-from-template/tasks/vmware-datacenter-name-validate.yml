@@ -2,9 +2,9 @@
 # This script will validate if datacenter is in vCenter
 - name: Get datacenters from vCenter
   uri:
-    url: "https://{{ VC_Server_Name }}/rest/vcenter/datacenter"
+    url: https://{{ VC_Server_Name }}/rest/vcenter/datacenter
     force_basic_auth: yes
-    validate_certs: "False"
+    validate_certs: False
     headers:
       Cookie: "{{ login.set_cookie }}"
   register: vDatacenters

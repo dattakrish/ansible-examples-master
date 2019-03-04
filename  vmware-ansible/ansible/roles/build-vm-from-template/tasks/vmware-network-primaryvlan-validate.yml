@@ -2,9 +2,9 @@
 # This script will validate the network primary vLan in vCenter
 - name: Get Network Primary Vlan from vCenter
   uri:
-    url: https://{{ VC_Server_Name }}/rest/vcenter/network
+    url: https://{{ VC_Server_Name }}/rest/vcenter/network?filter.names.1={{ Primary_VLAN }}
     force_basic_auth: yes
-    validate_certs: "False"
+    validate_certs: False
     headers:
       Cookie: "{{ login.set_cookie }}"
   register: vNetwork

@@ -7,5 +7,14 @@
         inventory: "Server Builds"
         state: present
 
+    - name: Add ansible_host host var for GDC servers
+      tower_host:
+        name: "{{serverName}}"
+        inventory: "Server Builds"
+        state: present
+        variables:
+          ansible_host: "{{serverName}}.GDC.LOCAL"
+      when: domain|lower == "gdc.local" 
+
     - name: Add host to group {{inventoryGroup}}
       shell: tower-cli host associate --host {{serverName}} --group {{inventoryGroup}}

@@ -8,9 +8,10 @@
     password: "{{ vcenter_password }}"
 
     validate_certs: False
-    folder: "/Fairham/vm/{{ Inventory_Location }}"
+    #folder: "/Fairham/vm/{{ Inventory_Location }}"
+    folder: "/{{ VC_Data_Center_Name }}/vm/{{ Inventory_Location }}"
     state: poweredon
-    datacenter: "{{ VC_Data_Center_Name }}"    
+    datacenter: "{{ VC_Data_Center_Name }}"
     cluster: "{{ VC_Cluster_Name }}"
     datastore: "{{ DataStore_Cluster_Name }}"
     name: "{{ VM_Name }}"
