@@ -1,0 +1,35 @@
+---
+# Created by Michael Barron 12/03/2019
+# Modified by Michael Barron 12/03/2019
+# Windows Management Framework 5.1
+
+- hosts: all
+  tasks:
+
+# Windows Management Framework 5.1 Not required for Windows Server 2016.
+    - name: Skip Windows Management Framework 5.1 Install if O/S is 2016
+      debug:
+        msg: "O/S is WIndows Server 2016 so Windows Management Framework 5.1 install not required, skipping"
+      when: "'2016' in ansible_os_name"
+
+# Copy Windows Management Framework 5.1 binary if O/S is 2012 R2.
+    - name: Copy Windows Management Framework 5.1 binary if O/S is 2012 R2
+      win_copy:
+        src: "{{ sourcePath }}{{ WMF51 }}"
+        dest: C:\tmp\wmf
+      when: "'2012 R2' in ansible_os_name"
+
+# Install Windows Management Framework 5.1 if O/S is 2012 R2
+    - name: install WMF 5.1 KB3191564 validating KB
+      win_hotfix:
+        hotfix_kb: KB3191564
+        source: C:\tmp\wmf\ {{ WMF51 }}
+        state: present
+      when: "'2012 R2' in ansible_os_name"
+
+# Remove Windows Management Framework 5.1 Folder if O/S is 2012 R2.
+    - name: Remove Windows Management Framework 5.1 Folder
+      win_file:
+       path: C:\temp\wmf
+       state: absent
+      when: "'2012 R2' in ansible_os_name"

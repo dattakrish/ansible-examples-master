@@ -16,5 +16,14 @@
           ansible_host: "{{serverName}}.GDC.LOCAL"
       when: domain|lower == "gdc.local" 
 
+    - name: Add ansible_host host var for IPANI servers
+      tower_host:
+        name: "{{serverName}}"
+        inventory: "Server Builds"
+        state: present
+        variables:
+          ansible_host: "{{serverName}}.IPANI.UK.EXPERIAN.COM"
+      when: domain|lower == "ipani.uk.experan.com" 
+
     - name: Add host to group {{inventoryGroup}}
       shell: tower-cli host associate --host {{serverName}} --group {{inventoryGroup}}

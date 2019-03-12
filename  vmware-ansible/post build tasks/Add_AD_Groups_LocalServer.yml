@@ -84,11 +84,18 @@
     when: domain == 'GDC'
 
 ##Remove AD Groups
-  - name: Remove from Admin Group
+  - name: Remove Domain Admin Group
     win_group_membership:
       name: Administrators
       members:
          - "{{ domain }}\\{{ domain_admins }}"
+      state: absent
+
+      ##Remove AD Groups
+  - name: Remove Other from ExperianUK Admin Group
+    win_group_membership:
+      name: Administrators
+      members:
         # - "{{ removegp1 }}"
          - "{{ removegp2 }}"
          - "{{ removegp3 }}"
@@ -97,3 +104,4 @@
         # - "{{ removegp6 }}"
          - "{{ removegp7 }}"
       state: absent
+    when: domain == 'EXPERIANUK'

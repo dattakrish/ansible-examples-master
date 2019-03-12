@@ -5,7 +5,8 @@
     - name: "Check if the server can ping the address {{ Primary_IP_Address }}"
       command: ping -c 4 {{ Primary_IP_Address }}
       ignore_errors: yes
-      register: ping_result
+      register: win_ping_result
+      run_once: true
 
     - name: Check if the IP address exists
       fail:
