@@ -35,6 +35,9 @@
     win_ping:
     register: dc_ping_result
 
+  - debug:
+      var: dc_ping_result.changed
+
   - name: Run once on a succesfull DC
     block:
     - debug:
@@ -44,14 +47,12 @@
 
     - name: copy ps1 to DC
       win_copy:
-        src: PS_Create_DNS_Record.ps1
+        src: "{{ powershellFile }}"
         dest: c:\tmp\
 
     - name: run nslookup and dnscmd in shell
-      win_shell: "{{ powershellPath }} -serverName \" {{ server_name }}\" -IP4Address \" {{ IP4_Address }}\" -zoneName \" {{ zone_name }}\""    
-# stdout?
-    when: dc_ping_result is success
-    run_once: true   
+      win_shell: "{{ powershellPath }}" # -serverName \" {{ server_name }}\" -IP4Address \" {{ IP4_Address }}\" -zoneName \" {{ zone_name }}\""    
+    when: dc_ping_result.ping
 
   - fail:
       msg: 'Failed to communicate with either DC'

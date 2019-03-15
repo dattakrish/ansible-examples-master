@@ -30,6 +30,6 @@
 # Remove Windows Management Framework 5.1 Folder if O/S is 2012 R2.
     - name: Remove Windows Management Framework 5.1 Folder
       win_file:
-       path: C:\temp\wmf
+       path: C:\tmp\wmf
        state: absent
       when: "'2012 R2' in ansible_os_name"
