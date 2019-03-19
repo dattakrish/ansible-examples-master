@@ -1,6 +1,6 @@
 ---
 # Created by Michael Barron 13/03/2019
-# Modified by Michael Barron 13/03/2019
+# Modified by Michael Barron 15/03/2019
 # Update Disallowed and Auth Certs
 
 - hosts: all
@@ -13,8 +13,14 @@
         dest: C:\tmp\certs
 
 # Run Add Auth Certs Batch file
-    - name: Run Add Auth Certs Batch file
-      win_command: C:\tmp\certs\deploycerts.cmd
+    - name: Update Disallowed Auth Certs
+      win_command: certutil -f -addstore Disallowed c:\tmp\certs\disallowedcert.stl
+
+    - name: Update Trusted Auth Certs
+      win_command: certutil -f -addstore Trusted C:\tmp\certs\authroot.stl
+
+    - name: Update Disallowed Auth Certs
+      win_command: certutil -f -addstore Disallowed c:\tmp\certs\disallowedcert.sst
 
 # Remove Auth Certs files from Server.
     - name: Remove Auth Certs files to Server

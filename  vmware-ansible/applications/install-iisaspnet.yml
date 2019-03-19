@@ -22,42 +22,22 @@
         - disk.1.drive_letter
         - "'D' in disk.1.drive_letter"
 
-# SXS Source for 2016
-    - name: Define SXS Source for 2016
-      set_fact:
-        sxs_source: "/resources/BladeLogic/Storage/file_deploy/Windows/Windows 2016 SXS/sxs"
-      when: "'2016' in ansible_os_name"
-
-# SXS Source for 2012
-    - name: Define SXS Source for 2012
-      set_fact:
-        sxs_source: "/resources/BladeLogic/Storage/file_deploy/Windows/Windows 2012 R2 SXS/sxs"
-      when: "'2012 R2' in ansible_os_name"
-
-# Copy SXS Folder to Target Server.
-    - name: Copy SXS Directory
-      win_copy:
-        src: "{{ sxs_source }}"
-        dest: C:\Temp
-
-# Install IIS + Management Tools.
-    - name: Install IIS
+# Install IIS + Management Tools
+    - name: Install IIS & Management Tools
       win_feature:
-       name: "Web-Server"
-       source: C:\Temp\sxs
+       name: Web-Server
        state: present
        restart: no
-       include_sub_features: yes
+       include_sub_features: no
        include_management_tools: yes
 
-# ASP.NET 4.6 if required (optional).
-    - name: Install ASP.NET 4.6
+# Install ASP.NET 4.x.
+    - name: Install ASP.NET 4.x
       win_feature:
-       name: "Web-Asp-Net45"
-       source: C:\Temp\sxs
+       name: Web-Asp-Net45
        state: present
        restart: no
-       include_sub_features: yes
+       include_sub_features: no
        include_management_tools: no
 
 # Create new webroot directory.
@@ -154,8 +134,3 @@
     - name: Disable dangerous verbs IIS DEBUG
       win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='DEBUG',allowed='false']"
       ignore_errors: yes
-
-    - name: remove SXS Folder
-      win_file:
-       path: C:\temp\sxs
-       state: absent

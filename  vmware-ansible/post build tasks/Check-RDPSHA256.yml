@@ -1,6 +1,6 @@
 ---
 # Created by Michael Barron 13/03/2019
-# Modified by Michael Barron 14/03/2019
+# Modified by Michael Barron 15/03/2019
 # Check RDP for SHA256 Cert
 
 - hosts: all
@@ -35,7 +35,20 @@
 
 # Run Check RDP for SHA256 Cert script if O/S is 2012 R2.
     - name: Run Check RDP for SHA256 Cert script
-      win_command: powershell -noprofile -nologo -noninteractive -executionpolicy Bypass -file  C:\tmp\sha256\Check-Sha256.ps1
+      #win_command: powershell -noprofile -nologo -noninteractive -executionpolicy Bypass -file  C:\tmp\sha256\Check-Sha256.ps1
+      win_shell: |
+        cd 'Cert:\LocalMachine\Remote Desktop'
+
+        if ((Get-ChildItem).SignatureAlgorithm.FriendlyName -ne "sha256RSA")
+        {
+        Write-Output "Cert is not already Sha256."
+        Write-Output "Restarting Terminal Services."
+        Stop-Service -Name TermService -Force
+        Remove-Item -Path "Cert:\localmachine\remote desktop\*" -force
+        Start-Service -Name TermService
+        cd c:
+        }
+        Else {Write-Output "Cert is already Sha256."}
       when: "'2012 R2' in ansible_os_name"
 
 # Remove Check RDP for SHA256 Cert script if O/S is 2012 R2.

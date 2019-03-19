@@ -36,7 +36,7 @@
     register: dc_ping_result
 
   - debug:
-      var: dc_ping_result.changed
+      var: dc_ping_result.ping
 
   - name: Run once on a succesfull DC
     block:
