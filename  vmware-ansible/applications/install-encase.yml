@@ -8,6 +8,10 @@
 ###########################################################################
 
 ---
+- name: Install Encase
+  hosts: all
+  gather_facts: no
+  tasks:
 
   - name: Copy installation media to server
     win_copy:

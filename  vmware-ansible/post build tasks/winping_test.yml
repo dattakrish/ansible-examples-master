@@ -1,9 +1,13 @@
-###ping test
 ---
-- name: Test WinRM
-  hosts: all
-  gather_facts: no
-  tasks:
+- name: Copy Powershell script to server
+  win_copy:
+    src: Windows_Path_Enumerate.ps1
+    dest: c:\temp\
 
-  - win_ping:
-    ignore_unreachable: yes
+- name: Run unquoted path fix ps1
+  win_shell: c:\temp\Windows_Path_Enumerate.ps1
+
+- name: Remove Powershell script from server
+  win_file:
+    path: C:\temp\Windows_Path_Enumerate.ps1
+    state: absent
