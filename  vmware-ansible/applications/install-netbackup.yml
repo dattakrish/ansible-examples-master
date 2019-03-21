@@ -18,10 +18,12 @@
         dest: C:\tmp\NetBackup\8.0
       when: backupRequired
 
-# run install batch file
-#    - name: Run NetBackup Install batch file
-#      script: C:\tmp\NetBackup\8.0\x64\silentclient.cmd
-#      when: backupRequired
+# Copy C:\tmp\NetBackup\8.0\netbackup_agent_required.txt to C:\Windows\System32\drivers\etc\ if backupRequired
+    - name: Copy C:\tmp\NetBackup\8.0\netbackup_agent_required.txt to C:\Windows\System32\drivers\etc\ if backupRequired
+      win_copy:
+        src: C:/tmp/NetBackup/8.0/netbackup_agent_required.txt
+        dest: C:\Windows\System32\drivers\etc\
+      when: backupRequired
 
 # run install batch file
     - win_shell: C:\tmp\NetBackup\8.0\x64\silentclient.cmd

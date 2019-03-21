@@ -4,7 +4,7 @@
 #   Install Encase
 #   Author: Barry Field
 #   Creation Date: 18/03/19
-#   Last Update Date:18/03/19
+#   Last Update Date:21/03/19
 ###########################################################################
 
 ---
@@ -22,5 +22,16 @@
     win_package:
       path: C:\temp\{{ src_encase_installer }}
       arguments: ALLUSERS=1 REBOOT=ReallySuppress
+      creates_service: enstart64
       state: present
+    register: encase_result
+
+  - name: Reboot server
+    win_reboot:
+    when: encase_result.reboot_required
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_encase_installer }}
+      state: absent
 
