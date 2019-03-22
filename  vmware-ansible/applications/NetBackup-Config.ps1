@@ -80,11 +80,6 @@ for ($i = $startaddr; $i -le $endaddr; $i++)
 
 }
 
-
-if((Get-Content -Path 'C:\Windows\System32\drivers\etc\netbackup_agent_required.txt') -ne 'no')
-{
-
-
 $BackupIP=""
 
 #Check for a NIC called "Backup"
@@ -197,8 +192,3 @@ New-NetRoute -DestinationPrefix "172.30.240.0/24" -InterfaceAlias "Backup" -Rout
 
 if(Test-Connection -ComputerName nbu-not-mast.backup.local -Count 30 -Quiet) {""; "Ping to nbu-not-mast.backup.local successful "}
 Else{""; "Ping to nbu-not-mast.backup.local failed. Check that nbu-not-mast.backup.local is available and that network connectivity is in place"}
-
-}
-
-Else{write-output "Netbackup Agent not required so do not carry out any configuration."}
-

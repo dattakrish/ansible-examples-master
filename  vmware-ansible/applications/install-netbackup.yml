@@ -3,6 +3,7 @@
 # Install NetBackup Client and Configure Routing And Hosts File
 
 - hosts: all
+  gather_facts: False
   tasks:
 
 # Debug Backup Not Required
@@ -16,13 +17,6 @@
       win_copy:
         src: "{{ sourcePath }}"
         dest: C:\tmp\NetBackup\8.0
-      when: backupRequired
-
-# Copy C:\tmp\NetBackup\8.0\netbackup_agent_required.txt to C:\Windows\System32\drivers\etc\ if backupRequired
-    - name: Copy C:\tmp\NetBackup\8.0\netbackup_agent_required.txt to C:\Windows\System32\drivers\etc\ if backupRequired
-      win_copy:
-        src: C:/tmp/NetBackup/8.0/netbackup_agent_required.txt
-        dest: C:\Windows\System32\drivers\etc\
       when: backupRequired
 
 # run install batch file
