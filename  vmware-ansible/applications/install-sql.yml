@@ -45,14 +45,12 @@
     win_copy:
       src: "{{ sourcePath }}"
       dest: C:\tmp\SQL
-      force: no
       state: present
 
   - name: Copy SXS Directory
     win_copy:
       src: "{{ sxs_source }}"
       dest: C:\tmp
-      force: no
       state: present
 
   - name: install AD PS Module
@@ -90,51 +88,51 @@
   - name: Unzip SQL Files
     win_unzip:
       src: "{{ zipSource }}"
-      dest: "{{ zipDest }}"
-      creates: "{{ working_Dir }}"
+      dest: c:\tmp\SQL\SQL_Install
+      #creates: c:\tmp\SQL\SQL_Install #"{{ working_Dir }}"
 
 #INI File {{ install_template }}
-  - name: Define ini File
-    set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
-    when: sql_ver == 'SQL2016Ent'
+#  - name: Define ini File
+ #   set_fact:
+  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
+   # when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
 
-  - name: Define ini File
-    set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
-    when: sql_ver == 'SQL2016Std'
+#  - name: Define ini File
+ #   set_fact:
+  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
+   # when: sql_ver == 'SQL2016Std'
 
-  - name: Define ini File
-    set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
-    when: sql_ver == 'SQL2017Ent'
+#  - name: Define ini File
+ #   set_fact:
+  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
+   # when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
 
-  - name: Define ini File
-    set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
-    when: sql_ver == 'SQL2017Std'
+#  - name: Define ini File
+ #   set_fact:
+  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
+   # when: sql_ver == 'SQL2017Std'
 
 
 #Define CMD File {{ cmd_file }}
   - name: Define CMD File
     set_fact:
         install_template: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
-    when: sql_ver == 'SQL2016Ent'
+    when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
 
-  - name: Define CMD File
-    set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
-    when: sql_ver == 'SQL2016Std'
-
-  - name: Define CMD File
-    set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
-    when: sql_ver == 'SQL2017Ent'
+#  - name: Define CMD File
+ #   set_fact:
+  #      install_template: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
+   # when: sql_ver == 'SQL2016Std'
 
   - name: Define CMD File
     set_fact:
         install_template: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
-    when: sql_ver == 'SQL2017Std'
+    when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
+
+#  - name: Define CMD File
+ #   set_fact:
+  #      install_template: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
+   # when: sql_ver == 'SQL2017Std'
 
 
 ## Install SQL

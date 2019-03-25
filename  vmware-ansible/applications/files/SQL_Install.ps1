@@ -14,7 +14,7 @@
 # - start installation of SQL
 
 # Params
-$cmdfile =  #location of CMD file for SQL install
+$cmdfile = "C:\tmp\SQLold\SQL2016\SQL2016Standalone.cmd" #location of CMD file for SQL install
 $workingDir = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2" #location of .tmp file for SQL install
 $installtemplate = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2\SQL2016Standalone.ini" #standalone INI File
 $sqladmin_key = "C:\tmp\SQLold\SQL2016\Keys\SQLAdmin.key" #key file location for sqladmin pw
