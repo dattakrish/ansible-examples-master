@@ -1,5 +1,0 @@
----
-- include_tasks: vm-name-length-validate.yml
-- include_tasks: is_vm-validate.yml
-- include_tasks: ip-address-validate.yml
-

@@ -1,6 +1,0 @@
----
-# vars file for add-additional-groups-to-servers
-experianuk_file: Add-Additional-AD-Groups-To-Server-Experianuk.ps1
-gdc_file: Add-Additional-AD-Groups-To-Server-GDC.ps1
-ipani_file: Add-Additional-AD-Groups-To-Server-IPANIUK.ps1
-windows_temp_path: 'C:\tmp\'

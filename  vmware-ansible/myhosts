@@ -1,9 +1,0 @@
-[windows]
-ukfhpapcho01
-[windows:vars]
-ansible_user=ETIG-Ansible@UK.EXPERIAN.LOCAL
-ansible_password=LbM2Hv6j5LwDUje3
-#ansible_port=5985
-ansible_connection=winrm
-ansible_winrm_transport=kerberos
-ansible_winrm_server_cert_validation=ignore

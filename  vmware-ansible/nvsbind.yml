@@ -1,6 +1,0 @@
----
-- name: Deploy NVSPBIND (Development)
-  hosts: windows
-  gather_facts: False
-  roles:
-  - role: nvsbind
