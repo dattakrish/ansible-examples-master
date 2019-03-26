@@ -91,32 +91,32 @@
       dest: c:\tmp\SQL\SQL_Install
       #creates: c:\tmp\SQL\SQL_Install #"{{ working_Dir }}"
 
-#INI File {{ install_template }}
-#  - name: Define ini File
- #   set_fact:
-  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
-   # when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
+#Define INI File {{ install_template }}
+  - name: Define ini File
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
+    when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
 
 #  - name: Define ini File
  #   set_fact:
   #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2016Standalone.ini"
    # when: sql_ver == 'SQL2016Std'
 
-#  - name: Define ini File
- #   set_fact:
-  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
-   # when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
+  - name: Define ini File
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
+    when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
 
-#  - name: Define ini File
- #   set_fact:
-  #      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
-   # when: sql_ver == 'SQL2017Std'
+ # - name: Define ini File
+  #  set_fact:
+   #     install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL2017Standalone.ini"
+    #when: sql_ver == 'SQL2017Std'
 
 
-#Define CMD File {{ cmd_file }}
+#Define CMD File {{ cmd_File }}
   - name: Define CMD File
     set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
+        cmd_File: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
     when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
 
 #  - name: Define CMD File
@@ -126,7 +126,7 @@
 
   - name: Define CMD File
     set_fact:
-        install_template: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
+        cmd_File: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
     when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
 
 #  - name: Define CMD File
@@ -134,10 +134,30 @@
   #      install_template: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
    # when: sql_ver == 'SQL2017Std'
 
+#Define working path {{ working_dir }}
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2"
+    when: sql_ver == 'SQL2016Ent'
+
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2"
+    when: sql_ver == 'SQL2016Std'
+
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM"
+    when: sql_ver == 'SQL2017Ent'
+
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM"
+    when: sql_ver == 'SQL2017Std'
 
 ## Install SQL
   - name: Install SQL
-    win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -sqladminKey \"{{ sqladmin_Key }}\" -sqladminPw \"{{ sqladmin_Pw }}\" -keyFile \"{{ key_File }}\" -txtFile \"{{ txt_File }}\" -sqlCollation \"{{ sql_Collation }}\""
+    win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -sqlCollation \"{{ sql_Collation }}\""
     register: result1
 
 #  - name: Remove Source Files

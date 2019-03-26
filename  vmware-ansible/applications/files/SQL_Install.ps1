@@ -14,14 +14,15 @@
 # - start installation of SQL
 
 # Params
-$cmdfile = "C:\tmp\SQLold\SQL2016\SQL2016Standalone.cmd" #location of CMD file for SQL install
-$workingDir = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2" #location of .tmp file for SQL install
-$installtemplate = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2\SQL2016Standalone.ini" #standalone INI File
-$sqladmin_key = "C:\tmp\SQLold\SQL2016\Keys\SQLAdmin.key" #key file location for sqladmin pw
-$sqladmin_pw = "C:\tmp\SQL\SQL2016\Keys\Password.txt" #pw file location for sqladmin pw
-$sqlcollation = "SQL_Latin1_General_CP1_CI_AS" #Take input from SNOW
-$KeyFile = "C:\tmp\SQLold\SQL2016\Keys\ansiblead.key" #Take input from SNOW
-$File = "C:\tmp\SQLold\SQL2016\Keys\ansiblead.txt" #Take input from SNOW
+param ([string]$cmdFile, [string]$installTemplate, [string]$sqlCollation)
+#$cmdfile =  #location of CMD file for SQL install
+$workingDir = "C:\tmp\SQL\SQL_Install" #location of .tmp file for SQL install
+#$installtemplate = "C:\tmp\SQLold\SQL2016\SQL_2016_Ent_x64_inc_SP2\SQL2016Standalone.ini" #standalone INI File
+$sqladmin_key = C:\\tmp\\SQL\\Keys\\SQLAdmin.key #key file location for sqladmin pw
+$sqladmin_pw = "C:\\tmp\\SQL\\Keys\\Password.txt" #pw file location for sqladmin pw
+#$sqlcollation = "SQL_Latin1_General_CP1_CI_AS" #Take input from SNOW
+$KeyFile = "C:\\tmp\\SQL\\Keys\\ansiblead.key" #Take input from SNOW
+$txtFile = "C:\\tmp\\SQL\\Keys\\ansiblead.txt" #Take input from SNOW
 $key = get-content $keyfile
 
 #region Create-Local-SQLAdmin-Account
