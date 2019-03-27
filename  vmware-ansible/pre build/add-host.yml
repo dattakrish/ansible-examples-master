@@ -4,12 +4,14 @@
     - name: Adding {{serverName}} to build inventory
       tower_host:
         name: "{{serverName}}"
+        tower_verify_ssl: no
         inventory: "Server Builds"
         state: present
 
     - name: Add ansible_host host var for GDC servers
       tower_host:
         name: "{{serverName}}"
+        tower_verify_ssl: no
         inventory: "Server Builds"
         state: present
         variables:
@@ -19,6 +21,7 @@
     - name: Add ansible_host host var for IPANI servers
       tower_host:
         name: "{{serverName}}"
+        tower_verify_ssl: no
         inventory: "Server Builds"
         state: present
         variables:
@@ -26,4 +29,4 @@
       when: domain|lower == "ipani.uk.experan.com" 
 
     - name: Add host to group {{inventoryGroup}}
-      shell: tower-cli host associate --host {{serverName}} --group {{inventoryGroup}}
+      shell: tower-cli host associate --host {{serverName}} --group {{inventoryGroup}} --insecure

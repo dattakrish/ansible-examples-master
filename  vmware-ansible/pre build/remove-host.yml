@@ -4,5 +4,6 @@
     - name: removing {{serverName}} from inventory
       tower_host:
         name: "{{serverName}}"
+        tower_verify_ssl: no
         inventory: "Server Builds"
         state: absent
