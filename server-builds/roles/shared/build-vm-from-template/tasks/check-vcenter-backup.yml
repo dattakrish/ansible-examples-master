@@ -1,0 +1,23 @@
+---
+
+  - name: Get backup VLAN [{{ backup_vlan }}]
+    uri:
+      url: https://{{ vcenter_hostname }}/rest/vcenter/network?filter.names.1={{ backup_vlan }}
+      force_basic_auth: yes
+      validate_certs: False
+      headers:
+        Cookie: "{{ login.set_cookie }}"
+    register: vBackupNetwork
+ 
+  - set_fact:
+      backup_network_exists: true
+    with_items: "{{ vBackupNetwork.json.value }}"
+    when: item.name == backup_vlan
+    no_log: true
+
+  - fail:
+      msg: "Backup VLAN [{{ backup_vlan }}] not present"
+    when: backup_network_exists is not defined
+
+  - debug:
+      msg: "Backup VLAN [{{ backup_vlan }}] present"

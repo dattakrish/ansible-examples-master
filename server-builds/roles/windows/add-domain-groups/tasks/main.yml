@@ -1,0 +1,32 @@
+---
+
+  - name: Define OU for EXPERIANUK
+    set_fact:
+      domain_group_ou: "{{ ou_experianuk_groups }}"
+    when: domain == 'uk.experian.local'
+
+  - name: Define OU for GDC
+    set_fact:
+      domain_group_ou: "{{ ou_gdc_groups }}"
+    when: domain == 'gdc.local'
+
+  - name: Define OU for IPANI
+    set_fact:
+      domain_group_ou: "{{ ou_ipani_groups }}"
+    when: domain == 'ipani.uk.experian.com'
+
+  - name: Create Server Administrator Group
+    win_domain_group:
+      state: present
+      name: "{{ domain_adm_group }}"
+      description: "Windows Server Local Administrator access group"
+      scope: global
+      organizational_unit: "{{ domain_group_ou }}"
+    
+  - name: Create Server Remote Desktop Group
+    win_domain_group:
+      state: present
+      name: "{{ domain_std_group }}"
+      description: "Windows Server Local RDP access group"
+      scope: global
+      organizational_unit: "{{ domain_group_ou }}"

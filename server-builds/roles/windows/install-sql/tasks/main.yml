@@ -1,0 +1,69 @@
+---
+
+  - name: Define location of SQL 2016 Enterprise
+    set_fact:
+      src_sql_path: "{{ src_sql_2016_ent_path }}"
+      src_sql_zip: "{{ src_sql_2016_ent_zip }}"
+    when: sql_version == 'SQL2016Ent'
+
+  - name: Define location of SQL 2016 Standard
+    set_fact:
+      src_sql_path: "{{ src_sql_2016_std_path }}"
+      src_sql_zip: "{{ src_sql_2016_std_zip }}"
+    when: sql_version == 'SQL2016Std'
+
+  - name: Define location of SQL 2017 Enterprise
+    set_fact:
+      src_sql_path: "{{ src_sql_2017_ent_path }}"
+      src_sql_zip: "{{ src_sql_2017_ent_zip }}"
+    when: sql_version == 'SQL2017Ent'
+
+  - name: Define location of SQL 2017 Standard
+    set_fact:
+      src_sql_path: "{{ src_sql_2017_std_path }}"
+      src_sql_zip: "{{ src_sql_2017_std_zip }}"
+    when: sql_version == 'SQL2017Std'
+
+  - name: Create temporary SQL directory
+    win_file:
+      path: C:\tmp\sql
+      state: directory
+
+  - name: Copy source directory for {{ sql_version }}
+    win_copy:
+      src: "{{ src_sql_path }}"
+      dest: C:\tmp\sql
+
+  - name: Copy 2016 SXS Directory
+    win_copy:
+      src: "{{ src_sxs_2016 }}"
+      dest: C:\tmp\sql
+      force: no
+
+  - name: Install AD PS Module
+    win_feature:
+      name: RSAT-AD-Powershell
+      source: C:\tmp\sxs
+      state: present
+
+  - name: Copy PowerShell to server
+    win_copy:
+      src: SQL_Install.ps1
+      dest: C:\tmp\sql
+
+  - name: Unzip SQL Files
+    win_unzip:
+      src: c:\tmp\sql\{{ sql_version }}\{{src_sql_zip}}
+      dest: c:\tmp\SQL2016
+      creates: c:\tmp\SQL2016\SQL_2016_Ent_x64_inc_SP2
+
+  - name: Installing {{ sql_version }} using PowerShell
+    win_shell: "C:\\tmp\\sql\\SQL_Install.ps1 -cmdFile \"{{ cfg_sql_cmd_File }}\" -workingDir \"{{ cfg_sql_working_Dir }}\" -installTemplate \"{{ cfg_sql_install_Template }}\" -sqladminKey \"{{ cfg_sql_sqladmin_Key }}\" -sqladminPw \"{{ cfg_sql_sqladmin_Pw }}\" -keyFile \"{{ cfg_sql_key_File }}\" -txtFile \"{{ cfg_sql_txt_File }}\" -sqlCollation \"{{ sql_collation }}\""
+    register: sql_result
+
+  - name: Delete temporary SQL directory
+    win_file:
+      path: C:\tmp\sql
+      state: absent
+    when: sql_result is success
+    

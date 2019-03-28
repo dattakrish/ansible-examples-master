@@ -1,0 +1,35 @@
+---
+
+  - name: Copy Check RDP for SHA256 Cert script if O/S is 2012 R2
+    win_copy:
+      src: "{{ src_sha256_path }}"
+      dest: C:\tmp\sha256
+
+  - name: Install {{ src_sha256_kb }} validating KB
+    win_hotfix:
+      hotfix_kb: "{{ src_sha256_kb }}"
+      source: C:\tmp\sha256\{{ src_sha256_installer }}
+      state: present
+    register: hotfix_install
+
+  - win_reboot:
+    when: hotfix_install.reboot_required
+
+  - name: Run Check RDP for SHA256 Cert script
+    win_shell: |
+      cd 'Cert:\LocalMachine\Remote Desktop'
+      if ((Get-ChildItem).SignatureAlgorithm.FriendlyName -ne "sha256RSA")
+      {
+      Write-Output "Cert is not already Sha256."
+      Write-Output "Restarting Terminal Services."
+      Stop-Service -Name TermService -Force
+      Remove-Item -Path "Cert:\localmachine\remote desktop\*" -force
+      Start-Service -Name TermService
+      cd c:
+      }
+      Else {Write-Output "Cert is already Sha256."}
+
+  - name: Remove Check RDP for SHA256 Cert script
+    win_file:
+      path: C:\tmp\sha256
+      state: absent

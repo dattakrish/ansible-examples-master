@@ -1,0 +1,29 @@
+---
+
+  # Set template and vCenter names
+  - include_tasks: set-template-and-vcenter.yml
+  
+  # Check VM and vCenter config
+  - include_tasks: check-server-name.yml
+  - include_tasks: check-vcenter-api.yml
+  - include_tasks: check-vcenter-vm-name.yml
+  - include_tasks: check-vcenter-datacenter.yml
+  - include_tasks: check-vcenter-cluster.yml
+  - include_tasks: check-vcenter-vlan.yml
+  - include_tasks: check-vcenter-backup.yml
+    when: backup_required
+  - include_tasks: check-vcenter-datastore.yml
+  - include_tasks: check-vcenter-freespace.yml
+
+  # Set config
+  # - include_tasks: set-backup-config.yml
+  - include_tasks: set-domain-config.yml
+  - include_tasks: create-vcenter-folder.yml
+
+  # Deploy VM without backup NIC
+  - include_tasks: create-vm-win.yml
+    when: not backup_required
+
+  # Deploy VM with backup NIC
+  - include_tasks: create-vm-win-with-backup.yml
+    when: backup_required

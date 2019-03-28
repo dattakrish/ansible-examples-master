@@ -1,0 +1,20 @@
+---
+
+  - name: Copying Java JDK installation media to server
+    win_copy:
+      src: "{{ src_javajdk_path }}{{ src_javajdk_installer }}"
+      dest: C:\temp\
+
+  - name: Installing JavaJDK
+    win_shell: C:\temp\{{ src_javajdk_installer }} /s
+
+  - name: Update %PATH% Variable
+    win_path:
+      elements:
+      - 'C:\Program Files\Java\{{ src_javajdk_version }}\bin'
+      state: present
+
+  - name: Removing Java JDK installation media
+    win_file:
+      path: C:\temp\{{ src_javajdk_installer }}
+      state: absent

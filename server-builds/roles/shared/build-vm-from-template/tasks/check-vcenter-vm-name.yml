@@ -1,0 +1,22 @@
+---
+
+  - name: Check for VM named [{{ server_name }}]
+    uri:
+      url: "https://{{ vcenter_hostname }}/rest/vcenter/vm?filter.names.1={{ server_name }}"
+      force_basic_auth: yes
+      validate_certs: False
+      headers:
+        Cookie: "{{ login.set_cookie }}"
+    register: vVMs
+
+  - set_fact:
+      server_name_exists: true       
+    with_items: "{{ vVMs.json.value }}"
+    when: item.name == server_name
+
+  - fail:
+      msg: "The VM [{{ server_name }}] already exists"
+    when: server_name_exists is defined
+
+  - debug:
+      msg: "The VM [{{ server_name }}] does not already exist"

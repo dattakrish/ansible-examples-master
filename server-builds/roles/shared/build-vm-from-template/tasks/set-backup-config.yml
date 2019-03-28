@@ -1,0 +1,26 @@
+---
+
+- name: Set dummy backup config as not required - Synergy
+  set_fact:
+   assigned_backup_ip_address: "192.168.0.100"
+   assigned_backup_subnet_mask: "255.255.255.0"
+   assigned_backup_vlan: "SBN|backup|clients"
+  when: 
+    - not backup_required
+    - vcenter_site == 'Fairham Synergy' or vcenter_site == 'Bulwell Synergy'
+
+- name: Set dummy backup config as not required - Vblock
+  set_fact:
+   assigned_backup_ip_address: "192.168.0.100"
+   assigned_backup_subnet_mask: "255.255.255.0"
+   assigned_backup_vlan: "VLAN999"
+  when: 
+    - not backup_required
+    - vcenter_site == 'Fairham Vblock' or vcenter_site == 'Bulwell Vblock'
+
+- name: Set backup config
+  set_fact:
+   assigned_backup_ip_address: "{{ backup_ip_address }}"
+   assigned_backup_subnet_mask: "{{ backup_subnet_mask }}"
+   assigned_backup_vlan: "{{ backup_vlan }}"
+  when: backup_required

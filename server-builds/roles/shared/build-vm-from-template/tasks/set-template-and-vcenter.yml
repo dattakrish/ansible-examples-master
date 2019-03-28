@@ -1,0 +1,45 @@
+---
+
+  - name: Define template and vCenter for Windows 2016 - Fairham Vblock
+    set_fact:
+      template_name: "{{ tmp_fh_win_2016 }}"
+      vcenter_hostname: ukfhpvbvcs01.uk.experian.local
+      vcenter_datacenter: Fairham Vblock
+      compatible_os: true
+    when:
+      - os == 'Windows Server 2016'
+      - vcenter_site == 'Fairham Vblock'
+
+  - name: Define template and vCenter for Windows 2016 - Bulwell Vblock
+    set_fact:
+      template_name: "{{ tmp_bl_win_2016 }}"
+      vcenter_hostname: ukblpvbvcs01.uk.experian.local
+      vcenter_datacenter: Bulwell Vblock
+      compatible_os: true
+    when:
+      - os == 'Windows Server 2016'
+      - vcenter_site == 'Bulwell Vblock'
+
+  - name: Define template and vCenter for Windows 2016 - Fairham Synergy
+    set_fact:
+      template_name: "{{ tmp_fh_win_2016 }}"
+      vcenter_hostname: ukfhpcbvcs02.uk.experian.local
+      vcenter_datacenter: Fairham
+      compatible_os: true
+    when:
+      - os == 'Windows Server 2016'
+      - vcenter_site == 'Fairham Synergy'
+
+  - name: Define template and vCenter for Windows 2016 - Bulwell Synergy
+    set_fact:
+      template_name: "{{ tmp_bl_win_2016 }}"
+      vcenter_hostname: ukblpcbvcs02.uk.experian.local
+      vcenter_datacenter: Bulwell
+      compatible_os: true
+    when:
+      - os == 'Windows Server 2016'
+      - vcenter_site == 'Bulwell Synergy'
+
+  - fail:
+      msg: "Incompatible OS and vCenter configuration"
+    when: not compatible_os

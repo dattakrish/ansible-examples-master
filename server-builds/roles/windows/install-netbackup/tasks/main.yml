@@ -1,0 +1,24 @@
+---
+
+  - name: Copy NetBackup Folder to Target Server
+    win_copy:
+      src: "{{ src_netbackup_path }}"
+      dest: C:\tmp\NetBackup\8.0
+
+  - win_shell: C:\tmp\NetBackup\8.0\x64\silentclient.cmd
+    args:
+      executable: cmd
+      chdir: C:\tmp\NetBackup\8.0\x64
+
+  - name: Copy NetBackup-Config.ps1 to server
+    win_copy:
+      src: NetBackup-Config.ps1
+      dest: c:\tmp\NetBackup\
+
+  - name: Run NetBackup-Config.ps1 script
+    win_shell: C:/tmp/NetBackup/NetBackup-Config.ps1
+
+  - name: Remove NetBackup Folder
+    win_file:
+      path: C:\tmp\NetBackup
+      state: absent

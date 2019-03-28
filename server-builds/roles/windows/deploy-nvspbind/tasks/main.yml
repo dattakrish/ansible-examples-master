@@ -1,0 +1,7 @@
+---
+
+  - name: Copy nvspbind.exe
+    win_copy:
+      src: "{{ src_nvspbind_path }}"
+      dest: C:\Windows\System32
+      state: present

@@ -1,0 +1,13 @@
+---
+- name: Copy PS1 script to temp
+  win_copy:
+    src: Windows_Path_Enumerate.ps1
+    dest: c:\temp\
+
+- name: Run unquoted path fix PS1
+  win_shell: c:\temp\Windows_Path_Enumerate.ps1
+
+- name: Remove PS1
+  win_file:
+    path: c:\temp\Windows_Path_Enumerate.ps1
+    state: absent

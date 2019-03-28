@@ -1,0 +1,14 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_npp_path }}{{ src_npp_installer }}"
+      dest: c:\temp\
+
+  - name: Installing Notepad++
+    win_shell: C:\temp\{{ src_npp_installer }} /S
+       
+  - name: Removing installation media
+    win_file:
+      path: C:\temp\{{ src_npp_installer }}
+      state: absent

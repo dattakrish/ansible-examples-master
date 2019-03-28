@@ -1,0 +1,22 @@
+---
+
+  - name: Get vCenter datacenters
+    uri:
+      url: https://{{ vcenter_hostname }}/rest/vcenter/datacenter
+      force_basic_auth: yes
+      validate_certs: False
+      headers:
+        Cookie: "{{ login.set_cookie }}"
+    register: vDatacenters
+
+  - set_fact:
+      datacenter_exists: true
+    with_items: "{{ vDatacenters.json.value }}"
+    when: item.name == vcenter_datacenter
+  
+  - fail:
+      msg: "Datacenter [{{ vcenter_datacenter }}] not present"
+    when: datacenter_exists is not defined
+
+  - debug:
+      msg: "Datacenter [{{ vcenter_datacenter }}] present"

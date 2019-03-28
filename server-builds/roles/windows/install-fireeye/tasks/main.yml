@@ -1,0 +1,28 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_fireeye_path }}{{ src_fireeye_installer }}"
+      dest: c:\temp\
+
+  - name: Copy config file to server
+    win_copy:
+      src: "{{ src_fireeye_path }}{{ src_fireeye_config }}"
+      dest: c:\temp\
+
+  - name: Installing FireEye
+    win_package:
+      path: C:\temp\{{ src_fireeye_installer }}
+      arguments: /quiet /l*v C:\Windows\Temp\FireEyeAgent-Install.log /norestart
+      state: present
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_fireeye_installer }}
+      state: absent
+
+  - name: Remove config file
+    win_file:
+      path: C:\temp\{{ src_fireeye_config }}
+      state: absent      
+

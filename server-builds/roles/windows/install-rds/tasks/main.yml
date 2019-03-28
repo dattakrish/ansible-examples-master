@@ -1,0 +1,43 @@
+---
+
+  - name: Installing Remote Desktop Services Feature
+    win_feature:
+      name: RDS-RD-Server
+      state: present
+      include_sub_features: yes
+    register: rds_feature
+
+  - name: Installing Remote Desktop Services Licensing Feature
+    win_feature:
+      name: RDS-Licensing
+      state: present
+      include_sub_features: no
+    when: rds_license_server
+
+  - name: Installing Remote Desktop Services Licensing Feature UI
+    win_feature:
+      name: RDS-Licensing-UI
+      state: present
+      include_sub_features: no
+    when: rds_license_server
+
+  - name: Copy Remote_Desktop_Install.ps1 to server
+    win_copy:
+      src: "{{ scr_rds_name }}"
+      dest: c:\tmp\
+
+  - name: Run Remote_Desktop_Install.ps1 without target License Server
+    win_shell: "C:/tmp/{{ scr_rds_name }} -isRDSLicenseServer \"{{ rds_license_server }}\" -licenseMode \"{{ rds_license_mode }}\""
+    when: rds_license_server
+
+  - name: Run Remote_Desktop_Install.ps1 With target License Server
+    win_shell: "C:/tmp/{{ scr_rds_name }} -isRDSLicenseServer \"{{ rds_license_server }}\" -targetLicenseServer \"{{ rds_target_server }}\" -licenseMode \"{{ rds_license_mode }}\""
+    when: not rds_license_server
+
+  - name: Remove Remote_Desktop_Install.ps1 from target server
+    win_file:
+      path: C:\tmp\{{ scr_rds_name }}
+      state: absent
+
+  - win_reboot:
+    when: rds_feature.reboot_required

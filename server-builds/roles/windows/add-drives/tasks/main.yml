@@ -1,0 +1,31 @@
+---
+
+  - name: Convert drive strings to arrays
+    set_fact:
+      drive_letters_array: "{{ drive_letters.split(',') }}"
+      drive_sizes_array: "{{ drive_sizes.split(',') }}"
+      drive_labels_array: "{{ drive_labels.split(',') }}"
+      drive_allocation_array: "{{ drive_allocation.split(',') }}"
+
+  - name: Deploy PowerShell file
+    win_copy:
+      src: Add_Drive_Windows.ps1
+      dest: C:\tmp\
+
+  - name: List of drives to add
+    debug:
+      msg: "Letter: {{ drive_letters_array[drive_index] }}, Size: {{ drive_sizes_array[drive_index] }} GB, Label: {{ drive_labels_array[drive_index] }}, Position: {{ drive_index + 2 }}"
+    loop: "{{ drive_letters_array }}"
+    loop_control:
+      index_var: drive_index  
+   
+  - name: Add drives to Windows
+    win_shell: C:\tmp\Add_Drive_Windows.ps1 -position {{ drive_index + 2 }} -driveLetter {{ drive_letters_array[drive_index] }} -driveLabel {{ drive_labels_array[drive_index] }} -size {{ drive_sizes_array[drive_index] }} -sizeUnit GB -unitAllocation {{ drive_allocation_array[drive_index] }}
+    loop: "{{ drive_letters_array }}"
+    loop_control:
+      index_var: drive_index
+
+  - name: Remove PowerShell file
+    win_file:
+      path: C:\tmp\Add_Drive_Windows.ps1
+      state: absent

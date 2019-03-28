@@ -1,0 +1,6 @@
+---
+
+  - name: Copy Acronis.bat to C:\Windows\system32
+    win_copy:
+      src: Acronis.bat
+      dest: C:\windows\system32\

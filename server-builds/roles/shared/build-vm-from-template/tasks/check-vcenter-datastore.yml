@@ -1,0 +1,26 @@
+---
+
+  - name: Get vCenter cluster [{{ vcenter_cluster }}]"
+    vmware_datastore_facts:
+      hostname: '{{ vcenter_hostname }}'
+      username: '{{ vcenter_username }}'
+      password: '{{ vcenter_password }}'
+      datacenter: '{{ vcenter_datacenter }}'
+      cluster: '{{ vcenter_cluster }}'
+      validate_certs: False
+    delegate_to: localhost
+    register: vc_cluster_facts
+
+  - set_fact:
+      valid_cluster_name: true
+    with_items: "{{ vc_cluster_facts['datastores'] }}"
+    when: item.datastore_cluster == vcenter_datastore_cluster
+    no_log: true
+
+  - fail:
+      msg: "Datastore [{{ vcenter_datastore_cluster }}] not present in cluster [{{ vcenter_cluster }}]"
+    when: valid_cluster_name is not defined
+
+  - debug:
+      msg: "Datastore [{{ vcenter_datastore_cluster }}] present in cluster [{{ vcenter_cluster }}]"
+    

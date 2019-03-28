@@ -1,0 +1,109 @@
+---
+
+  # Work out short domain
+  - name: Define short name for EXPERIANUK
+    set_fact:
+      short_domain: EXPERIANUK
+    when: domain == 'uk.experian.local'
+
+  - name: Define short name for GDC
+    set_fact:
+      short_domain: GDC
+    when: domain == 'gdc.local'
+
+  - name: Define short name for IPANI
+    set_fact:
+      short_domain: IPANIUK
+    when: domain == 'ipani.uk.experian.com'
+
+  # Adds to local Administrators Groups
+  - name: Add to Local Administrator Group GDC.Local
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ short_domain }}\\{{ domain_adm_group }}"
+        - "{{ short_domain }}\\{{ grp_gdc_admin_1 }}"
+        - "{{ short_domain }}\\{{ grp_gdc_admin_2 }}"
+        - "{{ short_domain }}\\{{ grp_gdc_admin_3 }}"
+        - "{{ short_domain }}\\{{ grp_gdc_admin_4 }}"
+      state: present
+    when: short_domain == 'GDC'
+
+  - name: Add to Local Administrator Group ExperianUK
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ short_domain }}\\{{ domain_adm_group }}"
+        - "{{ short_domain }}\\{{ grp_expuk_admin_1 }}"
+        - "{{ short_domain }}\\{{ grp_expuk_admin_2 }}"
+        - "{{ short_domain }}\\{{ grp_all_admin_1 }}"
+        - "{{ short_domain }}\\{{ grp_all_admin_2 }}"
+      state: present
+    when: short_domain == 'EXPERIANUK'
+
+  - name: Add to Local Administrator Group ipaniuk
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ short_domain }}\\{{ domain_adm_group }}"
+        - "{{ short_domain }}\\{{ grp_all_admin_1 }}"
+        - "{{ short_domain }}\\{{ grp_all_admin_2 }}"
+        - "{{ short_domain }}\\{{ grp_ipani_admin_1 }}"
+      state: present
+    when: short_domain == 'IPANIUK'
+
+  # Add to Event Log Reader Groups
+  - name: Add GDC Event Log Reader Groups
+    win_group_membership:
+      name: 'Event Log Readers'
+      members:
+        - "{{ short_domain }}\\{{ grp_gdc_event }}"
+      state: present
+    when: short_domain == 'GDC'
+
+  - name: Add ExpUK/IPANI Event Log Reader Groups
+    win_group_membership:
+      name: 'Event Log Readers'
+      members:
+        - "{{ short_domain }}\\{{ grp_all_event }}"
+      state: present
+    when: (short_domain == 'EXPERIANUK' or short_domain == 'IPANIUK')
+
+  # Add to local Remote Desktop Users Group
+  - name: Add to local Remote Desktop Users
+    win_group_membership:
+     name: 'Remote Desktop Users'
+     members:
+        - "{{ short_domain }}\\{{ grp_all_rdp_1 }}"
+        - "{{ short_domain }}\\{{ domain_std_group }}"
+     state: present
+    when: (short_domain == 'EXPERIANUK' or short_domain == 'IPANIUK')
+
+  - name: Add to local Remote Desktop Users
+    win_group_membership:
+     name: 'Remote Desktop Users'
+     members:
+        - "{{ short_domain }}\\{{ domain_std_group }}"
+     state: present
+    when: short_domain == 'GDC'
+
+  # Remove AD Groups
+  - name: Remove Domain Admin Group
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ short_domain }}\\{{ domain_admins }}"
+      state: absent
+
+  # Remove AD Groups
+  - name: Remove Other from ExperianUK Admin Group
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ grp_remove_1 }}"
+        - "{{ grp_remove_2 }}"
+        - "{{ grp_remove_3 }}"
+        - "{{ grp_remove_4 }}"
+        - "{{ grp_remove_5 }}"
+      state: absent
+    when: short_domain == 'EXPERIANUK'

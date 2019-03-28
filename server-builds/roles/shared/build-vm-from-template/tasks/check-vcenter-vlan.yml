@@ -1,0 +1,22 @@
+---
+
+  - name: Get VLAN [{{ primary_vlan }}]
+    uri:
+      url: https://{{ vcenter_hostname }}/rest/vcenter/network?filter.names.1={{ primary_vlan }}
+      force_basic_auth: yes
+      validate_certs: False
+      headers:
+        Cookie: "{{ login.set_cookie }}"
+    register: vNetwork
+
+  - set_fact:
+      primary_network_exists: true
+    with_items: "{{ vNetwork.json.value }}"
+    when: item.name == primary_vlan
+
+  - fail:
+      msg: "VLAN [{{ primary_vlan }}] not present"
+    when: primary_network_exists is not defined
+
+  - debug:
+      msg:  "VLAN [{{ primary_vlan }}] present"

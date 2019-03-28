@@ -1,0 +1,23 @@
+---
+
+  - name: Get vCenter clusters
+    uri:
+      url: https://{{ vcenter_hostname }}/rest/vcenter/cluster
+      force_basic_auth: yes
+      validate_certs: False
+      headers:
+        Cookie: "{{ login.set_cookie }}"
+    register: vClusters
+
+  - set_fact:
+      cluster_exists: true
+    with_items: "{{ vClusters.json.value }}"
+    when: item.name == vcenter_cluster
+    no_log: true
+
+  - fail:
+      msg: "Cluster [{{ vcenter_cluster }}] not present"
+    when: cluster_exists is not defined
+
+  - debug:
+      msg: "Cluster [{{ vcenter_cluster }}] present"

@@ -1,0 +1,156 @@
+---
+
+  # D Drive Check Loop
+  - name: Check to loop through all drives looking for D
+    win_disk_facts:
+  - name: "with_subelements and loop example of disk check"
+    debug:
+      var: disk.0.drive_letter
+    with_subelements:
+      - "{{ ansible_disks }}"
+      - partitions
+      - flags:
+        skip_missing: true
+    loop_control:
+      loop_var: disk
+    when:
+      - disk.1.drive_letter
+      - "'D' in disk.1.drive_letter"
+
+  # SXS Source for 2016
+  - name: Define SXS Source for 2016
+    set_fact:
+      sxs_source: "{{ src_sxs_2016 }}"
+    when: "'2016' in ansible_os_name"
+
+  # SXS Source for 2012
+  - name: Define SXS Source for 2012
+    set_fact:
+      sxs_source: "{{ src_sxs_2012r2 }}"
+    when: "'2012 R2' in ansible_os_name"
+
+  # Copy SXS Folder to Target Server.
+  - name: Copy SXS Directory
+    win_copy:
+      src: "{{ sxs_source }}"
+      dest: C:\Temp
+
+  # Install IIS + Management Tools.
+  - name: Install IIS
+    win_feature:
+      name: "Web-Server"
+      source: C:\Temp\sxs
+      state: present
+      restart: no
+      include_sub_features: yes
+      include_management_tools: yes
+
+  # ASP.NET 4.6 if required (optional).
+  - name: Install ASP.NET 4.6
+    win_feature:
+      name: "Web-Asp-Net45"
+      source: C:\Temp\sxs
+      state: present
+      restart: no
+      include_sub_features: yes
+      include_management_tools: no
+
+  # Create new webroot directory.
+  - name: Creates IIS directory
+    win_file:
+      path: D:\wwwroot\Web Root
+      state: directory
+
+  # Create D:\IISLogs.
+  - name: Create Logs directory
+    win_file:
+      path: D:\IISLogs
+      state: directory
+
+  # Remove Default Web Site and the standard port 80 binding
+  - name: Remove Default Web Site
+    win_iis_website:
+      name: "Default Web Site"
+      state: absent
+
+  # Create new 'Default Web Site' and bind to IP of Primary adapter.
+  - name: Create new 'Web root Site' and set Primary IP
+    win_iis_website:
+      name: "Web root"
+      port: 80
+      ip: "{{ ansible_ip_addresses[0] }}"
+      physical_path: D:\wwwroot\Web Root
+      parameters: logfile.directory:D:\IISLogs
+    register: website
+
+  # Change default logfile location
+  - name: Set IIS Log defaults
+    win_xml:
+      backup: yes
+      path: C:\Windows\System32\inetsrv\config\applicationHost.config
+      xpath: '//configuration/system.applicationHost/sites/siteDefaults/logFile'
+      attribute: 'directory'
+      fragment: 'D:\IISLogs'
+      type: attribute
+
+  # Change default tracefailedrequestslogging file location
+  - name: Set IIS Trace Failed defaults
+    win_xml:
+      path: C:\Windows\System32\inetsrv\config\applicationHost.config
+      xpath: '//configuration/system.applicationHost/sites/siteDefaults/traceFailedRequestsLogging'
+      attribute: 'directory'
+      fragment: 'D:\IISLogs'
+      type: attribute
+
+  # set individual site defaults
+  - name: Set IIS Log individual site defaults
+    win_xml:
+      path: C:\Windows\System32\inetsrv\config\applicationHost.config
+      xpath: '//configuration/system.applicationHost/log/centralW3CLogFile'
+      attribute: 'directory'
+      fragment: 'D:\IISLogs'
+      type: attribute
+
+  # set individual site defaults
+  - name: Set IIS Log individual site defaults
+    win_xml:
+      path: C:\Windows\System32\inetsrv\config\applicationHost.config
+      xpath: '//configuration/system.applicationHost/log/centralBinaryLogFile'
+      attribute: 'directory'
+      fragment: 'D:\IISLogs'
+      type: attribute
+
+  # Remove Default HTTP errors IIS.
+  - name: Remove Default HTTP errors IIS
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe clear config -section:system.webserver/httperrors
+    ignore_errors: yes
+
+  # Disable dangerous verbs IIS.
+  - name: Disable dangerous verbs IIS TRACE
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs.”[verb='TRACE',allowed='false']”
+    ignore_errors: yes
+
+  - name: Disable dangerous verbs IIS TRACK
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='TRACK',allowed='false']"
+    ignore_errors: yes
+
+  - name: Disable dangerous verbs IIS DELETE
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='DELETE',allowed='false']"
+    ignore_errors: yes
+
+  - name: Disable dangerous verbs IIS PUT
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='PUT',allowed='false']"
+    ignore_errors: yes
+
+  - name: Disable dangerous verbs IIS WRITE
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='WRITE',allowed='false']"
+    ignore_errors: yes
+
+  - name: Disable dangerous verbs IIS DEBUG
+    win_shell: C:\Windows\System32\inetsrv\appcmd.exe set config -section:system.webServer/security/requestFiltering /+verbs."[verb='DEBUG',allowed='false']"
+    ignore_errors: yes
+
+  - name: Remove SXS Folder
+    win_file:
+      path: C:\temp\sxs
+      state: absent

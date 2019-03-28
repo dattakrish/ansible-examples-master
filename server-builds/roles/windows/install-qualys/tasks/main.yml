@@ -1,0 +1,20 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_qualys_path }}{{ src_qualys_installer }}"
+      dest: C:\tmp\
+      state: present
+
+  - name: Install QualysCloudAgent
+    win_package:
+      path: C:\tmp\{{ src_qualys_installer }}
+      creates_path: C:\Program Files\Qualys\QualysAgent\{{ src_qualys_installer }}
+      creates_ver: "{{ src_qualys_version }}"
+      arguments: CustomerId=9c0e25dd-f7a3-5af6-e040-10ac13043f6a ActivationId=c3f07e9c-9403-473f-9137-67e594e95333
+      state: present
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_qualys_installer }}
+      state: absent

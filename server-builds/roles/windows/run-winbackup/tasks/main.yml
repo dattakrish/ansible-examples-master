@@ -1,0 +1,10 @@
+---
+
+- name: Ensure Windows Backup Feature is installed
+  win_feature:
+    name: Windows-Server-Backup
+    state: present
+    restart: no
+
+- name: create backup of c:\ to y:\
+  win_command: wbadmin start backup -backupTarget:Y:\ -include:C:\ -allCritical -systemState -vssCopy -quiet

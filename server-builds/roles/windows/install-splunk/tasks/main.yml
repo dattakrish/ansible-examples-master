@@ -1,0 +1,17 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_splunk_path }}{{ src_splunk_installer }}"
+      dest: c:\temp\
+
+  - name: Installing Splunk
+    win_package:
+      path: C:\temp\{{ src_splunk_installer }}
+      arguments: ALLUSERS=1 REBOOT=ReallySuppress DEPLOYMENT_SERVER="ukfhpcbssu01:8089" WINEVENTLOG_SYS_ENABLE=0 AGREETOLICENSE=Yes /quiet
+      state: present
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_splunk_installer }}
+      state: absent

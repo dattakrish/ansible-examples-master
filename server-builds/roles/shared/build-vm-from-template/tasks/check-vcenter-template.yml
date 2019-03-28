@@ -1,0 +1,44 @@
+---
+
+  # - name: Get list of VMs from vCenter
+  #   vmware_vm_facts:
+  #     hostname: "{{ vcenter_hostname }}"
+  #     username: "{{ vcenter_username }}"
+  #     password: "{{ vcenter_password }}"
+  #     validate_certs: False
+  #   delegate_to: localhost
+  #   register: vm_facts
+
+  # - set_fact:
+  #     template_exists: true
+  #   with_dict: "{{ vm_facts.virtual_machines }}"
+  #   when: item.key == template_name
+    
+  # - fail:
+  #     msg: "Template [{{template_name}}] is not present"
+  #   when: template_exists is not defined
+
+  # - debug:
+  #     msg: "Template [{{ template_name }}] is present"
+       
+  - name: Check for Template named [{{ template_name }}]
+    uri:
+      url: "https://{{ vcenter_hostname }}/rest/vcenter/vm?filter.names.1={{ template_name }}"
+      force_basic_auth: yes
+      validate_certs: False
+      headers:
+        Cookie: "{{ login.set_cookie }}"
+    register: vVMs
+
+  - set_fact:
+      template_exists: true       
+    with_items: "{{ vVMs.json.value }}"
+    when: item.name == template_name
+
+  - fail:
+      msg: "The template [{{ template_name }}] is not present"
+    when: template_exists is not defined
+
+  - debug:
+      msg: "The template [{{ template_name }}] is present"
+

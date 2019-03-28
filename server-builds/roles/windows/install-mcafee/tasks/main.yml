@@ -1,0 +1,14 @@
+---
+
+  - name: Copy McAfee Framework to Target Server
+    win_copy:
+      src: "{{ src_mcafee_path }}{{ src_mcafee_installer }}"
+      dest: C:\tmp\McAfee\
+
+  - name: Install McAfee Framework on Target Server
+    raw: C:\tmp\McAfee\{{ src_mcafee_installer }} /install=agent /Silent
+
+  - name: Remove McAfee Framework folder
+    win_file:
+      path: C:\tmp\McAfee
+      state: absent

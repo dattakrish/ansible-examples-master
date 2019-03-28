@@ -1,0 +1,16 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_winzip_path }}{{ src_winzip_installer }}"
+      dest: c:\temp\
+
+  - name: Installing WinZip
+    win_package:
+      path: C:\temp\{{ src_winzip_installer }}
+      state: present
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_winzip_installer }}
+      state: absent

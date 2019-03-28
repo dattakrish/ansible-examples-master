@@ -1,0 +1,111 @@
+---
+
+# Global var file for Windows applications
+
+# SXS folders
+src_sxs_2012r2: /resources/BladeLogic/Storage/file_deploy/Windows/Windows 2012 R2 SXS/sxs
+src_sxs_2016: /resources/BladeLogic/Storage/file_deploy/Windows/Windows 2016 SXS/sources/sxs
+
+# WinZip
+src_winzip_path: /resources/BladeLogic/Storage/file_deploy/Windows/Winzip/Winzip_23/
+src_winzip_installer: winzip230-64.msi
+
+# Beyond Compare
+src_beyondcompare_path: /resources/BladeLogic/Storage/file_deploy/Windows/BeyondCompare/
+src_beyondcompare_installer: BCompare-4.2.9.23626_x64.msi
+
+# Java
+src_javajdk_path: /resources/BladeLogic/Storage/file_deploy/Windows/Java/JDK/
+src_javajdk_installer: jdk-8-windows-x64.exe
+src_javajdk_version: jdk1.8.0_202
+src_javajre_path: /resources/BladeLogic/Storage/file_deploy/Windows/Java/JRE/
+src_javajre_installer: jre-8-windows-x64.exe
+src_javajre_config: JavaJRE.cfg
+
+# Notepad++
+src_npp_path: /resources/BladeLogic/Storage/file_deploy/Windows/Notepad++/7.6.2/
+src_npp_installer: npp.7.6.2.Installer.x64.exe
+
+# RDS
+scr_rds_name: Remote_Desktop_Install.ps1
+
+# V the File Viewer
+src_vfile_path: /resources/BladeLogic/Storage/file_deploy/Windows/V File Viewer/v15-x64
+src_vfile_appFolder: v15-x64
+src_vfile_installer: setup.exe
+
+# Dynatrace OneAgent
+src_dynatrace_path: /resources/BladeLogic/Storage/file_deploy/OneAgent/Windows/
+src_dynatrace_installer: Dynatrace-OneAgent-Windows-Current.msi
+cfg_dynatrace_gateway: "https://ukblpgwdyn02.uk.experian.local:9999/communication;https://ukfhpgwdyn02.uk.experian.local:9999/communication;https://ukfhpgwdyn01.uk.experian.local:9999/communication;https://ukblpgwdyn01.uk.experian.local:9999/communication"
+cfg_dynatrace_infraonly: 1
+cfg_dynatrace_tenantid_prod: isr78399
+cfg_dynatrace_tenantid_nonprod: isv27618
+cfg_dynatrace_tenanttoken_prod: nMy6sSUnLqwjJCWl
+cfg_dynatrace_tenanttoken_nonprod: 6DwjEIrZ5jGLlyeI
+
+# Splunk
+src_splunk_path: /resources/BladeLogic/Storage/file_deploy/Windows/Splunk/
+src_splunk_installer: splunkforwarder.msi
+
+# FireEye
+src_fireeye_path: /resources/Storage/Iaas Automation/Windows/Software/FireEye/25.12.0/
+src_fireeye_installer: xagtSetup_25.12.0_universal.msi
+src_fireeye_config: agent_config.json
+
+# Qualys
+src_qualys_path: /resources/BladeLogic/Storage/file_deploy/Windows/QualysCloudAgent/
+src_qualys_installer: QualysCloudAgent-2.1.1.34.exe
+src_qualys_version: 2.1.1.34
+
+# Encase
+src_encase_path: /resources/BladeLogic/Storage/file_deploy/Windows/Encase/1.6.2.4/
+src_encase_installer: setup.msi
+
+# McAfee Framework
+src_mcafee_path: /resources/bladelogic/storage/file_deploy/windows/mcafee/
+src_mcafee_installer: Master_ePO_5_5_1_Windows_FramePkg.exe
+
+# Tanium
+src_tanium_path: /resources/bladelogic/storage/file_deploy/windows/tanium/6.0.314.1540/
+cfg_tanium_ip1: 10.8.40.80
+cfg_tanium_ip2: 10.8.60.36
+
+# NetBackup
+src_netbackup_path: /resources/BladeLogic/Storage/file_deploy/Windows/NetBackup/8.0/
+
+# Windows Management Framework
+src_wmf_path: /resources/BladeLogic/Storage/file_deploy/Windows/WMF/
+src_wmf_installer: Win8.1AndW2K12R2-KB3191564-x64.msu
+src_wmf_kb: KB3191564
+
+# Check RDP SHA256
+src_sha256_path: /resources/BladeLogic/Storage/file_deploy/Windows/sha256/
+src_sha256_installer: windows8.1-kb4012219-x64_65a44c2f045b53479bde37d475baf94768c814c5.msu
+src_sha256_kb: KB4012219
+
+# Update certificates
+src_certs_path: /resources/BladeLogic/Storage/file_deploy/Windows/Certs/
+
+# Windows 2016 Configuration
+src_config2016_path: /resources/BladeLogic/Storage/file_deploy/Windows/Windows_2016_Config
+
+# NVSPBIND
+src_nvspbind_path: /resources/BladeLogic/Storage/file_deploy/Windows/nvspbind/
+
+# SQL
+src_sql_2016_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Ent
+src_sql_2016_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Std
+src_sql_2017_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Ent
+src_sql_2017_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Std
+src_sql_2016_ent_zip: SQL_2016_Ent_x64_inc_SP2.zip
+src_sql_2016_std_zip: 
+src_sql_2017_ent_zip: 
+src_sql_2017_std_zip: 
+cfg_sql_destPath: "c:\\tmp\\SQL"
+cfg_sql_zipDest: "c:\\tmp\\SQL"
+cfg_sql_working_Dir: "c:\\tmp\\SQL\\SQL_Install"
+cfg_sql_sqladmin_Key: "C:\\tmp\\SQL\\Keys\\SQLAdmin.key"
+cfg_sql_sqladmin_Pw: "C:\\tmp\\SQL\\Keys\\Password.txt"
+cfg_sql_key_File: "C:\\tmp\\SQL\\Keys\\ansiblead.key"
+cfg_sql_txt_File: "C:\\tmp\\SQL\\Keys\\ansiblead.txt"

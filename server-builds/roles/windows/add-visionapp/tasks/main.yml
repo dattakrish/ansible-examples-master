@@ -1,0 +1,18 @@
+---
+
+  - name: Deploy PowerShell file
+    win_copy:
+      src: Add_Server_VisionApp.ps1
+      dest: C:\tmp\
+    run_once: true
+
+  - name: Run Add_Server_VisionApp.ps1
+    #win_command: "powershell.exe -ExecutionPolicy ByPass -File C:/tmp/Add_Server_VisionApp.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
+    win_shell: "C:/tmp/Add_Server_VisionApp.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
+    run_once: true
+
+  - name: Remove PowerShell file
+    win_file:
+      path: C:\tmp\Add_Server_VisionApp.ps1
+      state: absent
+    run_once: true

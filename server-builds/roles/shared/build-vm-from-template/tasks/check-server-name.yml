@@ -1,0 +1,8 @@
+---
+
+  - name: Check server name length
+    fail:
+      msg: "Server name [{{ server_name }}] should be less than or equal to 15 characters"
+    when: server_name|length > 15     
+  
+  

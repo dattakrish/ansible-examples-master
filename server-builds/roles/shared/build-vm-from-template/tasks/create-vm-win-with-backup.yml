@@ -1,0 +1,44 @@
+---
+
+  - name: Creating VM [{{ server_name }}] from template [{{ template_name }}]
+    vmware_guest:
+      annotation: "VM {{ server_name }} created on {{ ansible_date_time.date }} at {{ ansible_date_time.time }} by {{ build_engineer_email }} using Ansible."
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"    
+      password: "{{ vcenter_password }}"
+      validate_certs: False
+      folder: "/{{ vcenter_datacenter }}/vm/{{ vcenter_folder | replace(backslash, '/') }}"
+      state: poweredon
+      datacenter: "{{ vcenter_datacenter }}"
+      cluster: "{{ vcenter_cluster }}"
+      datastore: "{{ vcenter_datastore_cluster }}"
+      name: "{{ server_name }}"
+      template: "{{ template_name }}"    
+      hardware:
+        memory_mb: "{{ vm_memory_gb|int * 1024 }}" 
+        num_cpus: "{{ vm_cpu_sockets }}"
+        num_vm_cpu_cores: "{{ vm_cpu_cores }}"
+      customization:
+        domain: "{{ domain }}"
+        domainadmin: "{{ domain_admin_user }}" 
+        domainadminpassword: "{{ domain_admin_pwd }}"      
+        joindomain: "{{ domain }}"
+        timezone: 85
+        runonce:
+          - net localgroup administrators {{ short_domain }}\ansible_ad /add
+      networks:
+      - name: "{{ primary_vlan }}"
+        ip: "{{ primary_ip_address }}"
+        netmask: "{{ primary_subnet_mask }}"
+        gateway: "{{ primary_default_gateway }}"
+        dns_servers:
+        - "{{ primary_dns }}"
+        - "{{ secondary_dns }}"
+        type: static
+      - name: "{{ backup_vlan }}"    
+        ip: "{{ backup_ip_address }}"
+        netmask: "{{ backup_subnet_mask }}"
+        type: static       
+      wait_for_ip_address: True
+    delegate_to: localhost
+    register: vm_details

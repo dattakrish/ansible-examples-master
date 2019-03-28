@@ -1,0 +1,43 @@
+---
+
+# Global var file for Domain Config
+
+# Domain Controllers
+dc_experianuk_1: CORP-NOT-UKDC09
+dc_experianuk_2: CORP-NOT-UKDC02
+dc_gdc_1: CORP-NOT-GDC01
+dc_gdc_2: CORP-NOT-GDC02
+dc_ipani_1: CORP-NOT-IPDC01
+dc_ipani_2: CORP-NOT-IPDC02
+
+# OU for group creation
+ou_experianuk_groups: "OU=ServerGroups,OU=WindowsServers,OU=Groups,DC=uk,DC=experian,DC=local"
+ou_gdc_groups: "OU=ServerGroups,OU=WindowsServers,OU=Groups,DC=gdc,DC=local"
+ou_ipani_groups: "OU=ServerGroups,OU=WindowsServers,OU=Groups,DC=ipani,DC=uk,DC=experian,DC=com"
+
+# Inventory groups based on domain
+inv_experianuk_win: Windows_UK.EXPERIAN.LOCAL
+inv_gdc_win: Windows_GDC.LOCAL
+inv_ipani_win: Windows_IPANI.UK.EXPERIAN.COM
+inv_experianuk_lin: Linux_UK.EXPERIAN.LOCAL
+inv_gdc_lin: Linux_GDC.LOCAL
+
+# Server access
+grp_gdc_admin_1: "ADMIN DSG Engineers"
+grp_gdc_admin_2: "ADMIN EGOC Operations"
+grp_gdc_admin_3: "sndlgdc"
+grp_gdc_admin_4: "ADMIN Windows Server Administration"
+grp_gdc_event: "ArcSvc"
+domain_admins: "Domain Admins"
+grp_expuk_admin_1: "tdmukuser"
+grp_expuk_admin_2: "snduk"
+grp_all_admin_1: "ts-t-hs-serverops"
+grp_all_admin_2: "ts command centre all users"
+grp_all_event: "Arcsight"
+grp_all_rdp_1: "ADMIN Storage Administration"
+grp_ipani_admin_1: "sndipaniuk"
+grp_remove_1: "EXPERIANUK\\ADMIN Workstation Administration"
+grp_remove_2: "EXPERIANUK\\CL-T-DskAdmin"
+grp_remove_3: "EXPERIANUK\\CP-T-ACGAccAdmin"
+grp_remove_4: "EXPERIANUK\\Dept_BN_PCSupport"
+grp_remove_5: "EXPERIANUK\\SSMgmtWKUKSvc"

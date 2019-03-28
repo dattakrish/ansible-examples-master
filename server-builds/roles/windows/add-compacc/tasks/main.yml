@@ -1,0 +1,51 @@
+
+---
+#set Domain Part of Org Unit
+  - name: Set OU based on Domain - experianuk
+    set_fact:
+      dc_ou: "DC=uk,DC=experian,DC=local"
+    when: domain == 'uk.experian.local'
+
+  - name: Set OU based on Domain - ipani
+    set_fact:
+      dc_ou: "DC=ipani,DC=uk,DC=experian,DC=com"
+    when: domain == 'ipani.uk.experian.com'
+
+  - name: Set OU based on Domain - gdcuk
+    set_fact:
+      dc_ou: "DC=gdc,DC=local"
+    when: domain == 'gdc.local'
+
+#determine OS specific part of Org Unit
+  - name: Set OU based on OS - 2016
+    set_fact:
+      ou: "OU=Windows Server 2016 Member Servers,OU=Servers,OU=Systems,{{ dc_ou }}"
+      description: Windows 2016 server created by ETIG Automation
+    when: os == 'Windows Server 2016'
+
+  - name: Set OU based on OS - 2012
+    set_fact:
+      ou: "OU=Windows Server 2012 Member Servers,OU=Servers,OU=Systems,{{ dc_ou }}"
+      description: Windows 2012 server created by ETIG Automation
+    when: os == 'Windows Server 2012'
+
+#Message attributes
+  - debug:
+      msg: "Creating DNSHostname: {{ server_name + '.' + domain }}"
+  - debug:
+      msg: "SAMAccountname: {{ server_name + '$' }}"
+  - debug:
+      msg: "Placing in: {{ ou }}"
+
+#create account
+  - name: Create computer account
+    win_domain_computer:
+      name: "{{ server_name }}"
+      sam_account_name: "{{ server_name + '$' }}"
+      dns_hostname: "{{ server_name + '.' + domain }}"
+      ou: "{{ ou }}"
+      description: "{{ description }}"
+      enabled: yes
+      state: present
+  
+    

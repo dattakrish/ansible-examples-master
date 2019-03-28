@@ -1,0 +1,37 @@
+---
+
+  - name: Set TENANT for Production
+    set_fact:
+      cfg_dynatrace_tenantid: "{{ cfg_dynatrace_tenantid_prod }}"
+      cfg_dynatrace_tenanttoken: "{{ cfg_dynatrace_tenanttoken_prod }}"
+    when: server_env == 'Production'
+
+  - name: Set TENANT for Non-Production
+    set_fact:
+      cfg_dynatrace_tenantid: "{{ cfg_dynatrace_tenantid_nonprod }}"
+      cfg_dynatrace_tenanttoken: "{{ cfg_dynatrace_tenanttoken_nonprod }}"
+    when: server_env != 'Production'
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_dynatrace_path }}{{ src_dynatrace_installer }}"
+      dest: c:\temp\
+
+  - name: Installing Dynatrace OneAgent
+    win_package:
+      path: C:\temp\{{ src_dynatrace_installer }}
+      arguments: SERVER=\"{{ cfg_dynatrace_gateway }}\" TENANT=\"{{ cfg_dynatrace_tenantid }}\" PROCESSHOOKING=1 TENANT_TOKEN=\"{{ cfg_dynatrace_tenanttoken }}\" ALLOW_INFRASTRUCTURE_ONLY=1 INFRA_ONLY={{ cfg_dynatrace_infraonly }} APP_LOG_CONTENT_ACCESS=1 /quiet /qn
+      state: present
+    when: dynatrace_hostgroup == ''
+
+  - name: Installing Dynatrace OneAgent
+    win_package:
+      path: C:\temp\{{ src_dynatrace_installer }}
+      arguments: SERVER=\"{{ cfg_dynatrace_gateway }}\" TENANT=\"{{ cfg_dynatrace_tenantid }}\" HOST_GROUP=\"{{ dynatrace_hostgroup }}\" PROCESSHOOKING=1 TENANT_TOKEN=\"{{ cfg_dynatrace_tenanttoken }}\" ALLOW_INFRASTRUCTURE_ONLY=1 INFRA_ONLY={{ cfg_dynatrace_infraonly }} APP_LOG_CONTENT_ACCESS=1 /quiet /qn
+      state: present
+    when: dynatrace_hostgroup != ''
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_dynatrace_installer }}
+      state: absent

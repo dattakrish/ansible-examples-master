@@ -1,0 +1,14 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_vfile_path }}"
+      dest: c:\temp\
+
+  - name: Installing V File Viewer
+    win_shell: C:\temp\{{src_vfile_appFolder}}\{{src_vfile_installer}} /auto /all
+       
+  - name: Removing installation media
+    win_file:
+      path: C:\temp\{{src_vfile_appFolder}}
+      state: absent

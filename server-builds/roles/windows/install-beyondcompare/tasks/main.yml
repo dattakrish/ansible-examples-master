@@ -1,0 +1,16 @@
+---
+
+  - name: Copy installation media to server
+    win_copy:
+      src: "{{ src_beyondcompare_path }}{{ src_beyondcompare_installer }}"
+      dest: c:\temp\
+
+  - name: Installing Beyond Compare
+    win_package:
+      path: C:\temp\{{ src_beyondcompare_installer }}
+      state: present
+
+  - name: Remove installation media
+    win_file:
+      path: C:\temp\{{ src_beyondcompare_installer }}
+      state: absent

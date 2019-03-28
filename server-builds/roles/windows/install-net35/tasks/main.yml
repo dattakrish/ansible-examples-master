@@ -1,0 +1,22 @@
+---
+
+  - name: Define SXS Source for 2016
+    set_fact:
+      sxs_source: "{{ src_sxs_2016 }}"
+    when: "'2016' in ansible_os_name"
+
+  - name: Define SXS Source for 2012
+    set_fact:
+      sxs_source: "{{ src_sxs_2012r2 }}"
+    when: "'2012 R2' in ansible_os_name"
+
+  - name: Copy SXS Directory
+    win_copy:
+      src: "{{ sxs_source }}"
+      dest: C:\Temp
+
+  - name: Add .NET 3.5 Feature
+    win_feature:
+      name: NET-Framework-Core
+      source: C:\Temp\sxs
+      state: present

@@ -1,0 +1,24 @@
+---
+
+  - name: Copying Java JRE config file to server
+    win_copy:
+      src: "{{ src_javajre_path }}{{ src_javajre_config }}"
+      dest: c:\temp\
+        
+  - name: Copying Java JRE installation media to server
+    win_copy:
+      src: "{{ src_javajre_path }}{{ src_javajre_installer }}"
+      dest: c:\temp\
+
+  - name: Installing JavaJRE
+    win_shell: C:\temp\{{ src_javajre_installer }} INSTALLCFG=C:\temp\{{ src_javajre_config }}
+       
+  - name: Removing Java JRE installation media
+    win_file:
+      path: C:\temp\{{ src_javajre_installer }}
+      state: absent
+
+  - name: Removing Java JRE config file
+    win_file:
+      path: C:\temp\{{ src_javajre_config }}
+      state: absent

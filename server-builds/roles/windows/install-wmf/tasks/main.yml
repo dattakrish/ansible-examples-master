@@ -1,0 +1,21 @@
+---
+
+  - name: Copy Windows Management Framework binary
+    win_copy:
+      src: "{{ src_wmf_path }}{{ src_wmf_installer }}"
+      dest: C:\tmp\wmf
+
+  - name: Install WMF hotfix {{ src_wmf_kb }}
+    win_hotfix:
+      hotfix_kb: "{{ src_wmf_kb }}"
+      source: C:\tmp\wmf\{{ src_wmf_installer }}
+      state: present
+    register: wmf_install
+
+  - name: Remove Windows Management Framework Folder
+    win_file:
+      path: C:\temp\wmf
+      state: absent
+
+  - win_reboot:
+    when: wmf_install.reboot_required

@@ -1,0 +1,10 @@
+---
+
+  - name: Deploy PowerShell file if changed
+    win_copy:
+      src: Check_VM_Status.ps1
+      dest: D:\Repository\server-build\
+
+  - name: Check server has finished customisation
+    win_shell: D:\Repository\server-build\Check_VM_Status.ps1 -vCenter {{ vcenter_hostname }} -serverName {{ server_name }} -domain {{ domain }}
+    

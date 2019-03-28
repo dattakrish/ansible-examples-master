@@ -1,0 +1,38 @@
+---
+# Global var file for Deploy VM
+
+# Vcenter authentication
+vcenter_username: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}" # Tower network credential BladeLogicVMWare is used
+vcenter_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}" # Tower network credential BladeLogicVMWare is used
+
+# Domain authentication for domain joining
+domain_admin_uk_experian_local: "{{ UK_EXPERIAN_DOMAIN }}" # Tower custom credential is used
+domain_password_uk_experian_local: "{{ UK_EXPERIAN_DOMAIN_PASSWORD }}" # Tower custom credential is used
+domain_admin_gdc_local: "{{ GDC_DOMAIN }}" # Tower custom credential  is used
+domain_password_gdc_local: "{{ GDC_DOMAIN_PASSWORD }}" # Tower custom credential is used
+domain_admin_ipani_experian_local: "{{ IPANI_DOMAIN }}" # Tower custom credential is used
+domain_password_ipani_experian_local: "{{ IPANI_DOMAIN_PASSWORD }}" # Tower custom credential is used
+
+# Validation config
+minimum_datastore_space_required: 500
+free_space: {}
+ip_address_present: True
+domain_admin_user: ""
+domain_admin_pwd: ""
+timezone_value: 85
+assigned_backup_vlan: ""
+assigned_backup_ip_address: ""
+assigned_backup_subnet_mask: ""
+backslash: "\\"
+
+# Windows Templates
+tmp_fh_win_2016: ETIG-IAAS-GTS-2016-DC-Template-FH
+tmp_fh_win_2012r2: IAAS-GTS-2012R2-STD-Template-FH
+tmp_bl_win_2016: ETIG-IAAS-GTS-2016-DC-Template-BL
+tmp_bl_win_2012r2: IAAS-GTS-2012R2-STD-Template-BL
+
+# Linux Templates
+tmp_lin_sles_12: UK-SLES12-Template-LATEST
+tmp_lin_sles_11: UK-SLES11-Template-LATEST
+tmp_lin_rhel_7: UK-RHEL7-Template-LATEST
+tmp_lin_oel_6: UK-OEL6-Template-LATEST

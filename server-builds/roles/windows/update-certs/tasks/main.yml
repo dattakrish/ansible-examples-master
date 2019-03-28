@@ -1,0 +1,20 @@
+---
+
+  - name: Copy Auth Certs files to Server
+    win_copy:
+      src: "{{ src_certs_path }}"
+      dest: C:\tmp\certs
+
+  - name: Update Disallowed Auth Certs
+    win_command: certutil -f -addstore Disallowed c:\tmp\certs\disallowedcert.stl
+
+  - name: Update Trusted Auth Certs
+    win_command: certutil -f -addstore Trusted C:\tmp\certs\authroot.stl
+
+  - name: Update Disallowed Auth Certs
+    win_command: certutil -f -addstore Disallowed c:\tmp\certs\disallowedcert.sst
+
+  - name: Remove Auth Certs files to Server
+    win_file:
+      path: C:\tmp\certs
+      state: absent

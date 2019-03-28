@@ -1,0 +1,9 @@
+---
+
+  - name: Copy ps1 to DC
+    win_copy:
+      src: PS_Create_DNS_Record.ps1
+      dest: c:\tmp\
+
+  - name: Run nslookup and dnscmd in shell
+    win_shell: "c:\\tmp\\PS_Create_DNS_Record.ps1 -serverName \"{{ server_name }}\" -IP4Address \"{{ primary_ip_address }}\" -zoneName \"uk.experian.local\""

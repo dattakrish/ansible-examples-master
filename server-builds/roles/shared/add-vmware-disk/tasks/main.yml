@@ -1,0 +1,23 @@
+---
+
+  - name: Convert disk size list to array
+    set_fact:
+      drive_sizes_array: "{{ drive_sizes.split(',') }}"
+      
+  - name: Deploy PowerShell file if changed
+    win_copy:
+      src: Add_Drive_VMware.ps1
+      dest: D:\Repository\server-build\
+      
+  - name: List of disks to add to VM
+    debug:
+      msg: "Size: {{ drive_sizes_array[drive_index] }} GB"
+    loop: "{{ drive_sizes_array }}"
+    loop_control:
+      index_var: drive_index  
+   
+  - name: Add disks to VM
+    win_shell: D:\Repository\server-build\Add_Drive_VMware.ps1 -vCenter {{ vcenter_hostname }} -serverName {{ server_name }} -size {{ drive_sizes_array[drive_index] }} -sizeUnit GB
+    loop: "{{ drive_sizes_array }}"
+    loop_control:
+      index_var: drive_index

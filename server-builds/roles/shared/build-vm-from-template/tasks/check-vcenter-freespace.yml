@@ -1,0 +1,21 @@
+---
+
+  - name: Get datastore freespace
+    set_fact:
+      free_space: "{{  free_space|default({})| combine({item.name:(item.freeSpace/(1024*1024*1024))}) }}" 
+    with_items: "{{ vc_cluster_facts['datastores'] }}"
+    when: item.datastore_cluster == vcenter_datastore_cluster
+    no_log: true
+
+  - set_fact:
+      failed_result: "{{  failed_result|default({})| combine({item.key:item.value}) }}"
+    with_dict: "{{ free_space }}"
+    when: item.value|int <= minimum_datastore_space_required
+
+  - fail:
+      msg: "There is not enough free space available to provision the VM. {{ failed_result }}"
+    when: failed_result is defined and failed_result|list|length > 0
+
+  - debug:
+      msg: "Acceptable free space is available to provision the VM"
+    

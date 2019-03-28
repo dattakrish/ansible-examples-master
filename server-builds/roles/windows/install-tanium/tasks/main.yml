@@ -1,0 +1,16 @@
+---
+
+  - name: Copy Tanium to Target Server
+    win_copy:
+      src: "{{ src_tanium_path }}"
+      dest: C:\tmp\Tanium\
+
+  - name: Install Tanium on Target server
+    win_package:
+      path: C:\tmp\Tanium\InstallTanium.msi
+      arguments: /qn /norestart SERVERADDRESS="{{ cfg_tanium_ip1 }},{{ cfg_tanium_ip2 }}"
+
+  - name: Remove Tanium folder from Target server
+    win_file:
+      path: C:\tmp\Tanium
+      state: absent
