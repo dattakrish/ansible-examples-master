@@ -1,1 +1,0 @@
-This repository is for automated Windows Build content.
