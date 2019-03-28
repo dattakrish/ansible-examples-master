@@ -1,0 +1,16 @@
+---
+
+# This is the root playbook for the on-premise virtual machine deployment.
+# Please see README.md for more information.
+
+# The tasks in this play must be ran against localhost
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  tasks:
+
+  - include_vars:
+      file: vars/deploy-vm-vars.yml
+
+  - include_role:
+      name: shared/build-vm-from-template

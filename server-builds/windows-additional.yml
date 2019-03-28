@@ -1,0 +1,62 @@
+---
+
+# This is the root playbook for non-essential application and config deploys on Windows servers.
+# Please see README.md for more information.
+
+# The tasks in this play must be ran against the target server
+- hosts: all
+  gather_facts: yes
+  ignore_errors: yes
+  tasks:
+
+  - include_vars:
+      file: vars/windows-apps-vars.yml
+
+################## Add any extra drives ###################
+
+  - include_role:
+      name: windows/add-drives
+    when: extra_drives
+
+############### Install additonal software ################
+
+  - include_role:
+      name: windows/install-net35
+    when: install_net35
+
+  - include_role:
+      name: windows/install-winzip
+    when: install_winzip
+
+  - include_role:
+      name: windows/install-beyondcompare
+    when: install_beyondcompare
+
+  - include_role:
+      name: windows/install-javajdk
+    when: install_javajdk
+
+  - include_role:
+      name: windows/install-javajre
+    when: install_javajre
+
+  - include_role:
+      name: windows/install-vfile
+    when: install_vfile
+
+  - include_role:
+      name: windows/install-npp
+    when: install_npp
+
+  - include_role:
+      name: windows/install-iisaspnet
+    when: install_iisaspnet
+
+  - include_role:
+      name: windows/install-rds
+    when: install_rds
+
+  - include_role:
+      name: windows/install-sql
+    when: install_sql
+

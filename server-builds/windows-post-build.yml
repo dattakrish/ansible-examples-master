@@ -1,0 +1,85 @@
+---
+
+# This is the root playbook for Windows - Post-build.
+# Please see README.md for more information.
+
+# The tasks in this play must be ran against the target server
+- hosts: all
+  gather_facts: yes
+  tasks:
+
+  - include_vars:
+      file: vars/windows-apps-vars.yml
+
+  - include_vars:
+      file: vars/domain-config-vars.yml
+
+  ################### 2016 specific config ##################
+
+  - include_role:
+      name: windows/configure-os-2016
+    when: "'2016' in ansible_os_name"
+
+  ################# 2012 R2 specific config #################
+
+  - include_role:
+      name: windows/check-rdp-sha256
+    when: "'2012 R2' in ansible_os_name"
+
+  - include_role:
+      name: windows/install-wmf
+    when: "'2012 R2' in ansible_os_name"
+
+  ###################### Other config #######################
+  
+  - include_role:
+      name: windows/configure-group-access
+
+  - include_role:
+      name: windows/update-certs
+
+  - include_role:
+      name: windows/deploy-nvspbind
+
+  - include_role:
+      name: windows/deploy-acronisbat
+
+  - include_role:
+      name: windows/run-unquotedpath
+
+  ################### Agent installations ###################
+
+  - include_role:
+      name: windows/install-dynatrace
+
+  - include_role:
+      name: windows/install-splunk
+
+  - include_role:
+      name: windows/install-qualys
+
+  - include_role:
+      name: windows/install-tanium
+
+  - include_role:
+      name: windows/install-encase
+
+  - include_role:
+      name: windows/install-mcafee
+
+  - include_role:
+      name: windows/install-netbackup
+    when: backup_required
+
+  - include_role:
+      name: windows/install-fireeye
+    when: server_role != 'Database'
+
+  ############### Reboot and Run Windows Backup #############
+  
+  - name: Reboot server
+    win_reboot:
+
+  - include_role:
+      name: windows/run-winbackup
+

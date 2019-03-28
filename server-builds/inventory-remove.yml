@@ -1,0 +1,14 @@
+# This playbook removed a host from the Server Builds inventory.
+# Please see README.md for more information.
+
+# Execute template on Ansible Tower hosts
+
+---
+- hosts: all
+  tasks:
+    - name: Removing {{ server_name }} from Server Builds inventory
+      tower_host:
+        name: "{{ server_name }}"
+        tower_verify_ssl: no
+        inventory: "Server Builds"
+        state: absent

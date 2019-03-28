@@ -1,0 +1,59 @@
+---
+
+# This is the root playbook for tempplates to run on the Script Hosts - Pre-build tasks.
+# Please see README.md for more information.
+
+# The tasks in this play must be ran on the script host servers
+- hosts: all
+  gather_facts: no
+  ignore_unreachable: yes
+  tasks:
+
+  - name: Test connection to script hosts
+    win_ping:
+    register: host_ping_result
+
+  - name: Run once on a succesfull script host
+    block:
+
+    - name: Define vCenter for Fairham Vblock
+      set_fact:
+        vcenter_hostname: ukfhpvbvcs01.uk.experian.local
+      when: vcenter_site == 'Fairham Vblock'
+
+    - name: Define vCenter for Bulwell Vblock
+      set_fact:
+        vcenter_hostname: ukblpvbvcs01.uk.experian.local
+      when: vcenter_site == 'Bulwell Vblock'
+
+    - name: Define vCenter for Fairham Synergy
+      set_fact:
+        vcenter_hostname: ukfhpcbvcs02.uk.experian.local
+      when: vcenter_site == 'Fairham Synergy'
+
+    - name: Define vCenter for Bulwell Synergy
+      set_fact:
+        vcenter_hostname: ukblpcbvcs02.uk.experian.local
+      when: vcenter_site == 'Bulwell Synergy'
+ 
+    - include_role:
+        name: shared/check-vm-status
+    
+    - include_role:
+        name: shared/add-vmware-disk
+      when: extra_drives
+
+ #   - include_role:
+ #       name: windows/add-visionapp
+ #     when: os_class == 'Windows'
+
+    - set_fact:
+        host_success: true
+    
+    when: host_ping_result.ping
+    run_once: true
+
+  - fail:
+      msg: 'Failed to communicate with either script host'
+    when: hostvars[ansible_play_hosts[0]]['host_success'] is undefined and hostvars[ansible_play_hosts[1]]['host_success'] is undefined
+    

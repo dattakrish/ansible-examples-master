@@ -1,0 +1,42 @@
+---
+
+# This is the root playbook for EXPERIANUK DNS config.
+# Please see README.md for more information.
+
+# Execute template on Domain Controller inventory
+
+- name: Determine correct DCs
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+
+  - include_vars:
+      file: vars/domain-config-vars.yml
+
+- name: Connect to DCs
+  hosts: "{{ hostvars['localhost']['dc_experianuk_1'] }} {{ hostvars['localhost']['dc_experianuk_2'] }}"
+  gather_facts: no
+  ignore_unreachable: yes
+  tasks:
+
+  - name: Test connection to DCs
+    win_ping:
+    register: dc_ping_result
+
+  - name: Run once on a succesfull DC
+    block:
+
+    - include_role:
+        name: shared/add-experianuk-dns
+    
+    - set_fact:
+        dc_success: true
+    
+    when: dc_ping_result.ping
+    run_once: true
+
+  - fail:
+      msg: 'Failed to communicate with either DC'
+    when: hostvars[ansible_play_hosts[0]]['dc_success'] is undefined and hostvars[ansible_play_hosts[1]]['dc_success'] is undefined
+    

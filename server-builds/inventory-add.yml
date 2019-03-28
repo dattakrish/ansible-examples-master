@@ -1,0 +1,56 @@
+# This playbook adds a host to the Server Builds inventory.
+# Please see README.md for more information.
+
+# Execute template on Ansible Tower hosts
+
+---
+- hosts: all
+  tasks:
+
+    - include_vars:
+        file: vars/domain-config-vars.yml
+
+    - name: Define group for EXPERIANUK
+      set_fact:
+        inventory_group: "{{ inv_experianuk_win }}"
+      when: domain == 'uk.experian.local'
+
+    - name: Define group for GDC
+      set_fact:
+        inventory_group: "{{ inv_gdc_win }}"
+      when: domain == 'gdc.local'
+
+    - name: Define group for IPANI
+      set_fact:
+        inventory_group: "{{ inv_ipani_win }}"
+      when: domain == 'ipani.uk.experian.com'
+
+    - name: Adding {{ server_name }} to Server Builds inventory
+      tower_host:
+        name: "{{ server_name }}"
+        tower_verify_ssl: no
+        inventory: "Server Builds"
+        state: present
+
+    - name: Add ansible_host variable for GDC servers
+      tower_host:
+        name: "{{ server_name }}"
+        tower_verify_ssl: no
+        inventory: "Server Builds"
+        state: present
+        variables:
+          ansible_host: "{{ server_name }}.GDC.LOCAL"
+      when: domain == 'gdc.local'
+
+    - name: Add ansible_host host var for IPANI servers
+      tower_host:
+        name: "{{ server_name }}"
+        tower_verify_ssl: no
+        inventory: "Server Builds"
+        state: present
+        variables:
+          ansible_host: "{{ server_name }}.IPANI.UK.EXPERIAN.COM"
+      when: domain == "ipani.uk.experian.com" 
+
+    - name: Add host to group {{ inventory_group }}
+      shell: tower-cli host associate --host {{ server_name }} --group {{ inventory_group }} --insecure
