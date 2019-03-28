@@ -1,0 +1,29 @@
+---
+# Created by Michael Barron 13/03/2019
+# Modified by Michael Barron 15/03/2019
+# Update Disallowed and Auth Certs
+
+- hosts: all
+  tasks:
+
+# Copy Auth Certs files to Server.
+    - name: Copy Auth Certs files to Server
+      win_copy:
+        src: "{{ sourcePath }}"
+        dest: C:\tmp\certs
+
+# Run Add Auth Certs Batch file
+    - name: Update Disallowed Auth Certs
+      win_command: certutil -f -addstore Disallowed c:\tmp\certs\disallowedcert.stl
+
+    - name: Update Trusted Auth Certs
+      win_command: certutil -f -addstore Trusted C:\tmp\certs\authroot.stl
+
+    - name: Update Disallowed Auth Certs
+      win_command: certutil -f -addstore Disallowed c:\tmp\certs\disallowedcert.sst
+
+# Remove Auth Certs files from Server.
+    - name: Remove Auth Certs files to Server
+      win_file:
+       path: C:\tmp\certs
+       state: absent

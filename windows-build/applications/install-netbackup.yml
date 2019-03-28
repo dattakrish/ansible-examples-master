@@ -1,0 +1,46 @@
+---
+# created by Michael Barron 21/03/2019
+# Install NetBackup Client and Configure Routing And Hosts File
+
+- hosts: all
+  gather_facts: False
+  tasks:
+
+# Debug Backup Not Required
+    - name: Skip NetBackup Install if not required
+      debug:
+        msg: "Backup Not Required, Skipping"
+      when: not backupRequired
+
+# Copy NetBackup folder to target server
+    - name: Copy NetBackup Folder to Target Server
+      win_copy:
+        src: "{{ sourcePath }}"
+        dest: C:\tmp\NetBackup\8.0
+      when: backupRequired
+
+# run install batch file
+    - win_shell: C:\tmp\NetBackup\8.0\x64\silentclient.cmd
+      args:
+        executable: cmd
+        chdir: C:\tmp\NetBackup\8.0\x64
+      when: backupRequired
+
+# Copy NetBackup-Config.ps1 to server
+    - name: Copy NetBackup-Config.ps1 to server
+      win_copy:
+       src: NetBackup-Config.ps1
+       dest: c:\tmp\NetBackup\
+      when: backupRequired
+
+# run NetBackup-Config.ps1 script
+    - name: Run NetBackup-Config.ps1 script
+      win_shell: C:/tmp/NetBackup/NetBackup-Config.ps1
+      when: backupRequired
+
+# Remove NetBackup Folder
+    - name: Remove NetBackup Folder
+      win_file:
+       path: C:\tmp\NetBackup
+       state: absent
+      when: backupRequired

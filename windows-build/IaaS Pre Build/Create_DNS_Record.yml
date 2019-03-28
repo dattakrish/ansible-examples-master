@@ -1,0 +1,59 @@
+###########################################################################
+#   SSC Automation - Windows Build - DNS Creation
+#   Confluence:
+#   Create_DNS_Record
+#   Author: Barry Field
+#   Creation Date: 01/03/19
+#   Last Update Date: 01/03/19
+###########################################################################
+---
+# This is the root playbook for any tasks that run on the domain controllers.
+# Please see README.md for more information.
+
+# Execute template on Domain Controller inventory
+- name: Determine correct DCs
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+
+#  - include_vars:
+#      file: vars/domain-controllers.yml
+
+  - name: Define DCs for EXPERIANUK
+    set_fact:
+      domain_controller_1: "{{ dc_experianuk_1 }}"
+      domain_controller_2: "{{ dc_experianuk_2 }}"
+
+- name: Connect to DCs
+  hosts: "{{ hostvars['localhost']['domain_controller_1'] }} {{ hostvars['localhost']['domain_controller_2'] }}"
+  gather_facts: no
+  ignore_unreachable: yes
+  tasks:
+
+  - name: Test connection to DCs
+    win_ping:
+    register: dc_ping_result
+
+  - debug:
+      var: dc_ping_result.ping
+
+  - name: Run once on a succesfull DC
+    block:
+    - debug:
+        msg: 'Working on {{ inventory_hostname }}'
+    - set_fact:
+        dc_success: true
+
+    - name: copy ps1 to DC
+      win_copy:
+        src: "{{ powershellFile }}"
+        dest: c:\tmp\
+
+    - name: run nslookup and dnscmd in shell
+      win_shell: "{{ powershellPath }}" # -serverName \" {{ server_name }}\" -IP4Address \" {{ IP4_Address }}\" -zoneName \" {{ zone_name }}\""    
+    when: dc_ping_result.ping
+
+  - fail:
+      msg: 'Failed to communicate with either DC'
+    when: hostvars[ansible_play_hosts[0]]['dc_success'] is undefined and hostvars[ansible_play_hosts[1]]['dc_success'] is undefined

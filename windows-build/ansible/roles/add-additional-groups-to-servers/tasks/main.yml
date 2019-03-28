@@ -1,0 +1,40 @@
+---
+# tasks file for add-additional-groups-to-servers
+- name: Set file_name to {{ experianuk_file }}
+  set_fact:
+    file_name: "{{ experianuk_file }}"
+  when: domain is defined and domain == 'uk.experian.local'
+- name: copy file "{{ experianuk_file }}" to windows tmp directory
+  win_copy:
+   #src: "{{ experianuk_file }}"
+   src: "test.ps1"   
+   dest: "{{ windows_temp_path }}{{ experianuk_file }}"
+  when: domain is defined and domain == 'uk.experian.local'
+- name: Set file_name to {{ gdc_file }}
+  set_fact:
+    file_name: "{{ gdc_file }}"
+  when: domain is defined and domain == 'gdc.local'
+- name: copy file {{ gdc_file }} to windows tmp directory
+  win_copy:
+   #src: "{{ gdc_file }}"
+   src: "test.ps1"   
+   dest: "{{ windows_temp_path }}{{ gdc_file }}"
+  when: domain is defined and domain == 'gdc.local'
+- name: Set file_name to {{ ipani_file }}
+  set_fact:
+    file_name: "{{ ipani_file }}"
+  when: domain is defined and domain == 'ipani.uk.experian.local'
+- name: copy file {{ ipani_file }} to windows tmp directory
+  win_copy:
+   #src: "{{ ipani_file }}"
+   src: "test.ps1"   
+   dest: "{{ windows_temp_path }}{{ ipani_file }}"
+  when: domain is defined and domain == 'ipani.uk.experian.local'
+- name:  Run remote powershell script {{ windows_temp_path }}{{ file_name }}
+  win_shell: "{{ windows_temp_path }}{{ file_name }}"
+  args: 
+    executable: powershell
+  #ignore_errors: True
+  register: _out
+- debug:
+   msg: "{{ _out.stdout_lines,file_name,domain }}" 

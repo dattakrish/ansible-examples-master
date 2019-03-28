@@ -1,0 +1,71 @@
+---
+# Created by Michael Barron 27/03/2019
+# Modified by Michael Barron 27/03/2019
+# Service Acceptance check that runs on the Target Server
+
+- hosts: all
+  tasks:
+
+  # Work out short domain name from full doamin name and store as fact
+  - name: Define short name for EXPERIANUK
+    set_fact:
+      short_domain: EXPERIANUK
+    when: ansible_windows_domain == 'uk.experian.local'
+
+  - name: Define short name for GDC
+    set_fact:
+      short_domain: GDC
+    when: ansible_windows_domain == 'gdc.local'
+
+  - name: Define short name for IPANI
+    set_fact:
+      short_domain: IPANIUK
+    when: ansible_windows_domain == 'ipani.uk.experian.com'
+
+# Work out Admin and RDP Group names from hostname and store as fact
+  - name: Define Admin Group Name
+    set_fact:
+      admin_account: "WS-ADM_{{ ansible_hostname }}"
+  
+  - name: Define RDP Group Name
+    set_fact:
+      rdp_account: "WS-STD_{{ ansible_hostname }}"
+
+# Local access groups exist created by Configure Local Group Access role Admin
+  - name: Check local Admin Group membership
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ short_domain }}\\{{ admin_account }}"
+      state: present
+    register: local_admin_group
+
+# Local access groups exist created by Configure Local Group Access role RDP
+  - name: Check local RDP Group membership
+    win_group_membership:
+      name: Remote Desktop Users
+      members:
+        - "{{ short_domain }}\\{{ rdp_account }}"
+      state: present
+    register: local_rdp_group
+
+
+# Check if the Check local Admin Group membership changed anything
+  - name: Check if the Check local Admin Group membership changed anything
+    fail:
+      msg: "Group Doesnt Exist {{ admin_account }}"
+    when: local_admin_group.changed == true
+
+# Check if the Check local Admin Group membership changed anything
+  - name: Check if the Check local RDP Group membership changed anything
+    fail:
+      msg: "Group Doesnt Exist {{ rdp_account }}"
+    when: local_rdp_group.changed == true
+
+# Success Debug
+  - name: Success Debug
+    debug:
+      msg: "Both the Admin and RDP groups exist on the server"
+    when:
+      - local_admin_group.changed == false
+      - local_rdp_group.changed == false

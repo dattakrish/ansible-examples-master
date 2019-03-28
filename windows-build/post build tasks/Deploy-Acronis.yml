@@ -1,0 +1,14 @@
+---
+# Created by Michael Barron 25/03/2019
+# Modified by Michael Barron 25/03/2019
+# Deploy Acronis.bat to C:\Windows\System32\
+
+- hosts: all
+  gather_facts: False
+  tasks:
+  
+  # Copy Acronis.bat to C:\Windows\System32
+  - name: Copy Acronis.bat to C:\Windows\system32
+    win_copy:
+      src: "{{ sourcePath }}"
+      dest: C:\windows\system32\

@@ -1,0 +1,71 @@
+###########################################################################
+#   SSC Automation - Windows Build - Computer Account Pre-staging
+#   Confluence:
+#   Pre-stage Computer Acc
+#   Author: Barry Field
+#   Creation Date: 01/03/19
+#   Last Update Date: 13/03/19
+###########################################################################
+---
+- name: Pre-stage comp acc testing
+  hosts: all
+  gather_facts: no
+  tasks:
+#set DC OU
+
+  - name: set OU based on Domain - experianuk
+    set_fact:
+      dc_ou: "DC=uk,DC=experian,DC=local"
+    when: domain == 'uk.experian.local'
+
+  - name: set OU based on Domain - ipani
+    set_fact:
+      dc_ou: "DC=ipani,DC=uk,DC=experian,DC=com"
+    when: domain == 'ipani.uk.experian.com'
+
+  - name: set OU based on Domain - gdcuk
+    set_fact:
+      dc_ou: "DC=gdc,DC=local"
+    when: domain == 'gdc.local'
+
+#determine OS
+  - name: set OU based on OS - 2016
+    set_fact:
+      ou: "OU=Windows Server 2012 Member Servers,OU=Servers,OU=Systems,{{ dc_ou }}"
+    when: os_class == 'Windows Server 2016'
+
+  - name: set OU based on OS - 2012
+    set_fact:
+      ou: "OU=Windows Server 2012 Member Servers,OU=Servers,OU=Systems,{{ dc_ou }}"
+    when: os_class == 'Windows Server 2012'
+
+#Message attributes
+  - debug:
+      msg: " Creating DNSHostname: {{ servername + '.' + domain }}"
+  - debug:
+      msg: "SAMAccountname: {{ servername + '$' }}"
+  - debug:
+      msg: "Placing in: {{ ou }}"
+
+#create account
+  - name: Create computer account in 2016 OU
+    win_domain_computer:
+      name: "{{ servername }}"
+      sam_account_name: "{{ servername + '$' }}"
+      dns_hostname: "{{ servername + '.' + domain }}"
+      ou: "{{ ou }}"
+      description: Windows 2016 server created by ETIG Automation
+      enabled: yes
+      state: present
+    when: os_class == 'Windows Server 2016'
+
+  - name: Create computer account in 2012 OU
+    win_domain_computer:
+      name: "{{ servername }}"
+      sam_account_name: "{{ servername + '$' }}"
+      dns_hostname: "{{ servername + '.' + domain }}"
+      ou: "{{ ou }}"
+      description: Windows 2012 server created by ETIG Automation
+      enabled: yes
+      state: present
+    when: os_class == 'Windows Server 2012'

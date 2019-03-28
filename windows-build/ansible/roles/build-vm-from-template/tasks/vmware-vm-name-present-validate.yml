@@ -1,0 +1,22 @@
+---
+# Gather all registered virtual machines in a vCenter server
+# and validate whether the to be created vm name already exists
+- name: Get ALL VMs from vCenter
+  uri:
+    url: "https://{{ VC_Server_Name }}/rest/vcenter/vm?filter.names.1={{ VM_Name }}"
+    force_basic_auth: yes
+    validate_certs: False
+    headers:
+      Cookie: "{{ login.set_cookie }}"
+  register: vVMs
+
+- name: Validating VM name exists in the given vCenter
+  set_fact:
+    vm_name_exists: True       
+  with_items: "{{ vVMs.json.value }}"
+  when: item.name == VM_Name
+- fail:
+    msg: "The VM Server[{{ VM_Name }}] name already exists in vCenter Server[{{ VC_Server_Name }}]"
+  when: vm_name_exists
+- debug:
+    msg: "The VM Server[{{ VM_Name }}] name does not exists in vCenter Server[{{ VC_Server_Name }}]"

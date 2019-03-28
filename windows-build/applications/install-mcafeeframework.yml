@@ -1,0 +1,24 @@
+---
+# created by Michael Barron 25/03/2019
+# Modified by Michael Barron 25/03/2019
+# Install McAfee Framework
+
+- hosts: all
+  gather_facts: False
+  tasks:
+
+# Copy McaFee executable to target server
+    - name: Copy McAfee Framework to Target Server
+      win_copy:
+        src: "{{ sourcePath }}{{ mcafeeInstaller }}"
+        dest: C:\tmp\McAfee\
+
+# install McAfee Framework
+    - name: Install McAfee Framework on Target Server
+      raw: C:\tmp\McAfee\{{ mcafeeInstaller }} /install=agent /Silent
+
+# Remove McAfee Framework installation files
+    - name: Remove McAfee Framework folder
+      win_file:
+       path: C:\tmp\McAfee
+       state: absent

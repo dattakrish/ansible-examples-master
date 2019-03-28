@@ -1,0 +1,21 @@
+---
+# This script will validate the network primary vLan in vCenter
+- name: Get Network Primary Vlan from vCenter
+  uri:
+    url: https://{{ VC_Server_Name }}/rest/vcenter/network?filter.names.1={{ Primary_VLAN }}
+    force_basic_auth: yes
+    validate_certs: False
+    headers:
+      Cookie: "{{ login.set_cookie }}"
+  register: vNetwork
+
+- name: Validating primary vLan in vCenter
+  set_fact:
+    primary_network_exists: True
+  with_items: "{{ vNetwork.json.value }}"
+  when: item.name == Primary_VLAN
+- fail:
+    msg: "Priimary Network[{{ Primary_VLAN }}] not present in the vCenter Server[{{ VC_Server_Name }}]"
+  when: not primary_network_exists
+- debug:
+    msg:  "Primary Network[{{ Primary_VLAN }}] present in the vCenter Server[{{ VC_Server_Name }}]"

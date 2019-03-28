@@ -1,0 +1,80 @@
+---
+# Created by Michael Barron 26/03/2019
+# Modified by Michael Barron 26/03/2019
+# Service Acceptance checks that run on the script host servers to check a target server
+
+- hosts: all
+  gather_facts: false
+  tasks:
+
+# Block for executing all command only on one host
+  - name: Block for executing all command only on one host
+    block:
+
+# Check DNS Record exists Forward lookup
+    - name: Check DNS record exists Forward lookup
+      win_shell: nslookup {{ serverName }}
+      args:
+        executable: cmd
+      register: nslookup_out_shell
+    #run_once: true
+
+# Debug nslookup_out_shell
+    - debug:
+        var: nslookup_out_shell
+    #run_once: true
+
+# Fail if DNS Check failed
+    - name: Check if DNS Check failed
+      set_fact: errors="[ 'DNS Check Failed' ]"
+      when: "'Non-existent domain' in nslookup_out_shell.stderr"
+    #run_once: true
+
+# Check Server exists in Solarwinds
+    - name: Check server exists in Solarwinds
+      win_shell: "C:/ProgramData/Experian/SSC/Check_Server_Solarwinds.ps1 -serverName  \"{{ serverName }}\" -ipAddress \"{{ ipAddress }}\""
+      register: Check_Solarwinds_Result
+      #run_once: true
+
+# Debug Check_Solarwinds_Result
+    - debug:
+        var: Check_Solarwinds_Result
+    #run_once: true
+
+# Fail if Check_Solarwinds_Result failed and add to errors array if already defined
+    - name: Check if DNS Check failed and add to errors array if already defined
+      set_fact: errors="{{errors}} + [ 'Solarwinds Check failed' ]"
+      #set_fact: errors="[ 'Solarwinds Check failed' ]"
+      when:
+        - "'error' in Check_Solarwinds_Result.stderr"
+        -  errors is defined
+
+# Fail if Check_Solarwinds_Result failed and create errors array if not defined
+    - name: Check if DNS Check failed and create errors array if not defined
+      set_fact: errors="[ 'Solarwinds Check failed' ]"
+      when:
+        - "'error' in Check_Solarwinds_Result.stderr"
+        - errors is not defined
+
+# Final Section to check if any errors
+
+# Debug errors
+    - name: Debug errors
+      debug:
+        var: errors
+
+# Error if errors is not empty
+    - name: Fail if any errors
+      fail:
+        msg: "Errors detected in SA job {{ errors }}"
+      when: errors is defined
+    #run_once: true
+
+# Success if no error
+    - name: Success if no errors
+      debug:
+        msg: "No errors detected in SA job"
+      when: errors is undefined
+
+# End Block
+    run_once: true

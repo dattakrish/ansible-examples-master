@@ -1,0 +1,6 @@
+---
+- name: Check AD Join
+  hosts: windows
+  gather_facts: False
+  roles:
+  - role: check-ad-join

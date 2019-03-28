@@ -1,0 +1,16 @@
+---
+# Check that server IP does not ping which would indicate that in use IP has been provided.
+- name: "Check if the server can ping the address {{ Primary_IP_Address }}"
+  command: ping -c 4 {{ Primary_IP_Address }}
+  ignore_errors: yes
+  register: win_ping_result
+  run_once: true
+
+- name: Check if the IP address exists
+  fail:
+    msg: "{{ Primary_IP_Address }} is already present so do not continue"
+  when: win_ping_result.rc == 0
+- name: Continue if the IP address does not exists
+  debug:
+    msg: "{{ Primary_IP_Address }} is not present so continue"
+  when: win_ping_result.rc != 0

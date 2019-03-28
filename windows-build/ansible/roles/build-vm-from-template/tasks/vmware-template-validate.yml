@@ -1,0 +1,21 @@
+---
+# Gather all registered virtual machines & templates in a vCenter server
+# and validate whether the template name exists
+- name: "Connecting to vCenter"
+  vmware_vm_facts:
+    hostname: "{{ VC_Server_Name }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    validate_certs: False
+  delegate_to: localhost
+  register: vm_facts
+- set_fact:
+    template_exists: True       
+  with_dict: "{{ vm_facts.virtual_machines }}"
+  when: item.key == VM_Template_Name
+- fail:
+    msg: "Template[{{VM_Template_Name}}] does not exists in vCenter Server[{{ VC_Server_Name }}]"
+  when: not template_exists
+- debug:
+    msg: "Template[{{ VM_Template_Name }}] exists in vCenter Server[{{ VC_Server_Name }}]"
+       

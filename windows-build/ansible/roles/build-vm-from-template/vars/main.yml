@@ -1,0 +1,61 @@
+---
+## vars file for build-vm-from-template
+vcenter_username: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}" # Tower network credential BladeLogicVMWare is used
+vcenter_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}" # Tower network credential BladeLogicVMWare is used
+domain_admin_uk_experian_local: "{{ UK_EXPERIAN_DOMAIN }}" # Tower custom credential is used
+domain_password_uk_experian_local: "{{ UK_EXPERIAN_DOMAIN_PASSWORD }}" # Tower custom credential is used
+domain_admin_gdc_local: "{{ GDC_DOMAIN }}" # Tower custom credential  is used
+domain_password_gdc_local: "{{ GDC_DOMAIN_PASSWORD }}" # Tower custom credential is used
+domain_admin_ipani_experian_local: "{{ IPANI_DOMAIN }}" # Tower custom credential is used
+domain_password_ipani_experian_local: "{{ IPANI_DOMAIN_PASSWORD }}" # Tower custom credential is used
+
+domain_admin_uk_experian_staging: "SSC-IAAS-Auto-UK" # This should be put in a vault file
+domain_password_uk_experian_staging: "XXXXXXXXX" # This should be put in a vault file
+################ Input from SNOW Start #####################
+#VC_Server_Name: "" # This will come as an input from SNOW; e.g. ukfhpcbvcs02.uk.experian.local
+#VC_Data_Center_Name: "Fairham" # This will come as an input from SNOW
+#VC_Cluster_Name: "FH 40-Core Linux 01" # This will come as an input from SNOW
+#DataStore_Cluster_Name: "FH_40-Core_Lnx-01_T1-NR" # This will come as an input from SNOW
+#VM_Name: "ETIG-TESTVM02" # This will come as an input from SNOW. VM-NAME-CHECK15=15 char;VM-NAME-CHECK015>15
+#Windows_Domain: "uk.experian.local" # This will come as an input from SNOW
+#Is_VM: "Yes" # This will come as an input from SNOW. Values can be Yes|No
+#VM_Template_Name: "IAAS-GTS-2016-DC-Template-FH" # This will come as an input from SNOW
+#Primary_VLAN: "CORPNET|Layer2-Xsite|2579" # This will come as an input from SNOW
+#Primary_IP_Address: "10.188.240.160" # This will come as an input from SNOW
+#Primary_Subnet_Mask: "255.255.255.192" # This will come as an input from SNOW
+#Primary_Default_Gateway: "10.188.240.190" # This will come as an input from SNOW
+Backup_VLAN: "" # This will come as an input from SNOW
+Backup_IP_Address: "" # This will come as an input from SNOW
+Backup_Subnet_Mask: "" # This will come as an input from SNOW
+#Memory_GB: "12" # This will come as an input from SNOW
+#CPU_Sockets: "4" # This will come as an input from SNOW
+#CPU_Cores_Per_Socket: "1" # This will come as an input from SNOW
+#Build_Engineer_Email: "krishnendu.datta@experian.com" # This will come as an input from SNOW
+Backup_Required: "" # This will come as an input from SNOW
+Y_Drive_Required: "" # This will come as an input from SNOW
+#Inventory_Location: "ETIG" # This may come from SNOW as input. Default value assigned if nothing passed
+############### Input from SNOW End #####################
+minimum_datastore_space_required: 500 # This should come from some playbook variable to make it dynamic or can be here too
+vm_name_character_length: 15 # This should come from some playbook variable to make it dynamic or can be here too
+valid_cluster_name: False
+template_exists: False
+datacenter_exists: False
+cluster_exists: False
+free_space: {}
+vm_name_exists: False # This is used to check that the vm is already present in the mentioned vCenter host
+ip_address_present: True
+primary_network_exists: False
+backup_network_exists: False
+domain_admin_user: ""
+domain_admin_pwd: ""
+timezone_value: 85
+Assigned_Backup_VLAN: "" # This will come as an input from SNOW
+Assigned_Backup_IP_Address: "" # This will come as an input from SNOW
+Assigned_Backup_Subnet_Mask: "" # This will come as an input from SNOW
+########## Customization variable initialization start ################
+Customization_Spec_Name: ""
+Primary_DNS: "10.215.252.10"
+Secondary_DNS: "10.173.251.106"
+Primary_WINS: ""
+Secondary_WINS: ""
+########## Customization variable initialization end ################

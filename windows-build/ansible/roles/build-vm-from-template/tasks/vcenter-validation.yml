@@ -1,0 +1,12 @@
+---
+## Validating through rest api
+- include_tasks: api-connect.yml
+- include_tasks: vmware-vm-name-present-validate.yml
+- include_tasks: vmware-datacenter-name-validate.yml
+- include_tasks: vmware-vc-cluster-name-validate.yml
+- include_tasks: vmware-network-primaryvlan-validate.yml
+- include_tasks: vmware-network-backupvlan-validate.yml
+## Validating through ansible modules
+- include_tasks: vmware-template-validate.yml
+- include_tasks: vmware-datastore-cluster-name-validate.yml
+- include_tasks: vmware-datastore-cluster-storage-validate.yml

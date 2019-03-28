@@ -1,0 +1,183 @@
+###########################################################################
+#   SSC Automation - Windows Build - SQL Pre-Reqs
+#   Confluence:
+#   Move SQL Install Files
+#   Author: Barry Field
+#   Creation Date: 28/01/19
+#   Last Update Date: 28/01/19
+###########################################################################
+
+---
+- name: SQL Install
+  hosts: all
+  gather_facts: yes
+  become_method: runas
+  tasks:
+
+#Define Source File Location {{ sourcePath }}
+  - name: Define Source Files for SQL version
+    set_fact:
+        sourcePath: "{{ sql2016Ent_source }}"
+    when: sql_ver == 'SQL2016Ent'
+
+  - name: Define Source Files for SQL version
+    set_fact:
+        sourcePath: "{{ sql2016Std_source }}"
+    when: sql_ver == 'SQL2016Std'
+
+  - name: Define Source Files for SQL version
+    set_fact:
+        sourcePath: "{{ sql2017Ent_source }}"
+    when: sql_ver == 'SQL2017Ent'
+
+  - name: Define Source Files for SQL version
+    set_fact:
+        sourcePath: "{{ sql2017Std_source }}"
+    when: sql_ver == 'SQL2017Std'
+
+#Define SXS Source {{ sxs_source }}
+  - name: Define SXS Source for 2016
+    set_fact:
+        sxs_source: "{{ sxs2016_source }}"
+    when: "'2016' in ansible_os_name"
+
+#Begin Tasks
+  - name: Copy Source Files Directory
+    win_copy:
+      src: "{{ sourcePath }}"
+      dest: C:\tmp\SQL
+      state: present
+
+  - name: Copy SXS Directory
+    win_copy:
+      src: "{{ sxs_source }}"
+      dest: C:\tmp
+      state: present
+
+  - name: install AD PS Module
+    win_feature:
+      name: RSAT-AD-Powershell
+      source: C:\tmp\sxs
+      state: present
+
+  - name: copy ps1 to script host
+    win_copy:
+      src: SQL_Install.ps1
+      dest: c:\tmp\
+
+#Define Zip File {{ zipSource }}
+  - name: Define Zip Source
+    set_fact:
+        zipSource: "c:\\tmp\\SQL\\SQL_2016_Ent_x64_inc_SP2.zip"
+    when: sql_ver == 'SQL2016Ent'
+
+  - name: Define Zip Source
+    set_fact:
+        zipSource: "c:\\tmp\\SQL\\SQL_2016_Std_x64_inc_SP2.zip"
+    when: sql_ver == 'SQL2016Std'
+
+  - name: Define Zip Source
+    set_fact:
+        zipSource: "c:\\tmp\\SQL\\SQL_2017_Ent_x64_RTM.zip"
+    when: sql_ver == 'SQL2017Ent'
+
+  - name: Define Zip Source
+    set_fact:
+        zipSource: "c:\\tmp\\SQL\\SQL_2017_Std_x64_RTM.zip"
+    when: sql_ver == 'SQL2017Std'
+
+  - name: Unzip SQL Files
+    win_unzip:
+      src: "{{ zipSource }}"
+      dest: c:\tmp\SQL\SQL_Install
+
+#Define INI File {{ install_template }}
+  - name: Define INI file
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\SQL2016Standalone.ini"
+    when: sql_ver == 'SQL2016Ent'
+
+  - name: Define INI file
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\SQL2016Standalone.ini"
+    when: sql_ver == 'SQL2016Std'
+
+  - name: Define INI file
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\SQL2017Standalone.ini"
+    when: sql_ver == 'SQL2017Ent'
+
+  - name: Define INI file
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\SQL2017Standalone.ini"
+    when: sql_ver == 'SQL2017Std'
+
+#Define CMD File {{ cmd_File }}
+  - name: Define CMD File
+    set_fact:
+        cmd_File: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
+    when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
+
+  - name: Define CMD File
+    set_fact:
+        cmd_File: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
+    when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
+
+#Define working path {{ working_dir }}
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2"
+    when: sql_ver == 'SQL2016Ent'
+
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2"
+    when: sql_ver == 'SQL2016Std'
+
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM"
+    when: sql_ver == 'SQL2017Ent'
+
+  - name: Define working directory
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM"
+    when: sql_ver == 'SQL2017Std'
+
+  - name: who am I
+    win_whoami:
+
+## Install SQL
+  - name: Install SQL
+    win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -sqlCollation \"{{ sql_Collation }}\""
+    become: yes
+    become_user: SYSTEM
+    register: result1
+
+#Copy SQL Studio
+  - name: Copy Source Files Directory
+    win_copy:
+      src: "{{ studiosourcePath }}"
+      dest: C:\tmp\SQL
+      state: present
+    when: result1 is success
+
+#Install SQL Studio
+  - name: Install SQL Studio
+    win_package:
+      path: "{{ studiosourceDest }}"
+      arguments: /install /quiet /norestart
+      product_id: '{1D117BF0-C2F4-4B9F-88C9-710F1EAE95F6}'
+      state: present
+    when: result1 is success
+    register: result2
+
+  - name: Server Reboot
+    win_reboot:
+    when: result2.reboot_required
+
+  - name: Remove Source Files
+    win_copy:
+      src: "{{ destPath }}"
+      state: absent
+    when: result2 is success

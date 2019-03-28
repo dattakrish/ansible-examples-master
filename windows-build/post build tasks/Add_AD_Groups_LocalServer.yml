@@ -1,0 +1,107 @@
+###########################################################################
+#   SSC Automation - Windows Build - GSA AD Groups to Local Server
+#   Confluence:
+#   Adds GSA AD Groups to Local Server
+#   Author: Barry Field
+#   Creation Date: 11/01/19
+#   Last Update Date: 22/01/19
+###########################################################################
+---
+- name: Add AD Groups to Local Server
+  hosts: "{{ servername }}"
+  gather_facts: no
+  tasks:
+
+## Adds to local Administrators Groups
+  - name: Add to Local Administrator Group GDC.Local
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ adm_group }}"
+         - "{{ domain }}\\{{ gdcadmgroup1 }}"
+         - "{{ domain }}\\{{ gdcadmgroup2 }}"
+         - "{{ domain }}\\{{ gdcadmgroup3 }}"
+         - "{{ domain }}\\{{ gdcadmgroup4 }}"
+      state: present
+    when: domain == 'GDC'
+
+  - name: Add to Local Administrator Group ExperianUK
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ adm_group }}"
+         - "{{ domain }}\\{{ expukadmgroup1 }}"
+         - "{{ domain }}\\{{ expukadmgroup2 }}"
+         - "{{ domain }}\\{{ admgroup1 }}"
+         - "{{ domain }}\\{{ admgroup2 }}"
+      state: present
+    when: domain == 'EXPERIANUK'
+
+  - name: Add to Local Administrator Group ipaniuk
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ adm_group }}"
+         - "{{ domain }}\\{{ admgroup1 }}"
+         - "{{ domain }}\\{{ admgroup2 }}"
+         - "{{ domain }}\\{{ ipaniadmgroup1 }}"
+      state: present
+    when: domain == 'IPANIUK'
+
+##Add to Event Log Reader Groups
+  - name: Add GDC Event Log Reader Groups
+    win_group_membership:
+      name: 'Event Log Readers'
+      members:
+         - "{{ domain}}\\{{ gdcelrgroup1 }}"
+      state: present
+    when: domain == 'GDC'
+
+  - name: Add ExpUK/IPANI Event Log Reader Groups
+    win_group_membership:
+      name: 'Event Log Readers'
+      members:
+         - "{{ domain}}\\{{ elrgroup1 }}"
+      state: present
+    when: (domain == 'EXPERIANUK' or domain == 'IPANIUK')
+
+##Add to local Remote Desktop Users Group
+  - name: Add to local Remote Desktop Users
+    win_group_membership:
+     name: 'Remote Desktop Users'
+     members:
+        - "{{ domain }}\\{{ rdpgroup1 }}"
+        - "{{ domain }}\\{{ std_group }}"
+     state: present
+    when: (domain == 'EXPERIANUK' or domain == 'IPANIUK')
+
+  - name: Add to local Remote Desktop Users
+    win_group_membership:
+     name: 'Remote Desktop Users'
+     members:
+        - "{{ domain }}\\{{ std_group }}"
+     state: present
+    when: domain == 'GDC'
+
+##Remove AD Groups
+  - name: Remove Domain Admin Group
+    win_group_membership:
+      name: Administrators
+      members:
+         - "{{ domain }}\\{{ domain_admins }}"
+      state: absent
+
+      ##Remove AD Groups
+  - name: Remove Other from ExperianUK Admin Group
+    win_group_membership:
+      name: Administrators
+      members:
+        # - "{{ removegp1 }}"
+         - "{{ removegp2 }}"
+         - "{{ removegp3 }}"
+         - "{{ removegp4 }}"
+         - "{{ removegp5 }}"
+        # - "{{ removegp6 }}"
+         - "{{ removegp7 }}"
+      state: absent
+    when: domain == 'EXPERIANUK'
