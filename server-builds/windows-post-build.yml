@@ -31,7 +31,12 @@
     when: "'2012 R2' in ansible_os_name"
 
   ###################### Other config #######################
-  
+
+  - name: Remove ansible_ad scheduled task
+    win_scheduled_task:
+      name: ansible_ad
+      state: absent
+    
   - include_role:
       name: windows/configure-group-access
 

@@ -15,7 +15,7 @@
       file: vars/domain-config-vars.yml
 
 - name: Connect to DCs
-  hosts: "{{ hostvars['localhost']['dc_experianuk_1'] }} {{ hostvars['localhost']['dc_experianuk_2'] }}"
+  hosts: "{{ hostvars['localhost']['dc_experianuk_1'] }} {{ hostvars['localhost']['dc_experianuk_2'] }} {{ hostvars['localhost']['dc_experianuk_3'] }} {{ hostvars['localhost']['dc_experianuk_4'] }}"
   gather_facts: no
   ignore_unreachable: yes
   tasks:
@@ -37,6 +37,10 @@
     run_once: true
 
   - fail:
-      msg: 'Failed to communicate with either DC'
-    when: hostvars[ansible_play_hosts[0]]['dc_success'] is undefined and hostvars[ansible_play_hosts[1]]['dc_success'] is undefined
+      msg: 'Failed to communicate with any DC'
+    when: 
+      - hostvars[ansible_play_hosts[0]]['dc_success'] is undefined
+      - hostvars[ansible_play_hosts[1]]['dc_success'] is undefined
+      - hostvars[ansible_play_hosts[2]]['dc_success'] is undefined
+      - hostvars[ansible_play_hosts[3]]['dc_success'] is undefined
     

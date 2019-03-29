@@ -3,12 +3,18 @@
 # Global var file for Domain Config
 
 # Domain Controllers
-dc_experianuk_1: CORP-NOT-UKDC09
+dc_experianuk_1: CORP-NOT-UKDC01
 dc_experianuk_2: CORP-NOT-UKDC02
+dc_experianuk_3: CORP-NOT-UKDC09
+dc_experianuk_4: CORP-NOT-UKDC10
 dc_gdc_1: CORP-NOT-GDC01
 dc_gdc_2: CORP-NOT-GDC02
+dc_gdc_3: CORP-NOT-GDC03
+dc_gdc_4: CORP-NOT-GDC01
 dc_ipani_1: CORP-NOT-IPDC01
 dc_ipani_2: CORP-NOT-IPDC02
+dc_ipani_3: CORP-NOT-IPDC03
+dc_ipani_4: CORP-NOT-IPDC01
 
 # OU for group creation
 ou_experianuk_groups: "OU=ServerGroups,OU=WindowsServers,OU=Groups,DC=uk,DC=experian,DC=local"

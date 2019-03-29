@@ -18,22 +18,28 @@
     set_fact:
       domain_controller_1: "{{ dc_experianuk_1 }}"
       domain_controller_2: "{{ dc_experianuk_2 }}"
+      domain_controller_3: "{{ dc_experianuk_3 }}"
+      domain_controller_4: "{{ dc_experianuk_4 }}"
     when: domain == 'uk.experian.local'
 
   - name: Define DCs for GDC
     set_fact:
       domain_controller_1: "{{ dc_gdc_1 }}"
       domain_controller_2: "{{ dc_gdc_2 }}"
+      domain_controller_3: "{{ dc_gdc_3 }}"
+      domain_controller_4: "{{ dc_gdc_4 }}"
     when: domain == 'gdc.local'
 
   - name: Define DCs for IPANI
     set_fact:
       domain_controller_1: "{{ dc_ipani_1 }}"
       domain_controller_2: "{{ dc_ipani_2 }}"
+      domain_controller_3: "{{ dc_ipani_3 }}"
+      domain_controller_4: "{{ dc_ipani_4 }}"
     when: domain == 'ipani.uk.experian.com'
 
 - name: Connect to DCs
-  hosts: "{{ hostvars['localhost']['domain_controller_1'] }} {{ hostvars['localhost']['domain_controller_2'] }}"
+  hosts: "{{ hostvars['localhost']['domain_controller_1'] }} {{ hostvars['localhost']['domain_controller_2'] }} {{ hostvars['localhost']['domain_controller_3'] }} {{ hostvars['localhost']['domain_controller_4'] }}"
   gather_facts: no
   ignore_unreachable: yes
   tasks:
@@ -63,6 +69,10 @@
     run_once: true
 
   - fail:
-      msg: 'Failed to communicate with either DC'
-    when: hostvars[ansible_play_hosts[0]]['dc_success'] is undefined and hostvars[ansible_play_hosts[1]]['dc_success'] is undefined
+      msg: 'Failed to communicate with any DC'
+    when:
+      - hostvars[ansible_play_hosts[0]]['dc_success'] is undefined
+      - hostvars[ansible_play_hosts[1]]['dc_success'] is undefined
+      - hostvars[ansible_play_hosts[2]]['dc_success'] is undefined
+      - hostvars[ansible_play_hosts[3]]['dc_success'] is undefined
     

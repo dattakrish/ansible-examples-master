@@ -28,7 +28,7 @@
   - name: Create Administrator Group
 #    win_shell: dsadd group cn={{ adm_group }},{{ ou }} -desc "Windows Server Local Administrator access group"
 #    when: result1 is success
-    win_command: ipconfig -a    
+    win_shell: hostname 
 
 #  - name: Create Remote Desktop istrator Group
  #   win_shell: dsadd group cn={{ std_group }},{{ ou }} -desc "Windows Server Remote Desktop access group"
