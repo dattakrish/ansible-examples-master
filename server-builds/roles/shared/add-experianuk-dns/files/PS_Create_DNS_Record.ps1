@@ -15,32 +15,26 @@ $forwardlookup = nslookup $serverName
 $reverselookup = nslookup $IP4Address
 
 #based on forward result - create A record
-if($forwardlookup -contains "Address: $IP4Address"){
-    write-host "DNS record already exists, checking reverse lookup"
-    }
-Else{
+if ($forwardlookup -like "*$IP4Address*"){
+    write-host "DNS record already exists"
+    exit 0
+} else {
     write-host "No DNS record found, attempting to create"
     $forwardresults = dnscmd /recordadd $zoneName $serverName A $IP4Address
+    if ($forwardresults -match "Command completed successfully") {
+        write-host $forwardresults
+    } else {
+        write-host "A record creation failed, exit"
+        write-host $forwardresults
+        exit 1
     }
+}
 
-#Forward A record creation success - continue or exit on fail.
-if ($forwardresults -match "Command completed successfully") {
-    write-host $forwardresults
-    }
-
-else{
-    write-host "A record creation failed, exit"
-    write-host $forwardresults
-    exit 1
-    }
-
-
-#if A record creation success , create reverse lookup zone and record
-if ($reverselookup -contains "Address: $IP4Address"){
-write-host "DNS reverse record already exists"
-exit 0
-    }
-else {
+#if A record creation success, create reverse lookup zone and record
+if ($reverselookup -like "*$IP4Address*"){
+    write-host "DNS reverse record already exists"
+    exit 0
+} else {
     #Setting zone addresses : reverse IP, replace and set last octet of IP
     write-host "No PTR found, attempting to check zones and create"
     $RevZone3 = $ip4Address -replace '^(\d+)\.(\d+)\.(\d+)\.\d+$','$3.$2.$1.in-addr.arpa'
@@ -78,7 +72,7 @@ else {
             write-host "No Reverse zone exists, creating zone $revZone3"
             $createZone = dnscmd /zoneadd $revZone3 /dsprimary /dp /domain
             #create PTR record if succesfully created zone
-		        if ($createZone -contains "Command completed successfully"){
+		        if ($createZone -like "*Command completed successfully*"){
                     write-host "Creating PTR record following successful zone creation"
 			        $PTRresult = dnscmd /recordadd $revZone3 $ip4 PTR "$($serverName).$($zoneName)"
                     #enable secure dynamic updates
