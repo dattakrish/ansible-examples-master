@@ -447,19 +447,16 @@ Else {(Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "ipani.
 #region Modify-Unattended-Install-File
 if (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "uk.experian.local"}) {
     write-host "Attempting to modify INI file with ExperianUK details"
-    $iniresult = (get-content $installtemplate) | foreach-object {$_ -replace ';SQLSYSADMINACCOUNTS="EXPERIANUK', 'SQLSYSADMINACCOUNTS="EXPERIANUK' -replace "@domain@", "experianuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installtemplate
-    $iniresult
+    (get-content $installtemplate) | foreach-object {$_ -replace ';SQLSYSADMINACCOUNTS="EXPERIANUK', 'SQLSYSADMINACCOUNTS="EXPERIANUK' -replace "@domain@", "experianuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installtemplate
     }
 
     Elseif (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "gdc.local"}) {
     write-host "Attempting to modify INI file with GDC details"
-    $iniresult = (get-content $installtemplate) | foreach-object {$_ -replace ';SQLSYSADMINACCOUNTS="GDC', 'SQLSYSADMINACCOUNTS="GDC' -replace "@domain@", "gdc" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation" -replace "ts command centre all users", "ADMIN EGOC Operations" -replace "ts-t-hs-serverops", "ADMIN DSG Engineers" } | set-content $installtemplate
-    $iniresult
+    (get-content $installtemplate) | foreach-object {$_ -replace ';SQLSYSADMINACCOUNTS="GDC', 'SQLSYSADMINACCOUNTS="GDC' -replace "@domain@", "gdc" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation" -replace "ts command centre all users", "ADMIN EGOC Operations" -replace "ts-t-hs-serverops", "ADMIN DSG Engineers" } | set-content $installtemplate
     }
     Else {(Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "ipani.uk.experian.com"})
     write-host "Attempting to modify INI file with IPANI details"
-    $iniresult = (get-content $installtemplate) | foreach-object {$_ -replace ';SQLSYSADMINACCOUNTS="IPANIUK', 'SQLSYSADMINACCOUNTS="IPANIUK' -replace "@domain@", "ipaniuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installtemplate
-    $iniresult
+    (get-content $installtemplate) | foreach-object {$_ -replace ';SQLSYSADMINACCOUNTS="IPANIUK', 'SQLSYSADMINACCOUNTS="IPANIUK' -replace "@domain@", "ipaniuk" -replace "@svcSQLAccount@", "$usernamesql" -replace "@svcAGTAccount@", "$usernameagt" -replace "@svcSQLpassword@", "$RndPwd1" -replace "@svcSQLAgentpassword@", "$RndPwd2" -replace "@sqlCollation@", "$sqlcollation"} | set-content $installtemplate
     }
 
 #endregion Modify-Unattended-Install-File

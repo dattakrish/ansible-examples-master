@@ -14,7 +14,7 @@
 
   - name: List of drives to add
     debug:
-      msg: "Letter: {{ drive_letters_array[drive_index] }}, Size: {{ drive_sizes_array[drive_index] }} GB, Label: {{ drive_labels_array[drive_index] }}, Position: {{ drive_index + 2 }}"
+      msg: "Letter: {{ drive_letters_array[drive_index] }}, Size: {{ drive_sizes_array[drive_index] }} GB, Label: {{ drive_labels_array[drive_index] }}, Position: {{ drive_index + 2 }}, 64k: {{ drive_allocation_array[drive_index] }}"
     loop: "{{ drive_letters_array }}"
     loop_control:
       index_var: drive_index  

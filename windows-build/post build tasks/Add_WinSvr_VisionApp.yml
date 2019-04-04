@@ -1,27 +1,22 @@
 ---
 # created by Michael Barron 11/03/2019
-# modified by Michael Barron 1/04/2019
+# modified by Michael Barron 2/04/2019
 # Add Windows Server to VisionApp
 
 - hosts: UKFHPSHTIG01
   tasks:
 
-# # Execute Add_Server_VisionApp.ps1 to server
-#  - name: Run Add_Server_VisionApp.ps1
-    #win_command: "powershell.exe -noninteractive -ExecutionPolicy ByPass -File C:/tmp/Add_Server_VisionApp.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
-    #win_shell: "C:/tmp/Add_Server_VisionApp.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
-    #run_once: true
-
-# ps_exec testing
-  - name: Run Add_Server_VisionApp.ps1 locally (on target node) interactively
+# Run Add_Server_VisionApp.ps1 on Script host server interactively via psexec
+  - name: Run Add_Server_VisionApp.ps1 on Script host server interactively via psexec
     win_psexec:
-      #command: "powershell.exe -d -h -File c:\\tmp\\Add_Server_VisionApp.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
-      command: "powershell.exe Add_Server_VisionApp.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
-      executable: C:\tmp\psexec.exe
+      command: "powershell.exe -File C:\\ProgramData\\Experian\\SSC\\Add-VisionAppServer.ps1 -serverName  \"{{ targetServer }}\" -Country \"{{ serverRegion }}\" -bu \"{{ businessUnit }}\" -Service \"{{ serverService }}\" -domain \"{{ serverDomain }}\" -Function \"{{ serverFunction }}\""
+      executable: C:\ProgramData\Experian\SSC\psexec.exe
       interactive: yes
-      chdir: c:\tmp\
+      chdir: C:\ProgramData\Experian\SSC\
       elevated: yes
       limited: no
       nobanner: yes
       run_once: true
+      username: EXPERIANUK\barronm
+      password: MBms2ttmf51234567890
       #system: yes

@@ -126,58 +126,69 @@
 #Define working path {{ working_dir }}
   - name: Define working directory
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2"
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\"
     when: sql_ver == 'SQL2016Ent'
 
   - name: Define working directory
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2"
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\"
     when: sql_ver == 'SQL2016Std'
 
   - name: Define working directory
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM"
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\"
     when: sql_ver == 'SQL2017Ent'
 
   - name: Define working directory
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM"
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\"
     when: sql_ver == 'SQL2017Std'
-
-  - name: who am I
-    win_whoami:
 
 ## Install SQL
   - name: Install SQL
     win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -sqlCollation \"{{ sql_Collation }}\""
     become: yes
     become_user: SYSTEM
-    register: result1
+
+# Check for SQL Service "Started"
+#  - name: check for SQL Service
+ #   win_service:
+  #    name: 
+   #   state: started
+    #register: serviceresult
+    #ignore_errors: yes
+    #until: serviceresult is success
+    #retries: 6
+    #delay: 300
+    
+  #- fail:
+   #   msg: "SQL Services have failed to start, installation unsuccesful."
+    #when: serviceresult is fail
 
 #Copy SQL Studio
-  - name: Copy Source Files Directory
-    win_copy:
-      src: "{{ studiosourcePath }}"
-      dest: C:\tmp\SQL
-      state: present
-    when: result1 is success
+  #- name: Copy Source Files Directory
+   # win_copy:
+    #  src: "{{ studiosourcePath }}"
+     # dest: C:\tmp\SQL
+      #state: present
+    #when: serviceresult is success
 
 #Install SQL Studio
-  - name: Install SQL Studio
-    win_package:
-      path: "{{ studiosourceDest }}"
-      arguments: /install /quiet /norestart
-      product_id: '{1D117BF0-C2F4-4B9F-88C9-710F1EAE95F6}'
-      state: present
-    when: result1 is success
-    register: result2
+  #- name: Install SQL Studio
+   # win_package:
+    #  path: "{{ studiosourceDest }}"
+     # arguments: /install /quiet /norestart
+      #product_id: '{1D117BF0-C2F4-4B9F-88C9-710F1EAE95F6}'
+      #state: present
+    #when: serviceresult is success
+    #register: result2
 
-  - name: Server Reboot
-    win_reboot:
-    when: result2.reboot_required
+ # - name: Server Reboot
+  #  win_reboot:
+   # when: result2.reboot_required
 
-  - name: Remove Source Files
-    win_copy:
-      src: "{{ destPath }}"
-      state: absent
-    when: result2 is success
+  #- name: Remove Source Files
+   # win_copy:
+    #  src: "{{ destPath }}"
+     # state: absent
+    #when: result2 is success

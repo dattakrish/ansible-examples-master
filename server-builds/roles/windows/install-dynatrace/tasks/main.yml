@@ -4,13 +4,13 @@
     set_fact:
       cfg_dynatrace_tenantid: "{{ cfg_dynatrace_tenantid_prod }}"
       cfg_dynatrace_tenanttoken: "{{ cfg_dynatrace_tenanttoken_prod }}"
-    when: server_env == 'Production'
+    when: server_env == 'production'
 
   - name: Set TENANT for Non-Production
     set_fact:
       cfg_dynatrace_tenantid: "{{ cfg_dynatrace_tenantid_nonprod }}"
       cfg_dynatrace_tenanttoken: "{{ cfg_dynatrace_tenanttoken_nonprod }}"
-    when: server_env != 'Production'
+    when: server_env != 'production'
 
   - name: Copy installation media to server
     win_copy:

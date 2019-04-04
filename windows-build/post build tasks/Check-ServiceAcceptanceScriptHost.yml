@@ -1,6 +1,6 @@
 ---
 # Created by Michael Barron 26/03/2019
-# Modified by Michael Barron 26/03/2019
+# Modified by Michael Barron 2/04/2019
 # Service Acceptance checks that run on the script host servers to check a target server
 
 - hosts: all
@@ -42,7 +42,7 @@
     #run_once: true
 
 # Fail if Check_Solarwinds_Result failed and add to errors array if already defined
-    - name: Check if DNS Check failed and add to errors array if already defined
+    - name: Check if Solarwinds Check failed and add to errors array if already defined
       set_fact: errors="{{errors}} + [ 'Solarwinds Check failed' ]"
       #set_fact: errors="[ 'Solarwinds Check failed' ]"
       when:
@@ -50,13 +50,36 @@
         -  errors is defined
 
 # Fail if Check_Solarwinds_Result failed and create errors array if not defined
-    - name: Check if DNS Check failed and create errors array if not defined
+    - name: Check if Solarwinds Check failed and create errors array if not defined
       set_fact: errors="[ 'Solarwinds Check failed' ]"
       when:
         - "'error' in Check_Solarwinds_Result.stderr"
         - errors is not defined
 
-# Final Section to check if any errors
+# Check server exists in VisionApp
+    - name: Check server exists in VisionApp
+      win_shell: "C:/ProgramData/Experian/SSC/Check_VisionApp.ps1 -serverName  \"{{ serverName }}\""
+      register: VisionApp_check_results
+      ignore_errors: true
+
+    - debug:
+        var: VisionApp_check_results
+
+# Fail if VisionApp_check_results failed and add to errors array if already defined
+    - name: Check if VisionApp Check failed and add to errors array if already defined
+      set_fact: errors="{{errors}} + [ 'VisionApp Check failed' ]"
+      when:
+        - VisionApp_check_results.rc == 1
+        - errors is defined
+
+# Fail if VisionApp_check_results failed and create errors array if not defined
+    - name: Check if VisionApp Check failed and create errors array if not defined
+      set_fact: errors="[ 'VisionAppCheck failed' ]"
+      when:
+        - VisionApp_check_results.rc == 1
+        - errors is not defined
+
+# Final Section to check if any errors in errors array
 
 # Debug errors
     - name: Debug errors

@@ -6,6 +6,10 @@
 - hosts: all
   tasks:
 
+##################################################################################
+########## Check RDP and Admin Accounts have been added to the server ############
+##################################################################################
+
   # Work out short domain name from full doamin name and store as fact
   - name: Define short name for EXPERIANUK
     set_fact:
@@ -49,7 +53,6 @@
       state: present
     register: local_rdp_group
 
-
 # Check if the Check local Admin Group membership changed anything
   - name: Check if the Check local Admin Group membership changed anything
     fail:
@@ -69,3 +72,78 @@
     when:
       - local_admin_group.changed == false
       - local_rdp_group.changed == false
+
+##################################################################################
+############# Check FireEye is installed when not a Database server ##############
+##################################################################################
+
+# Check FireEye is installed if not a Database server block
+  - name: Block for executing command only when not Database
+    block:
+
+# Gather FireEye Registry version key value
+    - name: Gather FireEye version from Registry
+      win_reg_stat:
+        path: HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{D82800D5-27A8-4FAC-9564-3F700157BA2F}\
+        name: DisplayVersion
+      register: fireeye_results
+
+# Debug FireEye results var
+    - name: Debug FireEye Results var
+      debug:
+        var: fireeye_results
+    
+    - name: FireEye Version Check
+      debug:
+        msg: "Fireeye required Version is {{ fireEye_Version }} installed version is {{ fireeye_results.value }}"
+      when:
+        - fireeye_results.value == fireEye_Version
+        - fireeye_results is defined
+
+    - name: Fail if FireEye is not installed
+      fail:
+        msg: "FireEye not found or is the incorrect version!"
+      when: fireeye_results is undefined or fireeye_results.value != fireEye_Version
+
+# Block End
+    when:
+      - server_role != 'Database'
+
+##################################################################################
+############# Check that interfaces called Prinary and Backup exist ##############
+##################################################################################
+# "Check that interfaces called Prinary and Backup exist"
+  
+  - debug:
+      msg: "Item Name {{ item.connection_name }}"
+    when: "'Primary' in item.connection_name"
+    register: primary_result
+    loop: "{{ ansible_interfaces }}"
+
+  - debug:
+      msg: "Item Name {{ item.connection_name }}"
+    when: "'Backup' in item.connection_name"
+    register: backup_result
+    loop: "{{ ansible_interfaces }}"
+
+  - debug:
+      msg: "{{ primary_result }}"
+
+  - debug:
+      msg: "{{ backup_result }}"
+
+  - name: Fail if No Primary
+    fail:
+      msg: "No Primary Network Adapter Found!"
+    when: primary_result is not defined
+
+  - name: Fail if No Backup
+    fail:
+      msg: "No Backup Network Adapter Found!"
+    when: backup_result is not defined
+
+##################################################################################
+############# Check that interfaces called Prinary and Backup exist ##############
+##################################################################################
+#Safe Servlet
+  
