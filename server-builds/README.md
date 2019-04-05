@@ -88,6 +88,7 @@ Template Variables
 
 - deploy-vm
   - server_name
+  - server_role
   - os_class
   - os
   - domain

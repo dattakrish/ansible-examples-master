@@ -6,5 +6,5 @@
       dest: D:\Repository\server-build\
 
   - name: Check server has finished customisation
-    win_shell: D:\Repository\server-build\Check_VM_Status.ps1 -vCenter {{ vcenter_hostname }} -serverName {{ server_name }} -domain {{ domain }}
-    
+    win_shell: D:\Repository\server-build\Check_VM_Status.ps1 -vCenter {{ vcenter_hostname }} -serverName {{ server_name }} -domain {{ domain }} -backupTag {{ tag_backup_exclude }} -serverRole {{ server_role }}
+  

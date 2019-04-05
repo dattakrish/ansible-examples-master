@@ -27,3 +27,10 @@
   # Deploy VM with backup NIC
   - include_tasks: create-vm-win-with-backup.yml
     when: backup_required
+
+  # Set VMware tag for backups
+  # COMPATIBLE WITH 2.8 ONLY
+  # - include_tasks: set-backup-tag.yml
+  #  when:
+  #    - server_role == 'Database'
+  #    - "'Synergy' in vcenter_site"

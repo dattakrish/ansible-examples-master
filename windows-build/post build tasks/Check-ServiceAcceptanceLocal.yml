@@ -7,6 +7,24 @@
   tasks:
 
 ##################################################################################
+###### Check if Backup adapter exists and register backup_required variable ######
+##################################################################################
+
+  - name: Check Backup Network Adpater exists
+    win_shell: |
+      Get-NetAdapter -Name "Backup" –ErrorAction SilentlyContinue
+    register: backup_check
+    ignore_errors: yes
+    check_mode: no
+
+  - debug:
+      var: backup_check
+
+  - name: Register backup_required if backup NIC exists
+    register: backup_required
+    when: backup_check.rc != 0
+
+##################################################################################
 ########## Check RDP and Admin Accounts have been added to the server ############
 ##################################################################################
 
@@ -105,7 +123,7 @@
         msg: "FireEye not found or is the incorrect version!"
       when: fireeye_results is undefined or fireeye_results.value != fireEye_Version
 
-# Block End
+# FireEye Block End
     when:
       - server_role != 'Database'
 
@@ -114,36 +132,421 @@
 ##################################################################################
 # "Check that interfaces called Prinary and Backup exist"
   
-  - debug:
-      msg: "Item Name {{ item.connection_name }}"
-    when: "'Primary' in item.connection_name"
-    register: primary_result
-    loop: "{{ ansible_interfaces }}"
+  - name: Check Primary Network Adapter exists
+    win_shell: |
+      Get-NetAdapter -Name "Primary" –ErrorAction SilentlyContinue
+    register: primary_nic
+    ignore_errors: yes
+    check_mode: no
 
   - debug:
-      msg: "Item Name {{ item.connection_name }}"
-    when: "'Backup' in item.connection_name"
-    register: backup_result
-    loop: "{{ ansible_interfaces }}"
+      var: primary_nic
 
-  - debug:
-      msg: "{{ primary_result }}"
-
-  - debug:
-      msg: "{{ backup_result }}"
-
-  - name: Fail if No Primary
+  - name: Fail if no Primary Network Adapter found
     fail:
-      msg: "No Primary Network Adapter Found!"
-    when: primary_result is not defined
+      msg: "Primary NIC not found!"
+    when: primary_nic.rc != 0
 
-  - name: Fail if No Backup
-    fail:
-      msg: "No Backup Network Adapter Found!"
-    when: backup_result is not defined
+# Backup Required Block
+  - name: Block for executing command only when backup required
+    block:
+
+    - name: Check Backup Network Adpater exists
+      win_shell: |
+        Get-NetAdapter -Name "Backup" –ErrorAction SilentlyContinue
+      register: backup_nic
+      ignore_errors: yes
+      check_mode: no
+
+    - debug:
+        var: backup_nic
+
+    - name: Fail if no Backup Network Adapter found
+      fail:
+        msg: "Backup NIC not found!"
+      when: backup_nic.rc != 0
+
+# Backup Required Block end
+    when: 
+      - backup_required is defined
 
 ##################################################################################
-############# Check that interfaces called Prinary and Backup exist ##############
+####################### Checks required accounts exist ###########################
 ##################################################################################
-#Safe Servlet
-  
+
+# Check that CCAdmin Account exists and is a member of Administrators
+  - name: Check that CCAdmin Account exists and is a member of Administrators
+    win_group_membership:
+      name: Administrators
+      members:
+        - "CCAdmin"
+      state: present
+    register: CCAdmin_user
+
+# Check if the Check local Admin Group membership changed anything
+  - name: Check if the Check CCAdmin changed anything
+    fail:
+      msg: "User Doesnt Exist CCAdmin"
+    when: CCAdmin_user.changed == true
+
+# Check that the Arcsight Account is a member of the event log readers group
+  - name: Ensure user Arcsight is present EXPERIANUK Domain
+    win_group_membership:
+      name: Event Log Readers
+      members:
+        - "{{ short_domain }}\\arcsight"
+      state: present
+    register: arcsight_user
+    when: "'uk.experian.local' in ansible_domain"
+
+  - name: Ensure user ArcSvc is present GDC.LOCAL Domain
+    win_group_membership:
+      name: Event Log Readers
+      members:
+        - "{{ short_domain }}\\arcsvc"
+      state: present
+    register: arcsight_user
+    when: "'gdc' in ansible_domain"
+
+  - name: Ensure user Arcsight is present IPANI.UK.EXPERIAN.COM Domain
+    win_group_membership:
+      name: Event Log Readers
+      members:
+        - "{{ short_domain }}\\arcsight"
+      state: present
+    register: arcsight_user
+    when: "'ipani' in ansible_domain"
+
+# Check if the Check Arcsight changed anything
+  - name: Check if the Check Arcsight changed anything
+    fail:
+      msg: "User Doesnt Exist {{ short_domain }}\\Arcsight"
+    when: arcsight_user.changed == true
+
+# Check that SS000DA exists and is in administrators group.
+  - name: Check that SS000DA Account exists and is a member of Administrators
+    win_group_membership:
+      name: Administrators
+      members:
+        - "ss000da"
+      state: present
+    register: ss000da_user
+
+# Check if the Check SS000DA changed anything
+  - name: Check if the Check SS000DA changed anything
+    fail:
+      msg: "User Doesnt Exist SS000DA"
+    when: ss000da_user.changed == true
+
+# GDC Block
+  - name: Block for executing when GDC
+    block:
+
+# Check that sndlgdc exists and is in administrators group.
+    - name: Check that sndlgdc Account exists and is a member of Administrators GDC
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\sndlgdc"
+        state: present
+      register: sndlgdc_user
+
+# Check if the Check sndlgdc changed anything
+    - name: Check if the Check sndlgdc changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\sndlgdc"
+      when: sndlgdc_user.changed == true
+
+# Check that ADMIN EGOC Operations exists and is in administrators group.
+    - name: Check that ADMIN EGOC Operations Account exists and is a member of Administrators GDC
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ADMIN EGOC Operations"
+        state: present
+      register: EGOC_OP_user
+
+# Check if the Check ADMIN EGOC Operations changed anything
+    - name: Check if the Check ADMIN EGOC Operations changed anything
+      fail:
+        msg: "UserDoesnt Exist {{ short_domain }}\\ADMIN EGOC Operations"
+      when: EGOC_OP_user.changed == true
+
+# Check that ADMIN DSG Engineers exists and is in administrators group.
+    - name: Check that ADMIN DSG Engineers Account exists and is a member of Administrators GDC
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ADMIN DSG Engineers"
+        state: present
+      register: ADMIN_DSG_user
+
+# Check if the Check ADMIN DSG Engineers changed anything
+    - name: Check if the Check ADMIN DSG Engineers changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\ADMIN DSG Engineers"
+      when: ADMIN_DSG_user.changed == true
+
+# GDC Block End
+    when:
+      - ansible_windows_domain == 'gdc.local'
+
+# IPANIUK Block
+  - name: Block for executing when IPANIUK
+    block:
+
+# Check that sndipaniuk exists and is in administrators group.
+    - name: Check that sndipaniuk Account exists and is a member of Administrators IPANIUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\sndipaniuk"
+        state: present
+      register: sndipaniuk_user
+
+# Check if the Check sndipaniuk changed anything
+    - name: Check if the Check sndipaniuk changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\sndipaniuk"
+      when: sndipaniuk_user.changed == true
+
+# Check that Domain Admins exists and is in administrators group.
+    - name: Check that Domain Admins Account exists and is a member of Administrators IPANIUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\Domain Admins"
+        state: present
+      register: domain_admin_user
+
+# Check if the Check Domain Admins changed anything
+    - name: Check if the Check Domain Admins changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\Domain Admins"
+      when: domain_admin_user.changed == true
+
+# Check that ts command centre all users exists and is in administrators group.
+    - name: Check that ts command centre all users Account exists and is a member of Administrators IPANIUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ts command centre all users"
+        state: present
+      register: command_user
+
+# Check if the Check ts command centre all users changed anything
+    - name: Check if the Check ts command centre all users changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\ts command centre all users"
+      when: command_user.changed == true
+
+# Check that ts-t-hs-serverops exists and is in administrators group.
+    - name: Check that ts-t-hs-serverops Account exists and is a member of Administrators IPANIUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ts-t-hs-serverops"
+        state: present
+      register: ts_t_user
+
+# Check if the Check ts-t-hs-serverops changed anything
+    - name: Check if the Check ts-t-hs-serverops changed anything IPANIUK
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\ts-t-hs-serverops"
+      when: ts_t_user.changed == true
+
+# IPANIUK Block End
+    when:
+      - ansible_windows_domain == 'ipani.uk.experian.com'
+
+# EXPERIANUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+# Check that snduk exists and is in administrators group.
+    - name: Check that snduk Account exists and is a member of Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\snduk"
+        state: present
+      register: snduk_user
+
+# Check if the Check snduk changed anything
+    - name: Check if the Check snduk changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\snduk"
+      when: snduk_user.changed == true
+
+# Check that ts command centre all users exists and is in administrators group.
+    - name: Check that ts command centre all users Account exists and is a member of Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ts command centre all users"
+        state: present
+      register: command_user
+
+# Check if the Check ts command centre all users changed anything
+    - name: Check if the Check ts command centre all users changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\ts command centre all users"
+      when: command_user.changed == true
+
+# Check that ts-t-hs-serverops exists and is in administrators group.
+    - name: Check that ts-t-hs-serverops Account exists and is a member of Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ts-t-hs-serverops"
+        state: present
+      register: ts_t_user
+
+# Check if the Check ts-t-hs-serverops changed anything
+    - name: Check if the Check ts-t-hs-serverops changed anything
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\\ts-t-hs-serverops"
+      when: ts_t_user.changed == true
+
+# Check that tdmukuser exists and is in administrators group.
+    - name: Check that tdmukuser Account exists and is a member of Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\tdmukuser"
+        state: present
+      register: tdmukuser_user
+
+# Check if the Check tdmukuser changed anything
+    - name: Check if the Check tdmukuser changed anything EXPERIANUK
+      fail:
+        msg: "User Doesnt Exist {{ short_domain }}\tdmukuser"
+      when: tdmukuser_user.changed == true
+
+# EXPERIANUK Block End
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+# Check that Domain Admins has been removed from local administrators GDC and EXPRIANUK Only
+
+# EXPERIANUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+# Check that Domain Admins doesnt exists in administrators
+    - name: Check that Domain Admins Account doesnt exists in Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\Domain Admins"
+        state: absent
+      register: Domain_Admins_user
+
+# Check if the Check Domain Admins changed anything
+    - name: Check if the Check Domain Admins changed anything EXPERINAUK
+      fail:
+        msg: "{{ short_domain }}\\Domain Admins has not been removed from the local administrators group"
+      when: Domain_Admins_user.changed == true
+
+# EXPERIANUK Block End
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+# GDC Block
+  - name: Block for executing when GDC
+    block:
+
+# Check that Domain_Admins doesnt exists in administrators
+    - name: Check that Domain Admins Account doesnt exists in Administrators GDC
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\Domain Admins"
+        state: absent
+      register: Domain_Admins_user
+
+# Check if the Check Domain Admins changed anything
+    - name: Check if the Check Domain Admins changed anything GDC
+      fail:
+        msg: "{{ short_domain }}\\Domain Admins has not been removed from the local administrators group"
+      when: Domain_Admins_user.changed == true
+
+# GDC Block End
+    when:
+      - ansible_windows_domain == 'gdc.local'
+
+#Check that various groups/users have been removed from local administrators in case server was created in the computers container EXPERIANUK Only
+
+# EXPERIANUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+# Check that ADMIN Workstation Administration doesnt exists in administrators
+    - name: Check that ADMIN Workstation Administration Account doesnt exists in Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ADMIN Workstation Administration"
+        state: absent
+      register: Admin_ws_user
+
+# Check if the Check ADMIN Workstation Administration changed anything
+    - name: Check if the Check ADMIN Workstation Administration changed anything EXPERIANUK
+      fail:
+        msg: "{{ short_domain }}\\ADMIN Workstation Administration has not been removed from the local administrators group"
+      when: Admin_ws_user.changed == true
+
+# Check that CL-T-DskAdmin doesnt exists in administrators
+    - name: Check that CL-T-DskAdmin Account doesnt exists in Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\CL-T-DskAdmin"
+        state: absent
+      register: DskAdmin_user
+
+# Check if the Check CL-T-DskAdmin changed anything
+    - name: Check if the Check CL-T-DskAdmin changed anything EXPERIANUK
+      fail:
+        msg: "{{ short_domain }}\\CL-T-DskAdmin has not been removed from the local administrators group"
+      when: DskAdmin_user.changed == true
+
+# Check that Dept_BN_PCSupport doesnt exists in administrators
+    - name: Check that Dept_BN_PCSupport Account doesnt exists in Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\Dept_BN_PCSupport"
+        state: absent
+      register: PCSupport_user
+
+# Check if the Check Dept_BN_PCSupport changed anything
+    - name: Check if the Check Dept_BN_PCSupport changed anything EXPERIANUK
+      fail:
+        msg: "{{ short_domain }}\\Dept_BN_PCSupport has not been removed from the local administrators group"
+      when: PCSupport_user.changed == true
+
+# Check that SSMgmtWKUKSvc doesnt exists in administrators
+    - name: Check that SSMgmtWKUKSvc Account doesnt exists in Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\SSMgmtWKUKSvc"
+        state: absent
+      register: SSMgmtWKUKSvc_user
+
+# Check if the Check SSMgmtWKUKSvc changed anything
+    - name: Check if the Check SSMgmtWKUKSvc changed anything EXPERIANUK
+      fail:
+        msg: "{{ short_domain }}\\SSMgmtWKUKSvc has not been removed from the local administrators group"
+      when: SSMgmtWKUKSvc_user.changed == true
+
+# EXPERIANUK Block End
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+##################################################################################
+########################## Checks required Services ##############################
+##################################################################################
+
+#Check that Telnet Client is installed

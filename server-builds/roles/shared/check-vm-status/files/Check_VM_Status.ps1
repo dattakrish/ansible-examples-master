@@ -2,11 +2,11 @@
 # Check VM Customisation Status
 # Author: Tom Meer
 # Creation Date: 20/03/19
-# Last Update Date: 
+# Last Update Date: 04/04/19
 ###########################################################################
 
 # Read parameters
-Param([string] $vCenter, [string] $serverName, [string] $domain)
+Param([string] $vCenter, [string] $serverName, [string] $domain, [string] $backupTag, [string] $serverRole)
 
 # Write out parameters
 Write-Host "[PARAMETER] Server: $serverName"
@@ -66,18 +66,28 @@ if (! $customisationStatus) {
 }
 
 # Check if DNS/Domain has been assigned correctly
-$dnsName = (Get-VM $server).ExtensionData.Guest.Hostname
-$count = 0
-while (($dnsName -ne "$serverName.$domain") -and ($count -lt 20)) {
-	$count++
-	Start-Sleep -s 30
-	$dnsName = (Get-VM $server).ExtensionData.Guest.Hostname
+if ($domain -ne "workgroup") {
+    $dnsName = (Get-VM $server).ExtensionData.Guest.Hostname
+    $count = 0
+    while (($dnsName -ne "$serverName.$domain") -and ($count -lt 20)) {
+	    $count++
+	    Start-Sleep -s 30
+	    $dnsName = (Get-VM $server).ExtensionData.Guest.Hostname
+    }
+    if ($dnsName -ne "$serverName.$domain") {
+	    Write-Host "[ERROR 70] DNS name has not been assigned correctly: $dnsName"
+	    DisconnectAndError
+    } else {
+        Write-Host "[SUCCESS] DNS name: $dnsName"
+    }
 }
-if ($dnsName -ne "$serverName.$domain") {
-	Write-Host "[ERROR 70] DNS name has not been assigned correctly: $dnsName"
-	DisconnectAndError
-} else {
-    Write-Host "[SUCCESS] DNS name: $dnsName"
+
+# Assign backup tag to VM if database and Synergy
+if ($serverRole -eq "Database") {
+    if ($vCenter -eq "ukfhpcbvcs02.uk.experian.local" -Or $vCenter -eq "ukblpcbvcs02.uk.experian.local") {
+        $tag = Get-Tag -Name $backupTag
+        $server | New-TagAssignment -Tag $tag
+    }
 }
 
 # Disconnect and exit 

@@ -1,0 +1,14 @@
+---
+
+  - name: Exclude backups using vm tag
+    vmware_tag_manager:
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      tag_names:
+        - "{{ tag_backup_exclude }}"
+      object_name: "{{ server_name }}"
+      object_type: VirtualMachine
+      state: add
+    register: vm_tag_creation_result
+    delegate_to: localhost

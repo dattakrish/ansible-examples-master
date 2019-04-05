@@ -14,7 +14,7 @@
 # - start installation of SQL
 
 # Params
-param ([string]$cmdFile, [string]$installTemplate, [string]$sqlCollation, [string]$workingDir)
+param ([string]$cmdFile, [string]$installTemplate, [string]$sqlCollation, [string]$workingDir, [string]$businessunit, [string]$supportgroup)
 
 $sqladmin_key = "C:\tmp\SQL\Keys\SQLAdmin.key" #key file location for sqladmin pw
 $sqladmin_pw = "C:\tmp\SQL\Keys\Password.txt" #pw file location for sqladmin pw
@@ -396,6 +396,7 @@ $usernamesql = "$env:computername"+"SQL"
 $usernameagt = "$env:computername"+"AGT"
 $Descriptionsql = "SQL Server Service account for $Computername"
 $Descriptionagt = "SQL Agent Service account for $Computername"
+$office = "Owner = $businessunit - $supportgroup"
 write-host "Setting account names $usernamesql and $usernameagt"
 
 #Load AD Module
@@ -408,8 +409,8 @@ if (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "uk.experi
     $username = "experianuk\ansible_ad"
     write-host "Attempting to create new AD users in ExperianUK with $username"
     $mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $txtfile | ConvertTo-SecureString -key $Key1)
-    $accresult = New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=uk,dc=experian,dc=com" -Description $Descriptionsql -PasswordNeverExpires $true
-    $accresult1 = New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=uk,dc=experian,dc=com" -Description $Descriptionagt -PasswordNeverExpires $true
+    $accresult = New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=uk,dc=experian,dc=local" -Description $Descriptionsql -office $office -PasswordNeverExpires $true
+    $accresult1 = New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=uk,dc=experian,dc=local" -Description $Descriptionagt -office $office -PasswordNeverExpires $true
     Add-LoginToLocalPrivilege "experianuk\$usernamesql" "SeLockMemoryPrivilege"
     Add-LoginToLocalPrivilege "Administrators" "SeDebugPrivilege"
     Add-LoginToLocalPrivilege "experianuk\$usernamesql" "SeManageVolumePrivilege"
@@ -421,8 +422,8 @@ Elseif (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "gdc.l
     $username = "gdc\ansible_ad"
     write-host "Attempting to create new AD users in GDC with $username"
     $mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $txtfile | ConvertTo-SecureString -key $Key1)
-    $accresult = New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=gdc,dc=local" -Description $Descriptionsql -PasswordNeverExpires $true
-    $accresult1 = New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=gdc,dc=local" -Description $Descriptionagt -PasswordNeverExpires $true
+    $accresult = New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=gdc,dc=local" -Description $Descriptionsql -office $office -PasswordNeverExpires $true
+    $accresult1 = New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,ou=accounts,dc=gdc,dc=local" -Description $Descriptionagt -office $office -PasswordNeverExpires $true
     Add-LoginToLocalPrivilege "gdc\$usernamesql" "SeLockMemoryPrivilege"
     Add-LoginToLocalPrivilege "Administrators" "SeDebugPrivilege"
     Add-LoginToLocalPrivilege "gdc\$usernamesql" "SeManageVolumePrivilege"
@@ -434,8 +435,8 @@ Else {(Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "ipani.
     $username = "ipaniuk\ansible_ad"
     write-host "Attempting to create new AD users in IPANI with $username"
     $mycreds = New-Object -typename system.management.automation.PSCredential -ArgumentList $username, (get-content $txtfile | ConvertTo-SecureString -key $Key1)
-    $accresult = New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,dc=ipani,dc=uk,dc=experian,dc=com" -Description $Descriptionsql -PasswordNeverExpires $true
-    $accresult1 = New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,dc=ipani,dc=uk,dc=experian,dc=com" -Description $Descriptionagt -PasswordNeverExpires $true
+    $accresult = New-ADUser -credential $mycreds -SamAccountName $usernamesql -name $usernamesql -DisplayName $usernamesql -AccountPassword $PWD1 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,dc=ipani,dc=uk,dc=experian,dc=com" -Description $Descriptionsql -office $office -PasswordNeverExpires $true
+    $accresult1 = New-ADUser -credential $mycreds -SamAccountName $usernameagt -name $usernameagt -DisplayName $usernameagt -AccountPassword $PWD2 -Enabled $true -ChangePasswordAtLogon $false -CannotChangePassword $false -Path "ou=Service Accounts,dc=ipani,dc=uk,dc=experian,dc=com" -Description $Descriptionagt -office $office -PasswordNeverExpires $true
     Add-LoginToLocalPrivilege "ipaniuk\$usernamesql" "SeLockMemoryPrivilege" -Confirm:$false
     Add-LoginToLocalPrivilege "Administrators" "SeDebugPrivilege" -Confirm:$false
     Add-LoginToLocalPrivilege "ipaniuk\$usernamesql" "SeManageVolumePrivilege" -Confirm:$false
@@ -462,7 +463,7 @@ if (Get-ADDomain | Select -property DNSRoot | where {$_.DNSRoot -like "uk.experi
 #endregion Modify-Unattended-Install-File
 
 #### Start the Installation process
-write-host "Attempting to start the SQL installation"
-Start-Process -FilePath $cmdfile -WorkingDirectory $workingDir
+#write-host "Attempting to start the SQL installation"
+#Start-Process -FilePath $cmdfile -WorkingDirectory $workingDir
 
 exit 0

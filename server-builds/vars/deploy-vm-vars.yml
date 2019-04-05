@@ -25,6 +25,9 @@ assigned_backup_ip_address: ""
 assigned_backup_subnet_mask: ""
 backslash: "\\"
 
+# VMware tags
+tag_backup_exclude: Exclude
+
 # Windows Templates
 tmp_fh_win_2016: ETIG-IAAS-GTS-2016-DC-Template-FH
 tmp_fh_win_2012r2: IAAS-GTS-2012R2-STD-Template-FH

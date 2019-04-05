@@ -1,0 +1,10 @@
+---
+- name: Remove ExperianUK Service Accounts
+  hosts: all
+  gather_facts: no
+  tasks:
+
+  - name: Remove Accounts
+    win_domain_user:
+        name: {{ acc_name }}
+        state: absent

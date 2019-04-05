@@ -16,6 +16,9 @@
   - name: Run once on a succesfull script host
     block:
 
+    - include_vars:
+        file: vars/deploy-vm-vars.yml
+
     - name: Define vCenter for Fairham Vblock
       set_fact:
         vcenter_hostname: ukfhpvbvcs01.uk.experian.local

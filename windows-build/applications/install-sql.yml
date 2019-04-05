@@ -146,25 +146,24 @@
 
 ## Install SQL
   - name: Install SQL
-    win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -sqlCollation \"{{ sql_Collation }}\""
-    become: yes
-    become_user: SYSTEM
+    win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
 
-# Check for SQL Service "Started"
+
+#Check for SQL Service "Started"
 #  - name: check for SQL Service
  #   win_service:
-  #    name: 
+  #    name: "SQL Server (MSSQLSERVER)"
    #   state: started
-    #register: serviceresult
-    #ignore_errors: yes
+  #  register: serviceresult
+   # ignore_errors: yes
     #until: serviceresult is success
     #retries: 6
     #delay: 300
     
   #- fail:
-   #   msg: "SQL Services have failed to start, installation unsuccesful."
-    #when: serviceresult is fail
-
+  #    msg: "SQL Services have failed to start, installation unsuccesful."
+ #   when: serviceresult is fail
+#
 #Copy SQL Studio
   #- name: Copy Source Files Directory
    # win_copy:
