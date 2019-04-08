@@ -1,6 +1,6 @@
 ---
 # created by Michael Barron 11/03/2019
-# modified by Michael Barron 2/04/2019
+# modified by Michael Barron 05/04/2019
 # Add Windows Server to VisionApp
 
 - hosts: UKFHPSHTIG01
@@ -16,7 +16,6 @@
       elevated: yes
       limited: no
       nobanner: yes
+      username: "EXPERIANUK\\{{ SIMPLE_USERNAME }}"
+      password: "{{ SIMPLE_PASSWORD }}"
       run_once: true
-      username: EXPERIANUK\barronm
-      password: MBms2ttmf51234567890
-      #system: yes

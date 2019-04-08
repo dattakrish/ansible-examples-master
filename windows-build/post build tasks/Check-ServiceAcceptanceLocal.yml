@@ -1,6 +1,6 @@
 ---
 # Created by Michael Barron 27/03/2019
-# Modified by Michael Barron 27/03/2019
+# Modified by Michael Barron 05/04/2019
 # Service Acceptance check that runs on the Target Server
 
 - hosts: all
@@ -10,18 +10,21 @@
 ###### Check if Backup adapter exists and register backup_required variable ######
 ##################################################################################
 
-  - name: Check Backup Network Adpater exists
+  - name: Check Backup Network Adapter exists
     win_shell: |
       Get-NetAdapter -Name "Backup" –ErrorAction SilentlyContinue
     register: backup_check
     ignore_errors: yes
     check_mode: no
 
-  - debug:
-      var: backup_check
+  - name: Register backup_required true if backup NIC exists
+    set_fact:
+      backup_required: true
+    when: backup_check.rc == 0
 
-  - name: Register backup_required if backup NIC exists
-    register: backup_required
+  - name: Register backup_required false if backup NIC doesnt exists
+    set_fact:
+      backup_required: false
     when: backup_check.rc != 0
 
 ##################################################################################
@@ -128,9 +131,9 @@
       - server_role != 'Database'
 
 ##################################################################################
-############# Check that interfaces called Prinary and Backup exist ##############
+############# Check that interfaces called Primary and Backup exist ##############
 ##################################################################################
-# "Check that interfaces called Prinary and Backup exist"
+# "Check that interfaces called Primary and Backup exist"
   
   - name: Check Primary Network Adapter exists
     win_shell: |
@@ -138,9 +141,6 @@
     register: primary_nic
     ignore_errors: yes
     check_mode: no
-
-  - debug:
-      var: primary_nic
 
   - name: Fail if no Primary Network Adapter found
     fail:
@@ -151,15 +151,12 @@
   - name: Block for executing command only when backup required
     block:
 
-    - name: Check Backup Network Adpater exists
+    - name: Check Backup Network Adapter exists
       win_shell: |
         Get-NetAdapter -Name "Backup" –ErrorAction SilentlyContinue
       register: backup_nic
       ignore_errors: yes
       check_mode: no
-
-    - debug:
-        var: backup_nic
 
     - name: Fail if no Backup Network Adapter found
       fail:
@@ -168,7 +165,7 @@
 
 # Backup Required Block end
     when: 
-      - backup_required is defined
+      - backup_required
 
 ##################################################################################
 ####################### Checks required accounts exist ###########################
@@ -549,4 +546,386 @@
 ########################## Checks required Services ##############################
 ##################################################################################
 
-#Check that Telnet Client is installed
+#Check that Telnet Client feature is installed
+  - name: Check Telnet Client
+    win_feature:
+     name: "Telnet-Client"
+     state: present
+     restart: no
+     include_sub_features: yes
+     include_management_tools: yes
+    register: telnet_results
+
+  - name: Check if the Check Telnet Client changed anything
+    fail:
+      msg: "Telnet Client Service has not been installed!"
+    when: telnet_results.changed == true
+
+#Check that SNMP Service is installed
+  - name: Check SNMP Service
+    win_feature:
+     name: "SNMP-Service"
+     state: present
+     restart: no
+     include_sub_features: yes
+     include_management_tools: yes
+    register: snmp_reults
+
+  - name: Check if the Check SNMP Service changed anything
+    fail:
+      msg: "SNMP Service has not been installed!"
+    when: snmp_reults.changed == true
+
+#Check that Windows-Server-Backup feature is installed
+  - name: Check Windows-Server-Backup
+    win_feature:
+     name: "Windows-Server-Backup"
+     state: present
+     restart: no
+     include_sub_features: yes
+     include_management_tools: yes
+    register: win_backup_results
+
+  - name: Check if the Check Windows-Server-Backup changed anything
+    fail:
+      msg: "Windows-Server-Backup Service has not been installed!"
+    when: win_backup_results.changed == true
+
+
+##################################################################################
+############################ Checks Firewall rules ###############################
+##################################################################################
+# Remote Desktop
+
+  - name: Check Remote Desktop Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Remote Desktop').Enabled -eq 'True'
+    register: rd_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Remote Desktop Firewall Rule group not enabled
+    fail:
+      msg: "Remote Desktop Firewall Rule group not enabled!"
+    when: rd_firewall_rules.rc != 0
+
+
+# File and Printer Sharing
+
+  - name: Check File and Printer Sharing Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'File and Printer Sharing').Enabled -eq 'True'
+    register: fps_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check File and Printer Sharing Firewall Rule group not enabled
+    fail:
+      msg: "File and Printer Sharing Firewall Rule group not enabled!"
+    when: fps_firewall_rules.rc != 0
+
+
+# Remote Service Management
+
+  - name: Check Remote Service Management Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Remote Service Management').Enabled -eq 'True'
+    register: rsm_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Remote Service Management Firewall Rule group not enabled
+    fail:
+      msg: "Remote Service Management Firewall Rule group not enabled!"
+    when: rsm_firewall_rules.rc != 0
+
+# Performance Logs and Alerts
+
+  - name: Check Performance Logs and Alerts Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Performance Logs and Alerts').Enabled -eq 'True'
+    register: pla_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Performance Logs and Alerts Firewall Rule group not enabled
+    fail:
+      msg: "Performance Logs and Alerts Firewall Rule group not enabled!"
+    when: pla_firewall_rules.rc != 0
+
+# Remote Event Log Management
+
+  - name: Check Remote Event Log Management Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Remote Event Log Management').Enabled -eq 'True'
+    register: relm_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Remote Event Log Management Firewall Rule group not enabled
+    fail:
+      msg: "Remote Event Log Management Firewall Rule group not enabled!"
+    when: relm_firewall_rules.rc != 0
+
+# Remote Scheduled Tasks Management
+
+  - name: Check Remote Scheduled Tasks Management Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Remote Scheduled Tasks Management').Enabled -eq 'True'
+    register: rstm_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Remote Scheduled Tasks Management Firewall Rule group not enabled
+    fail:
+      msg: "Remote Scheduled Tasks Management Firewall Rule group not enabled!"
+    when: rstm_firewall_rules.rc != 0
+
+# Remote Volume Management
+
+  - name: Check Remote Volume Management Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Remote Volume Management').Enabled -eq 'True'
+    register: rvm_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Remote Volume Management Firewall Rule group not enabled
+    fail:
+      msg: "Remote Volume Management Firewall Rule group not enabled!"
+    when: rvm_firewall_rules.rc != 0
+
+# Windows Firewall Remote Management
+
+  - name: Check Windows Firewall Remote Management Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Windows Firewall Remote Management').Enabled -eq 'True'
+    register: wfrm_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check Windows Firewall Remote Management Firewall Rule group not enabled
+    fail:
+      msg: "Windows Firewall Remote Management Firewall Rule group not enabled!"
+    when: wfrm_firewall_rules.rc != 0
+
+# windows management instrumentation (wmi)
+
+  - name: Check windows management instrumentation (wmi) Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'windows management instrumentation (wmi)').Enabled -eq 'True'
+    register: wmi_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check windows management instrumentation (wmi) Firewall Rule group not enabled
+    fail:
+      msg: "windows management instrumentation (wmi) Firewall Rule group not enabled!"
+    when: wmi_firewall_rules.rc != 0
+
+# Com+ Network Access
+
+  - name: Check Com+ Network Access Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Com+ Network Access').Enabled -eq 'True'
+    register: cna_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check windows Com+ Network Access Firewall Rule group not enabled
+    fail:
+      msg: "windows Com+ Network Access Firewall Rule group not enabled!"
+    when: cna_firewall_rules.rc != 0
+
+# Com+ Remote Administration
+
+  - name: Check Com+ Remote Administration Firewall Rule group is enabled
+    win_shell: |
+      (get-netfirewallrule -displaygroup 'Com+ Remote Administration').Enabled -eq 'True'
+    register: cra_firewall_rules
+    check_mode: no
+
+  - name: Fail if Check windows Com+ Remote Administration Firewall Rule group not enabled
+    fail:
+      msg: "windows Com+ Remote Administration Firewall Rule group not enabled!"
+    when: cra_firewall_rules.rc != 0
+
+##################################################################################
+########## Check for UAC LocalAccountTokenFilterPolicy registry setting ##########
+##################################################################################
+
+# Block for UAC LocalAccountTokenFilterPolicy registry if server is 2012
+  - name: Block for executing command only when Windows Server 2012
+    block:
+
+# Gather for UAC LocalAccountTokenFilterPolicy version key value
+    - name: Gather UAC LocalAccountTokenFilterPolicy registry version from Registry
+      win_reg_stat:
+        path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\
+        name: LocalAccountTokenFilterPolicy
+      register: uac_results
+    
+    - name: UAC LocalAccountTokenFilterPolicy registry Version Check
+      debug:
+        msg: "UAC LocalAccountTokenFilterPolicy registry setting exists"
+      when:
+        - uac_results.value == 1
+        - uac_results is defined
+
+    - name: Fail if UAC LocalAccountTokenFilterPolicy registry is not installed
+      fail:
+        msg: "UAC LocalAccountTokenFilterPolicy registry not found or is set wrong!"
+      when: uac_results is undefined or uac_results.value == 0
+
+# UAC LocalAccountTokenFilterPolicy Block End
+    when:
+      - "'2012' in ansible_os_name"
+
+##################################################################################
+######################## Check ReceiveSideScaling setting ########################
+##################################################################################
+
+# Block to check ReceiveSideScaling is disabled if server is 2012
+  - name: Block for executing command only when Windows Server 2012
+    block:
+
+# Check ReceiveSideScaling setting 2012
+    - name: Check ReceiveSideScaling is disabled 2012
+      win_shell: |
+        (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Disabled'
+      register: rss_results
+      check_mode: no
+
+    - name: UAC LocalAccountTokenFilterPolicy registry Version Check 2012
+      debug:
+        msg: "UAC LocalAccountTokenFilterPolicy is Disabled"
+      when:
+        - rss_results.rc == 0
+        - rss_results is defined
+
+    - name: Fail if UAC LocalAccountTokenFilterPolicy is enabled 2012
+      fail:
+        msg: "UAC LocalAccountTokenFilterPolicy is Enabled!"
+      when: rss_results is undefined or rss_results.rc == 1
+
+# ReceiveSideScaling 2012 Block End
+    when:
+      - "'2012' in ansible_os_name"
+
+# Check ReceiveSideScaling registry is enabled if server is 2016
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+# Check ReceiveSideScaling setting 2016
+    - name: Check ReceiveSideScaling is enabled 2016
+      win_shell: |
+        (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Enabled'
+      register: rss_results
+      check_mode: no
+
+    - name: UAC LocalAccountTokenFilterPolicy registry Version Check 2016
+      debug:
+        msg: "UAC LocalAccountTokenFilterPolicy is Enabled"
+      when:
+        - rss_results.rc == 0
+        - rss_results is defined
+
+    - name: Fail if UAC LocalAccountTokenFilterPolicy is enabled 2016
+      fail:
+        msg: "UAC LocalAccountTokenFilterPolicy is Enabled!"
+      when: rss_results is undefined or rss_results.rc == 1
+
+# ReceiveSideScaling 2016 Block End
+    when:
+      - "'2016' in ansible_os_name"
+
+##################################################################################
+############ Check that SS000DA account has a non-expiring password ##############
+##################################################################################
+
+# Check SS000DA account has an non-expiring password if server is 2012
+  - name: Block for executing command only when Windows Server 2012
+    block:
+
+    - name: Check that SS000DA account has a non-expiring password
+      win_user:
+        name: SS000DA
+        state: query
+      register: ss000da_results
+      check_mode: no
+
+# Debug results
+    - debug:
+        var: ss000da_results
+
+# Fail if SS000DA account has an expiring password
+    - name: Fail if SS000DA account has a non-expiring password
+      fail:
+        msg: "SS000DA Password is set to expire!"
+      when: ss000da_results is undefined or ss000da_results.password_never_expires == false
+
+# Debug if SS000DA account has an non-expiring password
+    - name: Debug if SS000DA account has an non-expiring password
+      debug:
+        msg: "SS000DA Password is set to never expire!"
+      when: 
+        - ss000da_results is defined
+        - ss000da_results.password_never_expires == true
+
+# Check SS000DA account has an non-expiring password 2012 Block End
+    when:
+      - "'2012' in ansible_os_name"
+
+# Check SS000DA account has an expiring password if server is 2016
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+    - name: Check that SS000DA account has a non-expiring password
+      win_user:
+        name: SS000DA
+        state: query
+      register: ss000da_results
+      check_mode: no
+
+# Debug results
+    - debug:
+        var: ss000da_results
+
+# Fail if SS000DA account has an expiring password 2016
+    - name: Fail if SS000DA account has a non-expiring password
+      fail:
+        msg: "SS000DA Password is set to never expire!"
+      when: ss000da_results is undefined or ss000da_results.password_never_expires == true
+
+# Debug if SS000DA account has an non-expiring password 2016
+    - name: Debug if SS000DA account has an expiring password
+      debug:
+        msg: "SS000DA Password is set to expire!"
+      when: 
+        - ss000da_results is defined
+        - ss000da_results.password_never_expires == false
+
+# ReceiveSideScaling 2016 Block End
+    when:
+      - "'2016' in ansible_os_name"
+
+##################################################################################
+################### Check that experian key has been created #####################
+##################################################################################
+
+# Block for Check that experian registry key if server is 2012
+#  - name: Block for executing command only when Windows Server 2012
+#    block:
+
+# Gather for Check that experian registry key value
+#    - name: Gather UAC LocalAccountTokenFilterPolicy registry version from Registry
+#      win_reg_stat:
+#        path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\
+#        name: LocalAccountTokenFilterPolicy
+#      register: uac_results
+    
+#    - name: UAC LocalAccountTokenFilterPolicy registry Version Check
+#      debug:
+#        msg: "UAC LocalAccountTokenFilterPolicy registry setting exists"
+#      when:
+#        - uac_results.value == 1
+#        - uac_results is defined
+
+#    - name: Fail if UAC LocalAccountTokenFilterPolicy registry is not installed
+#      fail:
+#        msg: "UAC LocalAccountTokenFilterPolicy registry not found or is set wrong!"
+#      when: uac_results is undefined or uac_results.value == 0
+
+# Check that experian registry key Block End 2012
+#    when:
+#      - "'2012' in ansible_os_name"

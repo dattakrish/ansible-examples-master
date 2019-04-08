@@ -1,10 +1,10 @@
 ###########################################################################
-#   SSC Automation - Windows Build - SQL Pre-Reqs
+#   SSC Automation - Windows Build - SQL Installation
 #   Confluence:
 #   Move SQL Install Files
 #   Author: Barry Field
 #   Creation Date: 28/01/19
-#   Last Update Date: 28/01/19
+#   Last Update Date: 08/04/19
 ###########################################################################
 
 ---
@@ -15,27 +15,43 @@
   tasks:
 
 #Define Source File Location {{ sourcePath }}
-  - name: Define Source Files for SQL version
+  - name: Define Source Files for SQL version 2016Ent
     set_fact:
         sourcePath: "{{ sql2016Ent_source }}"
     when: sql_ver == 'SQL2016Ent'
 
-  - name: Define Source Files for SQL version
+  - name: Define Source Files for SQL version 2016Std
     set_fact:
         sourcePath: "{{ sql2016Std_source }}"
     when: sql_ver == 'SQL2016Std'
 
-  - name: Define Source Files for SQL version
+  - name: Define Source Files for SQL version 2016Dev
+    set_fact:
+      sourcePath: "{{ sql2016Dev_source }}"
+    when: sql_ver == 'SQL2016Dev'
+
+  - name: Define Source Files for SQL version 2017Ent
     set_fact:
         sourcePath: "{{ sql2017Ent_source }}"
     when: sql_ver == 'SQL2017Ent'
 
-  - name: Define Source Files for SQL version
+  - name: Define Source Files for SQL version 2017Std
     set_fact:
         sourcePath: "{{ sql2017Std_source }}"
     when: sql_ver == 'SQL2017Std'
+  
+  - name: Define Source Files for SQL version 2017Dev
+    set_fact:
+        sourcePath: "{{ sql2017Dev_source }}"
+    when: sql_ver == 'SQL2017Dev'
 
 #Define SXS Source {{ sxs_source }}
+
+  - name: Define SXS Source for 2012
+    set_fact:
+        sxs_source: "{{ sxs2012_source }}"
+    when: "'2012' in ansible_os_name"
+
   - name: Define SXS Source for 2016
     set_fact:
         sxs_source: "{{ sxs2016_source }}"
@@ -60,31 +76,46 @@
       source: C:\tmp\sxs
       state: present
 
-  - name: copy ps1 to script host
+  - name: copy SQLServiceAccCreation.ps1 to script host
     win_copy:
-      src: SQL_Install.ps1
+      src: SQLServiceAccCreation.ps1
+      dest: c:\tmp\
+
+  - name: copy SQL_LocalPreReq.ps1 to script host
+    win_copy:
+      src: SQL_LocalPreReq.ps1
       dest: c:\tmp\
 
 #Define Zip File {{ zipSource }}
-  - name: Define Zip Source
+  - name: Define Zip Source 2016Ent
     set_fact:
         zipSource: "c:\\tmp\\SQL\\SQL_2016_Ent_x64_inc_SP2.zip"
     when: sql_ver == 'SQL2016Ent'
 
-  - name: Define Zip Source
+  - name: Define Zip Source 2016Std
     set_fact:
         zipSource: "c:\\tmp\\SQL\\SQL_2016_Std_x64_inc_SP2.zip"
     when: sql_ver == 'SQL2016Std'
 
-  - name: Define Zip Source
+  - name: Define Zip Source 2016Dev
+    set_fact:
+        zipSource: "c:\\tmp\\SQL\\SQL_2016_Dev_x64_inc_SP2.zip"
+    when: sql_ver == 'SQL2016Dev'
+
+  - name: Define Zip Source 2017Ent
     set_fact:
         zipSource: "c:\\tmp\\SQL\\SQL_2017_Ent_x64_RTM.zip"
     when: sql_ver == 'SQL2017Ent'
 
-  - name: Define Zip Source
+  - name: Define Zip Source 2017Std
     set_fact:
         zipSource: "c:\\tmp\\SQL\\SQL_2017_Std_x64_RTM.zip"
     when: sql_ver == 'SQL2017Std'
+
+  - name: Define Zip Source 2017Dev
+    set_fact:
+        zipSource: "c:\\tmp\\SQL\\SQL_2017_Dev_x64_RTM.zip"
+    when: sql_ver == 'SQL2017Dev'
 
   - name: Unzip SQL Files
     win_unzip:
@@ -92,102 +123,125 @@
       dest: c:\tmp\SQL\SQL_Install
 
 #Define INI File {{ install_template }}
-  - name: Define INI file
+  - name: Define INI file 2016Ent
     set_fact:
         install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\SQL2016Standalone.ini"
     when: sql_ver == 'SQL2016Ent'
 
-  - name: Define INI file
+  - name: Define INI file 2016Dev
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Dev_x64_inc_SP2\\SQL2016Standalone.ini"
+    when: sql_ver == 'SQL2016Dev'
+
+  - name: Define INI file 2016Std
     set_fact:
         install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\SQL2016Standalone.ini"
     when: sql_ver == 'SQL2016Std'
 
-  - name: Define INI file
+  - name: Define INI file 2017Ent
     set_fact:
         install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\SQL2017Standalone.ini"
     when: sql_ver == 'SQL2017Ent'
 
-  - name: Define INI file
+  - name: Define INI file 2017Std
     set_fact:
         install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\SQL2017Standalone.ini"
     when: sql_ver == 'SQL2017Std'
 
+  - name: Define INI file 2017Dev
+    set_fact:
+        install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Dev_x64_RTM\\SQL2017Standalone.ini"
+    when: sql_ver == 'SQL2017Dev'
+
 #Define CMD File {{ cmd_File }}
-  - name: Define CMD File
+  - name: Define CMD File 2016
     set_fact:
         cmd_File: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
-    when: sql_ver == 'SQL2016Ent' or 'SQL2016Std'
+    when: sql_ver == 'SQL2016Ent' or sql_ver == 'SQL2016Std' or sql_ver == 'SQL2016Dev'
 
-  - name: Define CMD File
+  - name: Define CMD File 2017
     set_fact:
         cmd_File: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
-    when: sql_ver == 'SQL2017Ent' or 'SQL2017Std'
+    when: sql_ver == 'SQL2017Ent' or sql_ver == 'SQL2017Std' or sql_ver == 'SQL2017Dev'
 
 #Define working path {{ working_dir }}
-  - name: Define working directory
+  - name: Define working directory 2016Ent
     set_fact:
         working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\"
     when: sql_ver == 'SQL2016Ent'
+  
+  - name: Define working directory 2016Dev
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Dev_x64_inc_SP2\\"
+    when: sql_ver == 'SQL2016Dev'
 
-  - name: Define working directory
+  - name: Define working directory 2016Std
     set_fact:
         working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\"
     when: sql_ver == 'SQL2016Std'
 
-  - name: Define working directory
+  - name: Define working directory 2017Ent
     set_fact:
         working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\"
     when: sql_ver == 'SQL2017Ent'
 
-  - name: Define working directory
+  - name: Define working directory 2017Dev
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Dev_x64_RTM\\"
+    when: sql_ver == 'SQL2017Dev'
+
+  - name: Define working directory 2017Std
     set_fact:
         working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\"
     when: sql_ver == 'SQL2017Std'
 
-## Install SQL
-  - name: Install SQL
-    win_shell: "{{ powershellPath }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
+# ## Disable UAC
+#   - name: turn UAC off
+#     win_regedit:
+#       path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
+#       name: EnableLUA
+#       data: 0
+#       type: dword
+#       state: present
+#     register: uac_result
 
+#   - name: reboot after disabling UAC
+#     win_reboot:
+#     when: uac_result is changed
 
-#Check for SQL Service "Started"
-#  - name: check for SQL Service
- #   win_service:
-  #    name: "SQL Server (MSSQLSERVER)"
-   #   state: started
-  #  register: serviceresult
-   # ignore_errors: yes
-    #until: serviceresult is success
-    #retries: 6
-    #delay: 300
+## Run Service Account Powershell
+  - name: Run SQLServiceAccCreation.ps1
+    win_shell: "{{ powershellPath1 }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
+    become: yes
+    become_user: SYSTEM
+
+  - pause:
+      seconds: 10
+
+## Run Service Account Powershell
+  - name: Run SQLServiceAccCreation.ps1
+    win_shell: "{{ powershellPath }}"
+
+  - pause: 
+      minutes: 10
+
+##Check for SQL Service "Started"
+  - name: check for SQL Service
+    win_service:
+      name: "SQL Server (MSSQLSERVER)"
+      state: started
+    register: serviceresult
+    ignore_errors: yes
+    until: serviceresult is success
+    retries: 6
+    delay: 300
     
-  #- fail:
-  #    msg: "SQL Services have failed to start, installation unsuccesful."
- #   when: serviceresult is fail
-#
-#Copy SQL Studio
-  #- name: Copy Source Files Directory
-   # win_copy:
-    #  src: "{{ studiosourcePath }}"
-     # dest: C:\tmp\SQL
-      #state: present
-    #when: serviceresult is success
+  - fail:
+      msg: "SQL Services have failed to start, installation unsuccesful."
+    when: serviceresult is failed
 
-#Install SQL Studio
-  #- name: Install SQL Studio
-   # win_package:
-    #  path: "{{ studiosourceDest }}"
-     # arguments: /install /quiet /norestart
-      #product_id: '{1D117BF0-C2F4-4B9F-88C9-710F1EAE95F6}'
-      #state: present
-    #when: serviceresult is success
-    #register: result2
-
- # - name: Server Reboot
-  #  win_reboot:
-   # when: result2.reboot_required
-
-  #- name: Remove Source Files
-   # win_copy:
-    #  src: "{{ destPath }}"
-     # state: absent
-    #when: result2 is success
+  - name: Remove Source Files
+    win_copy:
+     src: "{{ destPath }}"
+     state: absent
+    when: serviceresult is success

@@ -1,0 +1,46 @@
+###########################################################################
+#   SSC Automation - Windows Build - SQL Pre-Reqs
+#   Confluence:
+#   Move SQL Install Files
+#   Author: Barry Field
+#   Creation Date: 28/01/19
+#   Last Update Date: 28/01/19
+###########################################################################
+
+---
+- name: SQL TESTING
+  hosts: all
+  gather_facts: yes
+  #become_method: runas
+  tasks:
+
+#Begin Tasks
+
+  - name: copy ps1 to script host
+    win_copy:
+      src: SQL_LocalPreReq.ps1
+      dest: c:\tmp\
+
+# ## Disable UAC
+#   - name: turn UAC off
+#     win_regedit:
+#       path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
+#       name: EnableLUA
+#       data: 0
+#       type: dword
+#       state: present
+#     register: uac_result
+
+#   - name: reboot after disabling UAC
+#     win_reboot:
+#     when: uac_result is changed
+
+## Run Service Account Powershell
+  - name: Run SQLServiceAccCreation.ps1
+    win_shell: "{{ powershellPath }}"
+    #win_command: "powershell.exe -executionpolicy ByPass -File \"{{ powershellPath }}\" -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
+    #become: yes
+    #become_user: SYSTEM
+    #vars:
+    #  ansible_become_pass: D4nnyR0s3!
+    #become_flags: logon_type=interactive
