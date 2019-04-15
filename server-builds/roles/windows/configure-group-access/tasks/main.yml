@@ -76,6 +76,7 @@
      members:
         - "{{ short_domain }}\\{{ grp_all_rdp_1 }}"
         - "{{ short_domain }}\\{{ domain_std_group }}"
+        - "{{ short_domain }}\\{{ grp_all_rdp_2 }}"
      state: present
     when: (short_domain == 'EXPERIANUK' or short_domain == 'IPANIUK')
 
@@ -84,6 +85,7 @@
      name: 'Remote Desktop Users'
      members:
         - "{{ short_domain }}\\{{ domain_std_group }}"
+        - "{{ short_domain }}\\{{ grp_all_rdp_2 }}"
      state: present
     when: short_domain == 'GDC'
 

@@ -2,16 +2,19 @@
 # Check VM Customisation Status
 # Author: Tom Meer
 # Creation Date: 20/03/19
-# Last Update Date: 04/04/19
+# Last Update Date: 12/04/19
 ###########################################################################
 
 # Read parameters
-Param([string] $vCenter, [string] $serverName, [string] $domain, [string] $backupTag, [string] $serverRole)
+Param([string] $vCenter, [string] $serverName, [string] $domain, [string] $backupTag, [string] $serverRole, [string] $vmFolder, [string] $datacenter)
 
 # Write out parameters
 Write-Host "[PARAMETER] Server: $serverName"
 Write-Host "[PARAMETER] vCenter: $vCenter"
+Write-Host "[PARAMETER] Datacenter: $datacenter"
 Write-Host "[PARAMETER] Domain: $domain"
+Write-Host "[PARAMETER] Role: $serverRole"
+Write-Host "[PARAMETER] Folder: $vmFolder"
 
 # Load PowerCLI
 Set-ExecutionPolicy RemoteSigned
@@ -35,17 +38,17 @@ Function DisconnectAndError {
 Connect-VIServer -Server $vCenter -credential $creds | Out-Null
 $checkStatus = $global:DefaultVIServer
 if (-not $checkStatus) {
-        Write-Host "[ERROR 45] Can't connect to vCenter: $vCenter"
+        Write-Host "[ERROR] Can't connect to vCenter: $vCenter"
         exit 1
 }
 
 # Check if VM exists and only one
 $server = Get-VM -Name $serverName -ErrorAction SilentlyContinue | Where-Object {$_.Folder.Name -ne "DR - Replicas"}
 if (-not $server) {
-	Write-Host "[ERROR 50] Could not find VM named: $serverName"
+	Write-Host "[ERROR] Could not find VM named: $serverName"
     DisconnectAndError
 } elseif ($server.Count -gt 1) {
-	Write-Host "[ERROR 55] More than one VM named: $serverName"
+	Write-Host "[ERROR] More than one VM named: $serverName"
 	DisconnectAndError
 }
 
@@ -59,7 +62,7 @@ while ((! $customisationStatus) -and ($count -lt 60)) {
     $customisationStatus = Get-VIEvent $server | Where-Object {($_.FullFormattedMessage -like "*Customization of VM $serverName succeeded*")}
 }
 if (! $customisationStatus) {
-    Write-Host "[ERROR 60] VM not finished customisation in less han an hour: $serverName"
+    Write-Host "[ERROR] VM not finished customisation in less han an hour: $serverName"
     DisconnectAndError
 } else {
     Write-Host "[SUCCESS] VM customisation complete: $serverName"
@@ -75,7 +78,7 @@ if ($domain -ne "workgroup") {
 	    $dnsName = (Get-VM $server).ExtensionData.Guest.Hostname
     }
     if ($dnsName -ne "$serverName.$domain") {
-	    Write-Host "[ERROR 70] DNS name has not been assigned correctly: $dnsName"
+	    Write-Host "[ERROR] DNS name has not been assigned correctly: $dnsName"
 	    DisconnectAndError
     } else {
         Write-Host "[SUCCESS] DNS name: $dnsName"
@@ -88,6 +91,24 @@ if ($serverRole -eq "Database") {
         $tag = Get-Tag -Name $backupTag
         $server | New-TagAssignment -Tag $tag
     }
+}
+
+# Make sure folder exists and move vm to it
+if ($vmFolder) {
+	$vmFolder = $vmFolder.Trim("\")
+	$folders = $vmFolder.Split("\\")
+    cd vi:\$datacenter\vm
+	foreach ($folder in $folders) {
+	    if (-Not (Test-Path $folder)) {
+            Write-Host "[INFO] Creating new folder: $folder"
+		    New-Folder -Name $folder | Out-Null
+		}
+	    cd $folder
+	}
+    cd ..
+	$finalFolder = Get-Folder "$folder" | Select-Object -First 1
+	Write-Host "[INFO] Moving VM to folder: $finalFolder"
+    Move-VM -VM $server -InventoryLocation $finalFolder | Out-Null
 }
 
 # Disconnect and exit 

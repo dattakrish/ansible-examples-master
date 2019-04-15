@@ -95,45 +95,8 @@
       - local_rdp_group.changed == false
 
 ##################################################################################
-############# Check FireEye is installed when not a Database server ##############
-##################################################################################
-
-# Check FireEye is installed if not a Database server block
-  - name: Block for executing command only when not Database
-    block:
-
-# Gather FireEye Registry version key value
-    - name: Gather FireEye version from Registry
-      win_reg_stat:
-        path: HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{D82800D5-27A8-4FAC-9564-3F700157BA2F}\
-        name: DisplayVersion
-      register: fireeye_results
-
-# Debug FireEye results var
-    - name: Debug FireEye Results var
-      debug:
-        var: fireeye_results
-    
-    - name: FireEye Version Check
-      debug:
-        msg: "Fireeye required Version is {{ fireEye_Version }} installed version is {{ fireeye_results.value }}"
-      when:
-        - fireeye_results.value == fireEye_Version
-        - fireeye_results is defined
-
-    - name: Fail if FireEye is not installed
-      fail:
-        msg: "FireEye not found or is the incorrect version!"
-      when: fireeye_results is undefined or fireeye_results.value != fireEye_Version
-
-# FireEye Block End
-    when:
-      - server_role != 'Database'
-
-##################################################################################
 ############# Check that interfaces called Primary and Backup exist ##############
 ##################################################################################
-# "Check that interfaces called Primary and Backup exist"
   
   - name: Check Primary Network Adapter exists
     win_shell: |
@@ -593,9 +556,8 @@
 
 
 ##################################################################################
-############################ Checks Firewall rules ###############################
+############################ Checks Firewall Rules ###############################
 ##################################################################################
-# Remote Desktop
 
   - name: Check Remote Desktop Firewall Rule group is enabled
     win_shell: |
@@ -607,7 +569,6 @@
     fail:
       msg: "Remote Desktop Firewall Rule group not enabled!"
     when: rd_firewall_rules.rc != 0
-
 
 # File and Printer Sharing
 
@@ -621,7 +582,6 @@
     fail:
       msg: "File and Printer Sharing Firewall Rule group not enabled!"
     when: fps_firewall_rules.rc != 0
-
 
 # Remote Service Management
 
@@ -775,16 +735,15 @@
 ######################## Check ReceiveSideScaling setting ########################
 ##################################################################################
 
+  - name: Check ReceiveSideScaling is enabled 2016
+    win_shell: |
+      (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Enabled'
+    register: rss_results
+    check_mode: no
+
 # Block to check ReceiveSideScaling is disabled if server is 2012
   - name: Block for executing command only when Windows Server 2012
     block:
-
-# Check ReceiveSideScaling setting 2012
-    - name: Check ReceiveSideScaling is disabled 2012
-      win_shell: |
-        (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Disabled'
-      register: rss_results
-      check_mode: no
 
     - name: UAC LocalAccountTokenFilterPolicy registry Version Check 2012
       debug:
@@ -806,13 +765,6 @@
   - name: Block for executing command only when Windows Server 2016
     block:
 
-# Check ReceiveSideScaling setting 2016
-    - name: Check ReceiveSideScaling is enabled 2016
-      win_shell: |
-        (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Enabled'
-      register: rss_results
-      check_mode: no
-
     - name: UAC LocalAccountTokenFilterPolicy registry Version Check 2016
       debug:
         msg: "UAC LocalAccountTokenFilterPolicy is Enabled"
@@ -833,20 +785,16 @@
 ############ Check that SS000DA account has a non-expiring password ##############
 ##################################################################################
 
+  - name: Check that SS000DA account has a non-expiring password
+    win_user:
+      name: SS000DA
+      state: query
+    register: ss000da_results
+    check_mode: no
+
 # Check SS000DA account has an non-expiring password if server is 2012
   - name: Block for executing command only when Windows Server 2012
     block:
-
-    - name: Check that SS000DA account has a non-expiring password
-      win_user:
-        name: SS000DA
-        state: query
-      register: ss000da_results
-      check_mode: no
-
-# Debug results
-    - debug:
-        var: ss000da_results
 
 # Fail if SS000DA account has an expiring password
     - name: Fail if SS000DA account has a non-expiring password
@@ -870,17 +818,6 @@
   - name: Block for executing command only when Windows Server 2016
     block:
 
-    - name: Check that SS000DA account has a non-expiring password
-      win_user:
-        name: SS000DA
-        state: query
-      register: ss000da_results
-      check_mode: no
-
-# Debug results
-    - debug:
-        var: ss000da_results
-
 # Fail if SS000DA account has an expiring password 2016
     - name: Fail if SS000DA account has a non-expiring password
       fail:
@@ -903,29 +840,1144 @@
 ################### Check that experian key has been created #####################
 ##################################################################################
 
-# Block for Check that experian registry key if server is 2012
-#  - name: Block for executing command only when Windows Server 2012
-#    block:
+# Gather experian registry key value
+  - name: Gather experian registry key value from Registry
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Experian\
+      name: Build Description
+    register: build_desc_results
 
-# Gather for Check that experian registry key value
-#    - name: Gather UAC LocalAccountTokenFilterPolicy registry version from Registry
-#      win_reg_stat:
-#        path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\
-#        name: LocalAccountTokenFilterPolicy
-#      register: uac_results
-    
-#    - name: UAC LocalAccountTokenFilterPolicy registry Version Check
-#      debug:
-#        msg: "UAC LocalAccountTokenFilterPolicy registry setting exists"
-#      when:
-#        - uac_results.value == 1
-#        - uac_results is defined
+# Block for Check that experian registry key if server is 2012 R2
+  - name: Block for executing command only when Windows Server 2012 R2
+    block:
 
-#    - name: Fail if UAC LocalAccountTokenFilterPolicy registry is not installed
-#      fail:
-#        msg: "UAC LocalAccountTokenFilterPolicy registry not found or is set wrong!"
-#      when: uac_results is undefined or uac_results.value == 0
+    - name: Check that experian registry key for 2012 R2 exists
+      debug:
+        msg: "Experian Hardening registry key exists"
+      when:
+        - build_desc_results.exists == true
+        - "'Windows Server 2012 R2 Standard Hardened Build' in build_desc_results.value"
 
-# Check that experian registry key Block End 2012
-#    when:
-#      - "'2012' in ansible_os_name"
+    - name: Fail if Fail if Experian registry key for 2016 doesnt exist or is incorrect version
+      fail:
+        msg: "Fail if Experian registry key for 2016 doesnt exist or is incorrect version!"
+      when: build_desc_results.exists == false or build_desc_results.value != 'Windows Server 2012 R2 Standard Hardened Build'
+
+# Check that experian registry key Block End 2012 R2
+    when:
+      - "'2012 R2' in ansible_os_name"
+
+# Block for Check that experian registry key if server is 2016
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+    - name: Check that experian registry key for 2016 exists
+      debug:
+        msg: "Experian Hardening registry key exists"
+      when:
+        - build_desc_results.exists == true
+        - "'Windows Server 2016 Hardened Build' in build_desc_results.value"
+
+    - name: Fail if Experian registry key for 2016 doesnt exist or is incorrect version
+      fail:
+        msg: "Fail if Experian registry key for 2016 doesnt exist or is incorrect version!"
+      when: build_desc_results.exists == false or build_desc_results.value != 'Windows Server 2016 Hardened Build'
+
+# Check that experian registry key Block End 2016
+    when:
+      - "'2016' in ansible_os_name"
+
+##################################################################################
+###################### Check NIc's have protocols removed ########################
+##################################################################################
+# Check that no NICs have Link-Layer Topolgy Discovery Mapper I/O Driver, Link-Layer Topolgy Discovery Responder, QOS Packet Scheduler installed.
+
+#Uninstall the following protocols / services:
+#QOS Packet Scheduler
+#Link-Layer Topology Mapper IO Driver
+#Link-Layer Topology Mapper IO Responder
+#MS LLDP Protocol Driver is new for server 2016
+  - name: 
+    win_shell: C:\Windows\System32\netcfg.exe -u ms_pacer
+    register: ms_pacer_result
+    check_mode: no
+
+  - name: Fail if MS LLDP Protocol Driver is installed
+    fail: 
+      msg: "Fail MS LLDP Protocol Driver is installed"
+    when: "'is not installed' not in ms_pacer_result.stdout"
+
+  - name: 
+    win_shell: C:\Windows\System32\netcfg.exe -u ms_lltdio
+    register: ms_lltdio_result
+    check_mode: no
+
+  - name: Fail if MS LLDP Protocol Driver is installed
+    fail: 
+      msg: "Fail MS LLDP Protocol Driver is installed"
+    when: "'is not installed' not in ms_lltdio_result.stdout"
+
+  - name: 
+    win_shell: C:\Windows\System32\netcfg.exe -u ms_rspndr
+    register: ms_rspndr_result
+    check_mode: no
+
+  - name: Fail if MS LLDP Protocol Driver is installed
+    fail: 
+      msg: "Fail MS LLDP Protocol Driver is installed"
+    when: "'is not installed' not in ms_rspndr_result.stdout"
+
+# Block for Check that experian registry key if server is 2016
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+# Check MS LLDP Protocol Driver is uninstalled 2016
+    - name: Check MS LLDP Protocol Driver is uninstalled 2016
+      win_shell: C:\Windows\System32\netcfg.exe -u ms_lldp
+      register: ms_lldp_result
+      check_mode: no
+
+    - name: Fail if MS LLDP Protocol Driver is installed 2016
+      fail: 
+        msg: "Fail MS LLDP Protocol Driver is installed 2016"
+      when: "'is not installed' not in ms_lldp_result.stdout"
+
+# Check that experian registry key Block End 2016
+    when:
+      - "'2016' in ansible_os_name"
+
+##################################################################################
+###################### Check that IPv6 is disabled Primary########################
+##################################################################################
+
+  - name: Check IPv6 Protocol is uninstalled Primary
+    win_shell: |
+      (Get-NetAdapterBinding -Name 'Primary' –ComponentID ms_tcpip6).Enabled
+    register: ipv6_p_result
+    check_mode: no
+
+  - name: Fail if IPv6 Protocol is installed Primary
+    fail: 
+      msg: "Fail IPv6 Protocol is installed Primary"
+    when: "'True' in ipv6_p_result.stdout"
+
+##################################################################################
+################### Check that Backup protocols are disabled #####################
+##################################################################################
+
+# Backup Required Block
+  - name: Block for executing command only when backup required
+    block:
+
+    - name: Check IPv6 Protocol is uninstalled Backup
+      win_shell: |
+        (Get-NetAdapterBinding -Name 'Backup' –ComponentID ms_tcpip6).Enabled
+      register: ipv6_bk_result
+      check_mode: no
+
+    - name: Fail if IPv6 Protocol is installed Backup
+      fail: 
+        msg: "Fail IPv6 Protocol is installed Backup"
+      when: "'True' in ipv6_bk_result.stdout"
+
+    - name: Check msclient Protocol is uninstalled Backup
+      win_shell: |
+        (Get-NetAdapterBinding -Name 'Backup' –ComponentID ms_msclient).Enabled
+      register: msc_bk_result
+      check_mode: no
+
+    - name: Fail if msclient Protocol is installed Backup
+      fail: 
+        msg: "Fail msclient Protocol is installed Backup"
+      when: "'True' in msc_bk_result.stdout"
+
+    - name: Check msserver Protocol is uninstalled Backup
+      win_shell: |
+        (Get-NetAdapterBinding -Name 'Backup' –ComponentID ms_server).Enabled
+      register: mss_bk_result
+      check_mode: no
+
+    - name: Fail if msserver Protocol is installed Backup
+      fail: 
+        msg: "Fail msserver Protocol is installed Backup"
+      when: "'True' in mss_bk_result.stdout"
+
+# Backup Required Block end
+    when: 
+      - backup_required
+
+##################################################################################
+################### Check ConnectionSpecificSuffix on Primary ####################
+##################################################################################
+
+# EXPERIANUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+    - name: Check ConnectionSpecificSuffix on Primary Interface
+      win_shell: |
+        (Get-DNSClient –InterfaceAlias ‘Primary’).ConnectionSpecificSuffix
+      register: css_p_result
+      check_mode: no
+
+    - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
+      fail: 
+        msg: "Check ConnectionSpecificSuffix on Primary Interface"
+      when: "'uk.experian.local' not in css_p_result.stdout"
+
+# EXPERIANUK Block End
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+# GDC Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+    - name: Check ConnectionSpecificSuffix on Primary Interface
+      win_shell: |
+        (Get-DNSClient –InterfaceAlias ‘Primary’).ConnectionSpecificSuffix
+      register: css_p_result
+      check_mode: no
+
+    - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
+      fail: 
+        msg: "Check ConnectionSpecificSuffix on Primary Interface"
+      when: "'gdc.local' not in css_p_result.stdout"
+
+# GDC Block End
+    when:
+      - ansible_windows_domain == 'gdc.local'
+
+# IPANIUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+    - name: Check ConnectionSpecificSuffix on Primary Interface
+      win_shell: |
+        (Get-DNSClient –InterfaceAlias ‘Primary’).ConnectionSpecificSuffix
+      register: css_p_result
+      check_mode: no
+
+    - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
+      fail: 
+        msg: "Check ConnectionSpecificSuffix on Primary Interface"
+      when: "'ipani.uk.experian.com' not in css_p_result.stdout"
+
+# IPANIUK Block End
+    when:
+      - ansible_windows_domain == 'ipani.uk.experian.com'
+
+##################################################################################
+######################## Check that NETBIOS is disabled ##########################
+##################################################################################
+
+  - name: Check NETBIOS Protocol is disabled
+    win_shell: |
+      (Get-WmiObject win32_networkadapterconfiguration).TcpipNetbiosOptions
+    register: netbios_result
+    check_mode: no
+
+  - name: Fail when NETBIOS is not disabled Primary
+    fail:
+      msg: "Fail NETBIOS is not diaabled on Primary!"
+    when: "'2' not in netbios_result.stdout_lines[0]"
+
+# Backup Required Block
+  - name: Block for executing command only when backup
+    block:
+
+    - name: Fail when NETBIOS is not disabled
+      fail:
+        msg: "Fail NETBIOS is not diaabled!"
+      when: "'2' not in netbios_result.stdout_lines[1]"
+
+# Backup Required Block end
+    when: 
+      - backup_required
+
+##################################################################################
+######################## Check that LMHosts is disabled ##########################
+##################################################################################
+
+  - name: Check LMHosts Protocol is disabled
+    win_shell: |
+      (Get-WmiObject win32_networkadapterconfiguration).WINSEnableLMHostsLookup
+    register: lmhosts_result
+    check_mode: no
+
+  - name: Fail when LMHosts is not disabled
+    fail:
+      msg: "Fail LMHosts is not diaabled!"
+    when: "'True' in lmhosts_result.stdout"
+
+##################################################################################
+########### Check that Backup Interface has DNS Registration disabled ############
+##################################################################################
+
+  - name: Check DNS Registration is disabled Backup
+    win_shell: |
+      (Get-DNSClient –InterfaceAlias ‘Backup’).RegisterThisConnectionsAddress
+    register: dnsr_result
+    check_mode: no
+
+  - name: Fail when DNS Registration is not disabled Backup
+    fail:
+      msg: "Fail DNS Registration is not diaabled on Backup!"
+    when: "'True' in dnsr_result.stdout"
+
+##################################################################################
+####### Check that Backup Interface does not have a DNS Server registered ########
+##################################################################################
+
+  - name: Check that Interface does not have a DNS Server registered Backup
+    win_shell: |
+      (Get-DNSClientServerAddress –InterfaceAlias ‘Backup’ -AddressFamily IPv4).ServerAddresses
+    register: dnss_result
+    check_mode: no
+
+  - name: Fail Interface has a DNS Server registered Backup
+    fail:
+      msg: "Fail DNS Registra1tion is not diaabled on Backup!"
+    when: dnss_result.stdout != ""
+
+##################################################################################
+############# Check IPv4 Binding Order. Check that primary is first ##############
+##################################################################################
+
+# Block for Check IPv4 Binding Order. Check that primary is first if server is 2012
+  - name: Block for executing command only when Windows Server 2012
+    block:
+
+# Copy nvspbind to server C:\tmp
+
+    - name: copy nvspbind to server
+      win_copy:
+        src: "{{ sourcePath }}{{ nvspbind }}"
+        dest: C:\temp\
+      check_mode: no
+
+# Check IPv4 Binding Order. Check that primary is first
+
+    - name: Check IPv4 Binding Order. Check that primary is first
+      win_command: C:\temp\nvspbind.exe /o ms_tcpip
+      args:
+        chdir: C:\temp\
+      register: ipv4bind_results
+      check_mode: no
+
+    - name: Fail on incorrect IPv4 Binding Order
+      fail:
+        msg: "Incorrect IPv4 Binding Order "
+      when:  "'   enabled:   Primary' not in ipv4bind_results.stdout_lines[10]"
+
+    - name: remove nvpbind
+      win_file:
+        path: C:\temp\{{ nvspbind }}
+        state: absent
+      check_mode: no
+
+# Block End
+    when:
+      - "'2012' in ansible_os_name"
+
+##################################################################################
+####################### Check that DNS Servers are correct #######################
+##################################################################################
+
+# GDC Block
+  - name: Block for executing when GDC
+    block:
+
+    - name: Check that DNS Servers are correct
+      win_shell: | 
+        (Get-DNSClientServerAddress -InterfaceAlias "Primary" -AddressFamily IPv4).ServerAddresses
+      register: dnss_results
+      check_mode: no
+
+    - name: Fail on incorrect DNS Servers GDC
+      fail:
+        msg: "Incorrect DNS Servers for GDC.local"
+      when:
+        - "'10.188.21.1' not in dnss_results.stdout_lines[0]"
+        - "'10.188.21.2' not in dnss_results.stdout_lines[1]"
+
+# GDC Block End
+    when:
+      - ansible_windows_domain == 'gdc.local'
+
+# IPANIUK Block
+  - name: Block for executing when IPANIUK
+    block:
+
+    - name: Check that DNS Servers are correct
+      win_shell: | 
+        (Get-DNSClientServerAddress -InterfaceAlias "Primary" -AddressFamily IPv4).ServerAddresses
+      register: dnss_results
+      check_mode: no
+
+    - name: Fail on incorrect DNS Servers IPANIUK
+      fail:
+        msg: "Incorrect DNS Servers for IPANIUK"
+      when:  
+        - "'194.60.173.145' not in dnss_results.stdout_lines[0]"
+        - "'194.60.173.146' not in dnss_results.stdout_lines[1]"
+
+# IPANIUK Block End
+    when:
+      - ansible_windows_domain == 'ipani.uk.experian.com'
+
+# EXPERIANUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+    - name: Check that DNS Servers are correct
+      win_shell: | 
+        (Get-DNSClientServerAddress -InterfaceAlias "Primary" -AddressFamily IPv4).ServerAddresses
+      register: dnss_results
+      check_mode: no
+
+    - name: Fail on incorrect DNS Servers EXPERIANUK
+      fail:
+        msg: "Incorrect DNS Servers for EXPERIANUK"
+      when:  
+        - "'10.215.252.10' not in dnss_results.stdout_lines[0]"
+        - "'10.173.251.106' not in dnss_results.stdout_lines[1]"
+
+# EXPERIANUK Block End
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+##################################################################################
+######################### Check WINS Servers are correct #########################
+##################################################################################
+
+# EXPERIANUK Block
+  - name: Block for executing when EXPERIANUK
+    block:
+
+    - name: 
+      win_shell: |
+        (Get-WmiObject win32_networkadapterconfiguration).WINSPrimaryServer
+      register: wins_p_results
+      check_mode: no
+
+    - name: Fail on incorrect DNS Servers EXPERIANUK
+      fail:
+        msg: "Incorrect Primary WINS Server defined EXPERIANUK"
+      when: wins_p_results.stdout_lines[0] != "10.215.252.12"
+
+    - name: 
+      win_shell: |
+        (Get-WmiObject win32_networkadapterconfiguration).WINSSecondaryServer
+      register: wins_s_results
+      check_mode: no
+
+    - name: Fail on incorrect DNS Servers EXPERIANUK
+      fail:
+        msg: "Incorrect Secondary WINS Server defined EXPERIANUK"
+      when: wins_s_results.stdout_lines[0] != "10.173.243.146"
+
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+##################################################################################
+################### Check C Volume Label, use win_disk_info ######################
+##################################################################################
+#Check C Volume Label, use win_disk_info
+  - name: 
+    win_shell: |
+      (Get-Volume -Driveletter 'C').FileSystemLabel -eq 'System'
+    register: drivec_results
+    check_mode: no
+
+  - name: Fail when C drive label is not Systsem
+    fail:
+      msg: "C: Label is not SYSTEM"
+    when: "'False' in drivec_results.stdout"
+
+#Check Disk 1 is MBR for 2012/2012R2 and all disks GPT for 2016
+
+  # Drive Check Loop
+  - name: Check to loop through all drives looking for D
+    win_disk_facts:
+
+  - name: debug win_disk_facts
+    debug:
+      var: ansible_facts.disks
+  
+  - name: "with_subelements and loop example of disk check"
+    debug:
+      var: disk.0.drive_letter
+    with_subelements:
+      - "{{ ansible_disks }}"
+      - partitions
+      - flags:
+        skip_missing: true
+    loop_control:
+      loop_var: disk
+    register: disk_results
+    when:
+      - disk.1.drive_letter
+      - "'C' in disk.1.drive_letter"
+
+# Block for Check Disk 1 is MBR if server is 2012
+  - name: Block for executing command only when Windows Server 2012
+    block:
+
+    - name: Output first disk
+      debug:
+        var: disk_results
+
+# Block End
+    when:
+      - "'2012' in ansible_os_name"
+
+# Block for Check all disks GPT if server is 2016
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+    - name: Output first disk
+      debug:
+        var: disk_results
+
+# Block End
+    when:
+      - "'2016' in ansible_os_name"
+
+##################################################################################
+########################### Check Disk 1 Driveletter #############################
+##################################################################################
+  - name: Check Disk 1 Drive Letter
+    win_shell: |
+      (Get-Partition -DiskNumber 1).DriveLetter
+    register: drive_letter_result
+    check_mode: no
+
+  - name: Debug drive_letter_result
+    debug:
+      var: drive_letter_result
+
+##################################################################################
+############################## Check Y Volume Label ##############################
+##################################################################################
+
+# Block for Check Y Volume Label if server is 2012
+  - name: Block for executing command only when Windows Server 2012
+    block:
+
+    - name: Check Y drive Label 2012
+      win_shell: |
+        (Get-Volume -Driveletter 'Y').FileSystemLabel -eq 'GTS-Support-Only'
+      register: drivey_results
+      check_mode: no
+
+    - name: Fail when Y drive label is not GTS-Support-Only 2012
+      fail:
+        msg: "Y: Label is not GTS-Support-Only"
+      when: "'False' in drivey_results.stdout"
+
+# Block End
+    when:
+      - "'2012' in ansible_os_name"
+
+# Block for Check Y Volume Label if server is 2016
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+    - name: Check Y drive Label 2016
+      win_shell: |
+        (Get-Volume -Driveletter 'Y').FileSystemLabel -eq 'EITS-Support-Only'
+      register: drivey_results
+      check_mode: no
+
+    - name: Fail when Y drive label is not EITS-Support-Only 2016
+      fail:
+        msg: "Y: Label is not EITS-Support-Only"
+      when: "'False' in drivey_results.stdout"
+
+# Block End
+    when:
+      - "'2016' in ansible_os_name"
+
+##################################################################################
+########################## Check CDROM is Driveletter Z ##########################
+##################################################################################
+  - name: Check CD-Rom drive letter
+    win_shell: |
+      (gwmi win32_cdromdrive).Drive 
+    register: cd_result
+    check_mode: no
+
+  - name: Fail when CD-Rom drive letter is not Z
+    fail:
+      msg: "CD-ROm drive letter is not Z"
+    when: "'Z' not in cd_result.stdout"
+
+##################################################################################
+########################## Software and Version Checks ###########################
+##################################################################################
+#Check for existence and versions of following software and test if running if applicable
+# SAFE - (get-Service -DisplayName "Enstart64").Status -eq "Running"
+# BladeLogic - (get-Service -DisplayName "BMC BladeLogic Server Automation RSCD Agent").Status
+# FireEye - (get-Service -DisplayName "FireEye Endpoint Agent").Status -eq "Running"
+# NetBackup - (get-Service -DisplayName "NetBackup Client Service").Status -eq "Running"
+# VMWare Tools - (get-Service -DisplayName "VMware Tools").Status -eq "Running"
+# McAfee Framework - (get-Service -DisplayName "McAfee Agent Service").Status -eq "Running"
+# McAfee Endpoint Security Platform - Done
+# Tanium - (get-Service -DisplayName "Tanium Client").Status -eq "Running"
+# .NET Framework - Done
+# Powershell - Done
+# Splunk Universal Forwarder - (get-Service -DisplayName "SplunkForwarder Service").Status -eq "Running"
+# Qualys Agent - (get-Service -DisplayName "Qualys Cloud Agent").Status -eq "Running"
+# Dynatrace - WIP - (get-Service -DisplayName "Dynatrace").Status -eq "Running"
+
+#SAFE
+  - name: Check SAFE Servlet Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{E39C38FC-343C-4D3D-8DCA-681C7FF8518A}
+      name: DisplayVersion
+    register: safe_result
+
+# Block Start
+  - name: Block for executing command only when safe_result exists
+    block:
+
+    - name: SUCCESS SAFE Servlet Version Check
+      debug:
+        msg: "Success SAFE Servlet required Version is {{ safe_version }} installed version is {{ safe_result.value }}"
+      when: safe_result.value == safe_version
+
+    - name: Fail if SAFE Servlet is not installed
+      debug:
+        msg: "Error SAFE Servlet required Version is {{ safe_version }} installed version is {{ safe_result.value }}"
+      when: safe_result.value != safe_version
+
+# Block End
+    when:  safe_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when safe_result doesnt exists
+    block:
+
+    - name: Fail if SAFE Servlet is not installed
+      debug:
+        msg: "Error SAFE Servlet is not installed!"
+
+# Block End
+    when: safe_result.exists == false
+
+#BladeLogic
+  - name: Check BladeLogic Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{0370E432-D0E3-48B9-AA55-3FC347248361}
+      name: DisplayVersion
+    register: bl_result
+
+# Block Start
+  - name: Block for executing command only when bl_result exists
+    block:
+
+    - name: SUCCESS BladeLogic Version Check
+      debug:
+        msg: "Success BladeLogic required Version is {{ bl_version }} installed version is {{ bl_result.value }}"
+      when: bl_result.value == bl_version
+
+    - name: Fail if BladeLogic is not installed
+      debug:
+        msg: "Error BladeLogic required Version is {{ bl_version }} installed version is {{ bl_result.value }}"
+      when: bl_result.value != bl_version
+
+# Block End
+    when:  bl_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when bl_result doesnt exists
+    block:
+
+    - name: Fail if BladeLogic is not installed
+      debug:
+        msg: "Error BladeLogic is not installed!"
+
+# Block End
+    when: bl_result.exists == false
+
+# FireEye
+# Check FireEye is installed if not a Database server block
+  - name: Block for executing command only when not Database
+    block:
+
+# Gather FireEye Registry version key value
+    - name: Gather FireEye version from Registry
+      win_reg_stat:
+        path: HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{D82800D5-27A8-4FAC-9564-3F700157BA2F}
+        name: DisplayVersion
+      register: fireeye_result
+
+# Internal Block
+# Block Start
+    - name: Block for executing command only when fireeye_result exists
+      block:
+
+      - name: SUCCESS FireEye Version Check
+        debug:
+          msg: "Success FireEye required Version is {{ fireeye_version }} installed version is {{ fireeye_result.value }}"
+        when: fireeye_result.value == fireeye_version
+
+      - name: Fail if FireEye is not installed
+        debug:
+          msg: "Error FireEye required Version is {{ fireeye_version }} installed version is {{ fireeye_result.value }}"
+        when: fireeye_result.value != fireeye_version
+
+# Block End
+      when: fireeye_result.exists == true
+
+# Internal Block
+# Block Start
+    - name: Block for executing command only when fireeye_result doesnt exists
+      block:
+
+      - name: Fail if FireEye is not installed
+        debug:
+          msg: "Error FireEye is not installed!"
+
+# Block End
+      when: fireeye_result.exists == false
+
+# FireEye Block End
+    when:
+      - server_role != 'Database'
+
+# NetBackup
+# Backup Required Block
+  - name: Block for executing command only when backup required
+    block:
+
+# Gather NetBackup Registry version key value
+    - name: Gather NetBackup version from Registry
+      win_reg_stat:
+       #path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6C85C687-44E1-4E16-97A8-FF784325C8E7}
+        path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Veritas NetBackup Client
+        name: DisplayVersion
+      register: netbackup_result
+
+# Internal Block
+# Block Start
+    - name: Block for executing command only when netbackup_result exists
+      block:
+
+      - name: SUCCESS NetBackup Version Check
+        debug:
+          msg: "Success Netbackup required Version is {{ netbackup_version }} installed version is {{ netbackup_result.value }}"
+        when: netbackup_result.value == netbackup_version
+
+      - name: Fail if NetBackup is not installed
+        debug:
+          msg: "Error NetBackup required Version is {{ netbackup_version }} installed version is {{ netbackup_result.value }}"
+        when: netbackup_result.value != netbackup_version
+
+# Block End
+      when: netbackup_result.exists == true
+
+# Internal Block
+# Block Start
+    - name: Block for executing command only when netbackup_result doesnt exists
+      block:
+
+      - name: Fail if NetBackup is not installed
+        debug:
+          msg: "Error NetBackup is not installed!"
+
+# Block End
+      when: netbackup_result.exists == false
+
+# Backup Required Block end
+    when: 
+      - backup_required
+
+#VMWare Tools (Only checks if installed not version)
+  - name: Check VMWare Tools Installed
+    win_reg_stat:
+      path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F32C4E7B-2BF8-4788-8408-824C6896E1BB}
+      name: DisplayVersion
+    register: vmtools_result
+
+  - name: SUCCESS VMWare Tools Installed
+    debug:
+      msg: "SUCCESS VMWare Tools is Installed"
+    when:  vmtools_result.exists == true
+
+  - name: Fail if VMWare Tools is not installed
+    debug:
+      msg: "Error VMWare Tools is not installed!"
+    when: vmtools_result.exists == false
+
+# McAfee Framework Agent
+  - name: Check McAfee Framework Agent Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6256F19B-18EB-4942-8A7C-5A0A9DABFA35}
+      name: DisplayVersion
+    register: mcafee_result
+
+# Block Start
+  - name: Block for executing command only when mcafee_result exists
+    block:
+
+    - name: SUCCESS McAfee Framework Agent Version Check
+      debug:
+        msg: "Success McAfee Framework Agent required Version is {{ mcafee_version }} installed version is {{ mcafee_result.value }}"
+      when: mcafee_result.value == mcafee_version
+
+    - name: Fail if McAfee Framework Agent is not installed
+      debug:
+        msg: "Error McAfee Framework Agent required Version is {{ mcafee_version }} installed version is {{ mcafee_result.value }}"
+      when: mcafee_result.value != mcafee_version
+
+# Block End
+    when:  mcafee_result.exists == true
+
+# McAfee Agent (Only checks if installed not version)
+  - name: Check McAfee EndPoint Security Platform Installed
+    win_reg_stat:
+      path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{FF94B30D-A51E-4D68-A353-0667C5655D2E}
+      name: DisplayVersion
+    register: mcend_result
+
+  - name: SUCCESS McAfee EndPoint Installed
+    debug:
+      msg: "SUCCESS McAfee EndPoint Security Platform is Installed"
+    when:  mcend_result.exists == true
+
+  - name: Fail if McAfee EndPoint is not installed
+    debug:
+      msg: "Error McAfee EndPoint Security Platform is not installed!"
+    when: mcend_result.exists == false
+
+# Block Start
+  - name: Block for executing command only when mcafee_result doesnt exists
+    block:
+
+    - name: Fail if McAfee Framework Agent is not installed
+      debug:
+        msg: "Error McAfee Framework Agent is not installed!"
+
+# Block End
+    when: mcafee_result.exists == false
+
+# Tanium
+  - name: Check Tanium Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Tanium Client
+      name: DisplayVersion
+    register: tanium_result
+
+# Block Start
+  - name: Block for executing command only when tanium_result exists
+    block:
+
+    - name: SUCCESS Tanium Version Check
+      debug:
+        msg: "Success Tanium required Version is {{ tanium_version }} installed version is {{ tanium_result.value }}"
+      when: tanium_result.value == tanium_version
+
+    - name: Fail if Tanium is not installed
+      debug:
+        msg: "Error Tanium required Version is {{ tanium_version }} installed version is {{ tanium_result.value }}"
+      when: tanium_result.value != tanium_version
+
+# Block End
+    when:  tanium_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when tanium_result doesnt exists
+    block:
+
+    - name: Fail if Tanium is not installed
+      debug:
+        msg: "Error Tanium is not installed!"
+
+# Block End
+    when: tanium_result.exists == false
+
+# .NET Framework
+  - name: Check .NET Framework Installed Version
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full
+      name: Release
+    register: dotnet_result
+
+# Block Start
+  - name: Block for executing command only when dotnet_result exists
+    block:
+
+    - name: SUCCESS .NET Framework Version Check
+      debug:
+        msg: "Success .NET Framework required Version is {{ dotnet_version }} installed version is {{ dotnet_result.value }}"
+      when: dotnet_result.value == dotnet_version
+
+    - name: Fail if .NET Framework is not installed
+      debug:
+        msg: "Error .NET Framework required Version is {{ dotnet_version }} installed version is {{ dotnet_result.value }}"
+      when: dotnet_result.value != dotnet_version
+
+# Block End
+    when:  dotnet_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when dotnet_result doesnt exists
+    block:
+
+    - name: Fail if .NET Framework is not installed
+      debug:
+        msg: "Error .NET Framework is not installed!"
+
+# Block End
+    when: dotnet_result.exists == false
+
+# Powershell
+  - name: Check Powershell Installed Version
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine
+      name: PowerShellVersion
+    register: ps_result
+
+# Block Start
+  - name: Block for executing command only when ps_result exists
+    block:
+
+    - name: SUCCESS Powershell Version Check
+      debug:
+        msg: "Success Powershell required Version is {{ ps_version }} installed version is {{ ps_result.value }}"
+      when: ps_result.value == ps_version
+
+    - name: Fail if Powershell is not installed
+      debug:
+        msg: "Error Powershell required Version is {{ ps_version }} installed version is {{ ps_result.value }}"
+      when: ps_result.value != ps_version
+
+# Block End
+    when:  ps_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when ps_result doesnt exists
+    block:
+
+    - name: Fail if Powershell is not installed
+      debug:
+        msg: "Error Powershell is not installed!"
+
+# Block End
+    when: ps_result.exists == false
+
+# Splunk Universal Forwarder
+  - name: Check Splunk Universal Forwarder Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{C05A896E-05F4-49B6-A191-FC29B1362B81}
+      name: DisplayVersion
+    register: splunk_result
+
+# Block Start
+  - name: Block for executing command only when splunk_result exists
+    block:
+
+    - name: SUCCESS Splunk Universal Forwarder Version Check
+      debug:
+        msg: "Success Splunk Universal Forwarder required Version is {{ splunk_version }} installed version is {{ splunk_result.value }}"
+      when: splunk_result.value == splunk_version
+
+    - name: Fail if Splunk Universal Forwarder is not installed
+      debug:
+        msg: "Error Splunk Universal Forwarder required Version is {{ splunk_version }} installed version is {{ splunk_result.value }}"
+      when: splunk_result.value != splunk_version
+
+# Block End
+    when:  splunk_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when splunk_result doesnt exists
+    block:
+
+    - name: Fail if Splunk Universal Forwarder is not installed
+      debug:
+        msg: "Error Splunk Universal Forwarder is not installed!"
+
+# Block End
+    when: splunk_result.exists == false
+
+# Qualys
+  - name: Check Qualys Agent Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QualysAgent
+      name: DisplayVersion
+    register: qualys_result
+
+# Block Start
+  - name: Block for executing command only when qualys_result exists
+    block:
+
+    - name: SUCCESS Qualys Agent Version Check
+      debug:
+        msg: "Success Qualys Agent required Version is {{ qualys_version }} installed version is {{ qualys_result.value }}"
+      when: qualys_result.value == qualys_version
+
+    - name: Fail if Qualys Agent is not installed
+      debug:
+        msg: "Error Qualys Agent required Version is {{ qualys_version }} installed version is {{ qualys_result.value }}"
+      when: qualys_result.value != qualys_version
+
+# Block End
+    when:  qualys_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when qualys_result doesnt exists
+    block:
+
+    - name: Fail if Qualys Agent is not installed
+      debug:
+        msg: "Error Qualys Agent is not installed!"
+
+# Block End
+    when: qualys_result.exists == false
+
+# Dynatrace
+  - name: Check Dynatrace Installed Version
+    win_reg_stat:
+      path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{4B646D96-6C5F-4CEC-8815-5BBC0483BD9A}
+      name: DisplayVersion
+    register: dyn_result
+
+  - name: Debug Dynatrace Agent Results
+    debug:
+      var: dyn_result
+
+# Block Start
+  - name: Block for executing command only when dyn_result exists
+    block:
+
+    - name: SUCCESS Dynatrace Agent Version Check
+      debug:
+        msg: "Success Dynatrace Agent required Version is {{ dyn_version }} installed version is {{ dyn_result.value }}"
+      when: dyn_result.value == dyn_version
+
+    - name: Fail if Dynatrace Agent is not installed
+      debug:
+        msg: "Error Dynatrace Agent required Version is {{ dyn_version }} installed version is {{ dyn_result.value }}"
+      when: dyn_result.value != dyn_version
+
+# Block End
+    when:  dyn_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when dyn_result doesnt exists
+    block:
+
+    - name: Fail if Dynatrace Agent is not installed
+      debug:
+        msg: "Error Dynatrace Agent is not installed!"
+
+# Block End
+    when: dyn_result.exists == false
+
+#Check ping to nbu-not-mast.backup.local
+# Backup Required Block
+  - name: Block for executing command only when backup required
+    block:
+
+    - name: Check ping to nbu-not-mast.backup.local
+      win_shell: |
+        Test-Connection -ComputerName nbu-not-mast.backup.local -Count 5 -Quiet
+      register: nbu_ping_result
+      check_mode: no
+
+    - debug:
+        var: nbu_ping_result
+
+    - name: Success when nbu-not-mast.backup.local ping test success
+      fail:
+        msg: "Success nbu-not-mast.backup.local is reachable!"
+      when: "'True' in nbu_ping_result.stdout"
+
+    - name: Fail when nbu-not-mast.backup.local ping test fails
+      fail:
+        msg: "Fail nbu-not-mast.backup.local is not reachable!"
+      when: "'False' in nbu_ping_result.stdout"
+
+# Backup Required Block end
+    when: 
+      - backup_required
+
+#Check if OS is activated
+
+  - name: Check O/S is activated
+    win_shell: |
+      Get-CimInstance SoftwareLicensingProduct
+      #(Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'" | where licensestatus -eq 1)
+    register: osactivate_result
+    check_mode: no
+
+  - debug:
+      var: osactivate_result
+
+#check that computer name is 15 characters or less
+
+#Check that computer is in the correct OU. OU=Windows Server 201x Member Servers,OU=Servers,OU=Systems...
+#Check that "Default DSG Member Server 201x Baseline Policy" is being applied.
+#Check in Group Policy Log for EventIDs 5310 and 4016 in last 24 hours and filter on relevant messages
+
+# Check SNMP Configuration Settings
+
+#Check that Schannel settings are correct
+
+#Get Culture
+
+#Check TimZone
+
+#Check to see if LGPO has been applied
+
+# Check for a Windows Backup Local
+
+#Check that TADDM / Service Now is not allowed to log on interactively.
+#Uses accesschk.exe
+
+#Check that backup connection is set to private and primary is set to DomainAuthenticated
+
+#Ensure that C:\pending_bladelogic_run.txt has been deleted to indicate that this is no longer a "new/build" server
+
+#Check for certificates in the untrusted certificate store
+
+#Check for insecure library loaading
+
+#Check that Users Group has been removed from c:\ibm\itm
+
+#Check that Users Group has been removed from c:\tmp
+
+#Check that Users Group has been removed from c:\temp if it exists
+
+#Test that DEP is set to AlwaysOn
+
+#Check for hardened path entries needed for MS15-011
+
+#Check that Entrust Certificates exist in the correct stores
+
+#For Windows 2012R2 check that RDP cert is using a SHA256RSA signature algorithm
+#Not supported on 2012 and the default on Server 2016.
+
+#Windows 2016 Check that Windows Defender Features have been removed amd MultiPath installed
+
+#Check that SMB1 has been removed
+
+#Check that member servers time sync is set to NT5DS and time service is not disabled
+
+#Check if server has backups
+# takes a long time if no backup connectivity
+
+#Check that SS000LA exists, is in local administrators and its password expires and is disabled
+
+#Check that DefaultAccount is disabled and its password does not expire
+#Check that SS000GU is disabled and its password does not expire
+
+#Check that Windows Media Player is disabled  on 2016
+
+#Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529)
+
+#Check that ServicesPipeTimeout is set to 90 seconds on Server 2016
+

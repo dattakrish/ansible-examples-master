@@ -1,15 +1,15 @@
-Add VisionApp
-================
+Add Server to SolarWinds
+========================
 
 Written by Michael Barron.
 
-This role adds the Windows server into VisionApp, required for all Windows Servers.
+This role adds the server into SolarWinds.
 <br/><br/>
 
 Requirements
 ------------
 
-- Requires the PowerShell REST API to work and to be exectued from the Script Hosts.
+- None
 <br/>
 
 Role Variables
@@ -20,11 +20,7 @@ Passed from host facts:
 
 Passed from playbook:
 - server_name
-- server_role
-- region
-- business_unit
-- sub_business_unit
-- domain
+- primary_ip_address
 
 Passed from global vars file:
 - none
@@ -42,5 +38,5 @@ Example Playbook
 Example of how to use this role:
 
     - include_role:
-        name: windows/add-visionapp
+        name: windows/add-solarwinds
 

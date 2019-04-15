@@ -111,8 +111,15 @@ Template Variables
 
 - script-host-deploys
   - server_name
+  - server_role
+  - primary_ip_address
+  - region
+  - business_unit
+  - sub_business_unit
+  - domain
   - os_class
   - vcenter_site
+  - vcenter_folder
   - extra_drives
   - drive_sizes
 
@@ -126,6 +133,8 @@ Template Variables
   - dynatrace_hostgroup
   
 - windows-additional
+  - business_unit
+  - support_group
   - install_net35
   - install_winzip
   - install_beyondcompare

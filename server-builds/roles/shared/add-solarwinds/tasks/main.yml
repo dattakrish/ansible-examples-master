@@ -1,0 +1,10 @@
+---
+
+  - name: Deploy PowerShell file if changed
+    win_copy:
+      src: Add_Server_Solarwinds.ps1
+      dest: D:\Repository\server-build\
+
+  - name: Run Add_Server_Solarwinds.ps1
+    win_shell: "D:\\Repository\\server-build\\Add_Server_Solarwinds.ps1 -serverName  \"{{ server_name }}\" -ipAddress \"{{ primary_ip_address }}\""
+    ignore_errors: yes

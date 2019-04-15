@@ -7,7 +7,7 @@
       username: "{{ vcenter_username }}"    
       password: "{{ vcenter_password }}"
       validate_certs: False
-      folder: "/{{ vcenter_datacenter }}/vm/{{ vcenter_folder | replace(backslash, '/') }}"
+      folder: "/{{ vcenter_datacenter }}/vm/New Builds"
       state: poweredon
       datacenter: "{{ vcenter_datacenter }}"
       cluster: "{{ vcenter_cluster }}"

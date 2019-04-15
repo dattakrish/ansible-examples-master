@@ -22,21 +22,25 @@
     - name: Define vCenter for Fairham Vblock
       set_fact:
         vcenter_hostname: ukfhpvbvcs01.uk.experian.local
+        vcenter_datacenter: Fairham Vblock
       when: vcenter_site == 'Fairham Vblock'
 
     - name: Define vCenter for Bulwell Vblock
       set_fact:
         vcenter_hostname: ukblpvbvcs01.uk.experian.local
+        vcenter_datacenter: Bulwell Vblock
       when: vcenter_site == 'Bulwell Vblock'
 
     - name: Define vCenter for Fairham Synergy
       set_fact:
         vcenter_hostname: ukfhpcbvcs02.uk.experian.local
+        vcenter_datacenter: Fairham
       when: vcenter_site == 'Fairham Synergy'
 
     - name: Define vCenter for Bulwell Synergy
       set_fact:
         vcenter_hostname: ukblpcbvcs02.uk.experian.local
+        vcenter_datacenter: Bulwell
       when: vcenter_site == 'Bulwell Synergy'
  
     - include_role:
@@ -46,9 +50,12 @@
         name: shared/add-vmware-disk
       when: extra_drives
 
- #   - include_role:
- #       name: windows/add-visionapp
- #     when: os_class == 'Windows'
+    - include_role:
+        name: shared/add-solarwinds
+
+    - include_role:
+        name: windows/add-visionapp
+      when: os_class == 'Windows Server'
 
     - set_fact:
         host_success: true

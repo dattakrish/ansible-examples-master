@@ -1,44 +1,59 @@
 ---
 
-  - name: Define location of SQL 2016 Enterprise
+  # Define SQL source files  
+  - name: Define Source Files for SQL version 2016Ent
     set_fact:
-      src_sql_path: "{{ src_sql_2016_ent_path }}"
-      src_sql_zip: "{{ src_sql_2016_ent_zip }}"
+      sql_source_path: "{{ src_sql_2016_ent_path }}"
     when: sql_version == 'SQL2016Ent'
 
-  - name: Define location of SQL 2016 Standard
+  - name: Define Source Files for SQL version 2016Std
     set_fact:
-      src_sql_path: "{{ src_sql_2016_std_path }}"
-      src_sql_zip: "{{ src_sql_2016_std_zip }}"
+      sql_source_path: "{{ src_sql_2016_std_path }}"
     when: sql_version == 'SQL2016Std'
 
-  - name: Define location of SQL 2017 Enterprise
+  - name: Define Source Files for SQL version 2016Dev
     set_fact:
-      src_sql_path: "{{ src_sql_2017_ent_path }}"
-      src_sql_zip: "{{ src_sql_2017_ent_zip }}"
+      sql_source_path: "{{ src_sql_2016_dev_path }}"
+    when: sql_version == 'SQL2016Dev'
+
+  - name: Define Source Files for SQL version 2017Ent
+    set_fact:
+      sql_source_path: "{{ src_sql_2017_ent_path }}"
     when: sql_version == 'SQL2017Ent'
 
-  - name: Define location of SQL 2017 Standard
+  - name: Define Source Files for SQL version 2017Std
     set_fact:
-      src_sql_path: "{{ src_sql_2017_std_path }}"
-      src_sql_zip: "{{ src_sql_2017_std_zip }}"
+      sql_source_path: "{{ src_sql_2017_std_path }}"
     when: sql_version == 'SQL2017Std'
+  
+  - name: Define Source Files for SQL version 2017Dev
+    set_fact:
+      sql_source_path: "{{ src_sql_2017_dev_path }}"
+    when: sql_version == 'SQL2017Dev'
 
-  - name: Create temporary SQL directory
-    win_file:
-      path: C:\tmp\sql
-      state: directory
+  # Define SXS Source
+  - name: Define SXS Source for 2012 R2
+    set_fact:
+      sxs_source: "{{ src_sxs_2012r2 }}"
+    when: "'2012' in ansible_os_name"
 
-  - name: Copy source directory for {{ sql_version }}
+  - name: Define SXS Source for 2016
+    set_fact:
+      sxs_source: "{{ src_sxs_2016 }}"
+    when: "'2016' in ansible_os_name"
+
+  # Begin Tasks
+  - name: Copy Source Files Directory
     win_copy:
-      src: "{{ src_sql_path }}"
-      dest: C:\tmp\sql
+      src: "{{ sql_source_path }}"
+      dest: C:\tmp\SQL
+      state: present
 
-  - name: Copy 2016 SXS Directory
+  - name: Copy SXS Directory
     win_copy:
-      src: "{{ src_sxs_2016 }}"
-      dest: C:\tmp\sql
-      force: no
+      src: "{{ sxs_source }}"
+      dest: C:\tmp
+      state: present
 
   - name: Install AD PS Module
     win_feature:
@@ -46,24 +61,163 @@
       source: C:\tmp\sxs
       state: present
 
-  - name: Copy PowerShell to server
+  - name: Copy SQLServiceAccCreation.ps1 to server
     win_copy:
-      src: SQL_Install.ps1
-      dest: C:\tmp\sql
+      src: SQLServiceAccCreation.ps1
+      dest: c:\tmp\
+
+  - name: copy SQL_LocalPreReq.ps1 to server
+    win_copy:
+      src: SQL_LocalPreReq.ps1
+      dest: c:\tmp\
+
+  # Define Zip File source
+  - name: Define Zip Source 2016Ent
+    set_fact:
+      sql_source_zip: "{{ src_sql_2016_ent_zip }}"
+    when: sql_version == 'SQL2016Ent'
+
+  - name: Define Zip Source 2016Std
+    set_fact:
+      sql_source_zip: "{{ src_sql_2016_std_zip }}"
+    when: sql_version == 'SQL2016Std'
+
+  - name: Define Zip Source 2016Dev
+    set_fact:
+      sql_source_zip: "{{ src_sql_2016_dev_zip }}"
+    when: sql_version == 'SQL2016Dev'
+
+  - name: Define Zip Source 2017Ent
+    set_fact:
+      sql_source_zip: "{{ src_sql_2017_ent_zip }}"
+    when: sql_version == 'SQL2017Ent'
+
+  - name: Define Zip Source 2017Std
+    set_fact:
+      sql_source_zip: "{{ src_sql_2017_std_zip }}"
+    when: sql_version == 'SQL2017Std'
+
+  - name: Define Zip Source 2017Dev
+    set_fact:
+      sql_source_zip: "{{ src_sql_2017_dev_zip }}"
+    when: sql_version == 'SQL2017Dev'
 
   - name: Unzip SQL Files
     win_unzip:
-      src: c:\tmp\sql\{{ sql_version }}\{{src_sql_zip}}
-      dest: c:\tmp\SQL2016
-      creates: c:\tmp\SQL2016\SQL_2016_Ent_x64_inc_SP2
+      src: "{{ sql_source_zip }}"
+      dest: c:\tmp\SQL\SQL_Install
 
-  - name: Installing {{ sql_version }} using PowerShell
-    win_shell: "C:\\tmp\\sql\\SQL_Install.ps1 -cmdFile \"{{ cfg_sql_cmd_File }}\" -workingDir \"{{ cfg_sql_working_Dir }}\" -installTemplate \"{{ cfg_sql_install_Template }}\" -sqladminKey \"{{ cfg_sql_sqladmin_Key }}\" -sqladminPw \"{{ cfg_sql_sqladmin_Pw }}\" -keyFile \"{{ cfg_sql_key_File }}\" -txtFile \"{{ cfg_sql_txt_File }}\" -sqlCollation \"{{ sql_collation }}\""
-    register: sql_result
+  # Define INI File
+  - name: Define INI file 2016Ent
+    set_fact:
+      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\SQL2016Standalone.ini"
+    when: sql_version == 'SQL2016Ent'
 
-  - name: Delete temporary SQL directory
+  - name: Define INI file 2016Dev
+    set_fact:
+      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Dev_x64_inc_SP2\\SQL2016Standalone.ini"
+    when: sql_version == 'SQL2016Dev'
+
+  - name: Define INI file 2016Std
+    set_fact:
+      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\SQL2016Standalone.ini"
+    when: sql_version == 'SQL2016Std'
+
+  - name: Define INI file 2017Ent
+    set_fact:
+      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\SQL2017Standalone.ini"
+    when: sql_version == 'SQL2017Ent'
+
+  - name: Define INI file 2017Std
+    set_fact:
+      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\SQL2017Standalone.ini"
+    when: sql_version == 'SQL2017Std'
+
+  - name: Define INI file 2017Dev
+    set_fact:
+      install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Dev_x64_RTM\\SQL2017Standalone.ini"
+    when: sql_version == 'SQL2017Dev'
+
+  # Define working path
+  - name: Define working directory 2016Ent
+    set_fact:
+      working_Dir: C:\tmp\SQL\SQL_Install\SQL_2016_Ent_x64_inc_SP2\setup.exe
+    when: sql_version == 'SQL2016Ent'
+  
+  - name: Define working directory 2016Dev
+    set_fact:
+      working_Dir: C:\tmp\SQL\SQL_Install\SQL_2016_Dev_x64_inc_SP2\setup.exe
+    when: sql_version == 'SQL2016Dev'
+
+  - name: Define working directory 2016Std
+    set_fact:
+      working_Dir: C:\tmp\SQL\SQL_Install\SQL_2016_Std_x64_inc_SP2\setup.exe
+    when: sql_version == 'SQL2016Std'
+
+  - name: Define working directory 2017Ent
+    set_fact:
+      working_Dir: C:\tmp\SQL\SQL_Install\SQL_2017_Ent_x64_RTM\setup.exe
+    when: sql_version == 'SQL2017Ent'
+
+  - name: Define working directory 2017Dev
+    set_fact:
+      working_Dir: C:\tmp\SQL\SQL_Install\SQL_2017_Dev_x64_RTM\setup.exe
+    when: sql_version == 'SQL2017Dev'
+
+  - name: Define working directory 2017Std
+    set_fact:
+      working_Dir: C:\tmp\SQL\SQL_Install\SQL_2017_Std_x64_RTM\setup.exe
+    when: sql_version == 'SQL2017Std'
+
+  # Run Service Account Powershell
+  - name: Run SQLServiceAccCreation.ps1
+    win_shell: "C:\\tmp\\SQLServiceAccCreation.ps1 -sqlCollation \"{{ sql_collation }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
+    become: yes
+    become_user: SYSTEM
+    become_method: runas
+
+  - pause:
+      seconds: 10
+
+  # Run Service Account Powershell
+  - name: Run SQL_LocalPreReq.ps1
+    win_shell: "C:\\tmp\\SQL_LocalPreReq.ps1"
+
+  - pause: 
+      seconds: 10
+
+  # Install SQL
+  - name: Install SQL
+    win_package:
+      path: "{{ working_Dir }}"
+      arguments: /configurationfile="{{ install_template }}"
+      creates_service: "SQL Server (MSSQLSERVER)"
+      state: present
+    async: 1800
+    poll: 30
+    register: installresult
+    become: yes
+    become_user: SYSTEM
+    become_method: runas
+   
+  - fail:
+      msg: "SQL has failed to install."
+    when: installresult is failed
+
+  - name: Remove SQL Source Files
     win_file:
-      path: C:\tmp\sql
+      path: C:\tmp\SQL
       state: absent
-    when: sql_result is success
-    
+    when: installresult is success
+
+  - name: Remove SQL_LocalPreReq.ps1
+    win_file:
+      path: C:\tmp\SQL_LocalPreReq.ps1
+      state: absent
+    when: installresult is success
+
+  - name: Remove SQLServiceAccCreation.ps1
+    win_file:
+      path: C:\tmp\SQLServiceAccCreation.ps1
+      state: absent
+    when: installresult is success

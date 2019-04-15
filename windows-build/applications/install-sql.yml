@@ -153,65 +153,51 @@
         install_template: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Dev_x64_RTM\\SQL2017Standalone.ini"
     when: sql_ver == 'SQL2017Dev'
 
-#Define CMD File {{ cmd_File }}
-  - name: Define CMD File 2016
-    set_fact:
-        cmd_File: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
-    when: sql_ver == 'SQL2016Ent' or sql_ver == 'SQL2016Std' or sql_ver == 'SQL2016Dev'
-
-  - name: Define CMD File 2017
-    set_fact:
-        cmd_File: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
-    when: sql_ver == 'SQL2017Ent' or sql_ver == 'SQL2017Std' or sql_ver == 'SQL2017Dev'
+# #Define CMD File {{ cmd_File }}
+#   - name: Define CMD File 2016
+#     set_fact:
+#       cmd_File: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
+#     when: "'SQL2016' in sql_ver"
+  
+#   - name: Define CMD File 2017
+#     set_fact:
+#       cmd_File: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
+#     when: "'SQL2017' in sql_ver "
 
 #Define working path {{ working_dir }}
   - name: Define working directory 2016Ent
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\"
+        working_Dir: C:\tmp\SQL\SQL_Install\SQL_2016_Ent_x64_inc_SP2\setup.exe
     when: sql_ver == 'SQL2016Ent'
   
   - name: Define working directory 2016Dev
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Dev_x64_inc_SP2\\"
+        working_Dir: C:\tmp\SQL\SQL_Install\SQL_2016_Dev_x64_inc_SP2\setup.exe
     when: sql_ver == 'SQL2016Dev'
 
   - name: Define working directory 2016Std
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\"
+        working_Dir: C:\tmp\SQL\SQL_Install\SQL_2016_Std_x64_inc_SP2\setup.exe
     when: sql_ver == 'SQL2016Std'
 
   - name: Define working directory 2017Ent
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\"
+        working_Dir: C:\tmp\SQL\SQL_Install\SQL_2017_Ent_x64_RTM\setup.exe
     when: sql_ver == 'SQL2017Ent'
 
   - name: Define working directory 2017Dev
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Dev_x64_RTM\\"
+        working_Dir: C:\tmp\SQL\SQL_Install\SQL_2017_Dev_x64_RTM\setup.exe
     when: sql_ver == 'SQL2017Dev'
 
   - name: Define working directory 2017Std
     set_fact:
-        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\"
+        working_Dir: C:\tmp\SQL\SQL_Install\SQL_2017_Std_x64_RTM\setup.exe
     when: sql_ver == 'SQL2017Std'
-
-# ## Disable UAC
-#   - name: turn UAC off
-#     win_regedit:
-#       path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
-#       name: EnableLUA
-#       data: 0
-#       type: dword
-#       state: present
-#     register: uac_result
-
-#   - name: reboot after disabling UAC
-#     win_reboot:
-#     when: uac_result is changed
 
 ## Run Service Account Powershell
   - name: Run SQLServiceAccCreation.ps1
-    win_shell: "{{ powershellPath1 }} -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
+    win_shell: "{{ powershellPath1 }} -sqlCollation \"{{ sql_Collation }}\" -installTemplate \"{{ install_template }}\" -businessunit \"{{ business_unit }}\" -supportgroup \"{{ support_group }}\""
     become: yes
     become_user: SYSTEM
 
@@ -219,29 +205,43 @@
       seconds: 10
 
 ## Run Service Account Powershell
-  - name: Run SQLServiceAccCreation.ps1
-    win_shell: "{{ powershellPath }}"
+  - name: Run SQL_LocalPreReq.ps1
+    win_shell: "{{ powershellPath }}" ## -cmdFile \"{{ cmd_File }}\" -workingDir \"{{ working_Dir }}\""
 
   - pause: 
-      minutes: 10
+      seconds: 10
 
-##Check for SQL Service "Started"
-  - name: check for SQL Service
-    win_service:
-      name: "SQL Server (MSSQLSERVER)"
-      state: started
-    register: serviceresult
-    ignore_errors: yes
-    until: serviceresult is success
-    retries: 6
-    delay: 300
-    
+##install SQL
+  - name: Install SQL
+    win_package:
+      path: "{{ working_Dir }}"
+      arguments: /configurationfile="{{ install_template }}"
+      creates_service: "SQL Server (MSSQLSERVER)"
+      state: present
+    become: yes
+    become_user: SYSTEM
+    async: 1800
+    poll: 30
+    register: installresult
+   
   - fail:
-      msg: "SQL Services have failed to start, installation unsuccesful."
-    when: serviceresult is failed
+      msg: "SQL has failed to install."
+    when: installresult is failed
 
   - name: Remove Source Files
     win_copy:
-     src: "{{ destPath }}"
+      src: "{{ destPath }}"
+      state: absent
+    when: installresult is success
+
+  - name: Remove PS Source File
+    win_copy:
+     src: "{{ powershellPath }}"
      state: absent
-    when: serviceresult is success
+    when: installresult is success
+
+  - name: Remove PS Source File
+    win_copy:
+     src: "{{ powershellPath1 }}"
+     state: absent
+    when: installresult is success

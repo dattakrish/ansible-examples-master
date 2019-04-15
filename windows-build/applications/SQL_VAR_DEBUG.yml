@@ -1,0 +1,53 @@
+
+---
+- name: SQL Install
+  hosts: all
+  gather_facts: yes
+  become_method: runas
+  tasks:
+
+
+#Define CMD File {{ cmd_File }}
+  - name: Define CMD File 2016
+    set_fact:
+      cmd_File: "C:\\tmp\\SQL\\SQL2016Standalone.cmd"
+    when: "'SQL2016' in sql_ver"
+  
+  - name: Define CMD File 2017
+    set_fact:
+      cmd_File: "C:\\tmp\\SQL\\SQL2017Standalone.cmd"
+    when: "'SQL2017' in sql_ver "
+
+#Define working path {{ working_dir }}
+  - name: Define working directory 2016Ent
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Ent_x64_inc_SP2\\"
+    when: sql_ver == 'SQL2016Ent'
+  
+  - name: Define working directory 2016Dev
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Dev_x64_inc_SP2\\"
+    when: sql_ver == 'SQL2016Dev'
+
+  - name: Define working directory 2016Std
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2016_Std_x64_inc_SP2\\"
+    when: sql_ver == 'SQL2016Std'
+
+  - name: Define working directory 2017Ent
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Ent_x64_RTM\\"
+    when: sql_ver == 'SQL2017Ent'
+
+  - name: Define working directory 2017Dev
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Dev_x64_RTM\\"
+    when: sql_ver == 'SQL2017Dev'
+
+  - name: Define working directory 2017Std
+    set_fact:
+        working_Dir: "C:\\tmp\\SQL\\SQL_Install\\SQL_2017_Std_x64_RTM\\"
+    when: sql_ver == 'SQL2017Std'
+
+  - debug:
+        var: cmd_File

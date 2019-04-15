@@ -1,9 +1,11 @@
 ###########################################################################
-#   SSC Automation - Windows Build - GSA User Group Creation - dsadd
+#   SSC Automation - Windows Build - GSA User Group Creation
 #   Confluence:
 #   Create GSA User Groups in Domain
-#   Author: Kristiyan Nikolov
-#   Creation Date: 28/03/19
+#   Author: Barry Field
+#   Updated by Kristiyan Nikolov
+#   Creation Date: 07/01/19
+#   Last Update Date: 10/04/19
 ###########################################################################
 #Domain Controllers
 #experianukdclist=( corp-not-ukdc09 corp-not-ukdc02 corp-not-ukdc10 )
@@ -17,23 +19,126 @@
   gather_facts: no
   tasks:
 
-#  - name: Test connection to DC1
-#    win_ping:
-#    ignore_unreachable: yes
-#    register: result1
+  - name: Test connection to DC1
+    win_ping:
+    ignore_unreachable: yes
+    register: result1
 
-#  - debug:
-#      var: result1
+  - debug:
+      var: result1
 
   - name: Create Administrator Group
-#    win_shell: dsadd group cn={{ adm_group }},{{ ou }} -desc "Windows Server Local Administrator access group"
-#    when: result1 is success
-    win_shell: hostname 
+    win_domain_group:
+      state: present
+      name: "{{ adm_group }}"
+      description: "Windows Server Local Administrator access group"
+      scope: global
+      organizational_unit: "{{ ou }}"
+    when: result1 is success
 
-#  - name: Create Remote Desktop istrator Group
- #   win_shell: dsadd group cn={{ std_group }},{{ ou }} -desc "Windows Server Remote Desktop access group"
- #   when: result1 is success
+  - name: Create Remote Desktop Group
+    win_domain_group:
+     state: present
+     name: "{{std_group}}"
+     description: "Windows Server Local RDP access group"
+     scope: global
+     organizational_unit: "{{ ou }}"
+    when: result1 is success
 
-  #- fail:
-   #   msg: "No live Domain Contoller could be found."
-    #when: hostvars[dc1]['result1'] is failed and hostvars[dc2]['result2'] is failed
+  - name: Check if user exists
+    win_domain_user:
+      name: "{{ lanid }}"
+      state: query
+    register: user_result
+    ignore_errors: yes
+
+  - fail:
+      msg: "Can`t find user in Active Directory"
+    when: not user_result.sid
+
+
+  - name: Add user to admin group
+    win_domain_user:
+      name: "{{ lanid }}"
+      state: present
+      groups:
+        - "{{ adm_group }}"
+      groups_action: add
+    when: final_group == "adm"
+     
+  - name: Add user to remote desktop group
+    win_domain_user:
+      name: "{{ lanid }}"
+      state: present
+      groups:
+        - "{{ std_group }}"
+      groups_action: add
+    when: final_group == "std"
+
+- name: AD Group Creation Domain Controller Selection 2
+  hosts: "{{ dc2 }}"
+  gather_facts: no
+  tasks:
+
+  - name: Test connection to DC2
+    win_ping:
+    register: result2
+    when: hostvars[dc1]['result1'] is failed
+
+  - debug:
+      var: result2
+
+  - name: Create Administrator Group
+    win_domain_group:
+      state: present
+      name: "{{ adm_group }}"
+      description: "Windows Server Local Administrator access group"
+      scope: global
+      organizational_unit: "{{ ou }}"
+    when: hostvars[dc1]['result1'] is failed
+
+  - name: Create Remote Desktop Group
+    win_domain_group:
+     state: present
+     name: "{{std_group}}"
+     description: "Windows Server Local RDP access group"
+     scope: global
+     organizational_unit: "{{ ou }}"
+    when: hostvars[dc1]['result1'] is failed
+
+  - name: Check if user exists
+    win_domain_user:
+      name: "{{ lanid }}"
+      state: query
+    register: user_result
+    ignore_errors: yes
+
+  - fail:
+      msg: "Can`t find user in Active Directory"
+    when: not user_result.sid
+
+  - name: Add user to admin group
+    win_domain_user:
+      name: "{{ lanid }}"
+      state: present
+      groups:
+        - "{{ adm_group }}"
+      groups_action: add
+    when: final_group == "adm"
+     
+  - name: Add user to remote desktop group
+    win_domain_user:
+      name: "{{ lanid }}"
+      state: present
+      groups:
+        - "{{ std_group }}"
+      groups_action: add
+    when: final_group == "std"
+
+  - fail:
+      msg: "No live Domain Contoller could be found."
+    when: hostvars[dc1]['result1'] is failed and hostvars[dc2]['result2'] is failed
+
+
+
+    

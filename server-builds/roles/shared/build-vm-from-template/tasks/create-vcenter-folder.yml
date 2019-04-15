@@ -1,15 +1,57 @@
 ---
 
-  - name: Create vCenter folder [{{ vcenter_folder }}]
+  - name: Make sure New Builds folder exists
     vcenter_folder:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
       password: "{{ vcenter_password }}"
       datacenter: "{{ vcenter_datacenter }}"
-      folder_name: "{{ vcenter_folder }}"
+      folder_name: New Builds
       folder_type: vm
       validate_certs: False
       state: present
     register: vm_folder_creation_result
     delegate_to: localhost
 
+  # - name: Create vCenter folder parent [{{ vcenter_folder.split(backslash)[0] }}]
+  #   vcenter_folder:
+  #     hostname: "{{ vcenter_hostname }}"
+  #     username: "{{ vcenter_username }}"
+  #     password: "{{ vcenter_password }}"
+  #     datacenter: "{{ vcenter_datacenter }}"
+  #     folder_name: "{{ vcenter_folder.split(backslash)[0] }}"
+  #     folder_type: vm
+  #     validate_certs: False
+  #     state: present
+  #   register: vm_folder_creation_result
+  #   delegate_to: localhost
+  #   when: vcenter_folder.split(backslash)[1]
+
+  # - name: Create vCenter folder child [{{ vcenter_folder.split(backslash)[1] }}]
+  #   vcenter_folder:
+  #     hostname: "{{ vcenter_hostname }}"
+  #     username: "{{ vcenter_username }}"
+  #     password: "{{ vcenter_password }}"
+  #     datacenter: "{{ vcenter_datacenter }}"
+  #     folder_name: "{{ vcenter_folder.split(backslash)[1] }}"
+  #     parent_folder: "{{ vcenter_folder.split(backslash)[0] }}"
+  #     folder_type: vm
+  #     validate_certs: False
+  #     state: present
+  #   register: vm_folder_creation_result
+  #   delegate_to: localhost
+  #   when: vcenter_folder.split(backslash)[1]
+
+  # - name: Create vCenter folder [{{ vcenter_folder }}]
+  #   vcenter_folder:
+  #     hostname: "{{ vcenter_hostname }}"
+  #     username: "{{ vcenter_username }}"
+  #     password: "{{ vcenter_password }}"
+  #     datacenter: "{{ vcenter_datacenter }}"
+  #     folder_name: "{{ vcenter_folder }}"
+  #     folder_type: vm
+  #     validate_certs: False
+  #     state: present
+  #   register: vm_folder_creation_result
+  #   delegate_to: localhost
+  #   when: not vcenter_folder.split(backslash)[1]

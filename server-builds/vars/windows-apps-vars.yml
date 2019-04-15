@@ -94,18 +94,15 @@ src_config2016_path: /resources/BladeLogic/Storage/file_deploy/Windows/Windows_2
 src_nvspbind_path: /resources/BladeLogic/Storage/file_deploy/Windows/nvspbind/
 
 # SQL
-src_sql_2016_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Ent
-src_sql_2016_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Std
-src_sql_2017_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Ent
-src_sql_2017_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Std
-src_sql_2016_ent_zip: SQL_2016_Ent_x64_inc_SP2.zip
-src_sql_2016_std_zip: 
-src_sql_2017_ent_zip: 
-src_sql_2017_std_zip: 
-cfg_sql_destPath: "c:\\tmp\\SQL"
-cfg_sql_zipDest: "c:\\tmp\\SQL"
-cfg_sql_working_Dir: "c:\\tmp\\SQL\\SQL_Install"
-cfg_sql_sqladmin_Key: "C:\\tmp\\SQL\\Keys\\SQLAdmin.key"
-cfg_sql_sqladmin_Pw: "C:\\tmp\\SQL\\Keys\\Password.txt"
-cfg_sql_key_File: "C:\\tmp\\SQL\\Keys\\ansiblead.key"
-cfg_sql_txt_File: "C:\\tmp\\SQL\\Keys\\ansiblead.txt"
+src_sql_2016_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Ent/
+src_sql_2016_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Std/
+src_sql_2016_dev_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Dev/
+src_sql_2017_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Ent/
+src_sql_2017_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Std/
+src_sql_2017_dev_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Dev/
+src_sql_2016_ent_zip: "c:\\tmp\\SQL\\SQL_2016_Ent_x64_inc_SP2.zip"
+src_sql_2016_std_zip: "c:\\tmp\\SQL\\SQL_2016_Std_x64_inc_SP2.zip"
+src_sql_2016_dev_zip: "c:\\tmp\\SQL\\SQL_2016_Dev_x64_inc_SP2.zip"
+src_sql_2017_ent_zip: "c:\\tmp\\SQL\\SQL_2017_Ent_x64_RTM.zip"
+src_sql_2017_std_zip: "c:\\tmp\\SQL\\SQL_2017_Std_x64_RTM.zip"
+src_sql_2017_dev_zip: "c:\\tmp\\SQL\\SQL_2017_Dev_x64_RTM.zip"
