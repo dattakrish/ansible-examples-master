@@ -54,7 +54,7 @@
 
   - fail:
       msg: "Can`t find user in Active Directory"
-    when: not user_result.sid
+    when: "'FAILED' in user_result.stderr"
 
 
   - name: Add user to admin group

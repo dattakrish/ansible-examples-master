@@ -1,0 +1,23 @@
+---
+
+  - name: Copy Source Files Directory
+    win_copy:
+      src: "{{ src_sqlstudio_path }}"
+      dest: C:\tmp\SQL_Studio\
+      state: present
+    register: sqlstudio_copyresult
+
+  - name: Install SQL Studio
+    win_package:
+      path: "{{ src_sqlstudio_dest }}"
+      arguments: /install /quiet /norestart
+      product_id: "{{ src_sqlstudio_id }}"
+      state: present
+    when: sqlstudio_copyresult is success
+    register: sqlstudio_installresult
+
+  - name: Removing Install Media
+    win_file:
+      path: C:\tmp\SQL_Studio
+      state: absent
+    when: sqlstudio_installresult is success

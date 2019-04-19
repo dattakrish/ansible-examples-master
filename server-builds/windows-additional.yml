@@ -60,3 +60,6 @@
       name: windows/install-sql
     when: install_sql
 
+  - include_role:
+      name: windows/install-sqlstudio
+    when: install_sql

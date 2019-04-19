@@ -6,9 +6,9 @@
 - hosts: all
   tasks:
 
-##################################################################################
-###### Check if Backup adapter exists and register backup_required variable ######
-##################################################################################
+# Create an Array to store results
+  - name: Create Results Array
+    set_fact: Service_Acceptance_Results="[ 'Service Acceptance Results' ]"
 
   - name: Check Backup Network Adapter exists
     win_shell: |
@@ -26,10 +26,6 @@
     set_fact:
       backup_required: false
     when: backup_check.rc != 0
-
-##################################################################################
-########## Check RDP and Admin Accounts have been added to the server ############
-##################################################################################
 
   # Work out short domain name from full doamin name and store as fact
   - name: Define short name for EXPERIANUK
@@ -76,28 +72,23 @@
 
 # Check if the Check local Admin Group membership changed anything
   - name: Check if the Check local Admin Group membership changed anything
-    fail:
-      msg: "Group Doesnt Exist {{ admin_account }}"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local Admin Group Exists = Failed' ]"
     when: local_admin_group.changed == true
+
+  - name: Admin account exists
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local Admin Group Exists = Passed' ]"
+    when: local_admin_group.changed == false
 
 # Check if the Check local Admin Group membership changed anything
   - name: Check if the Check local RDP Group membership changed anything
-    fail:
-      msg: "Group Doesnt Exist {{ rdp_account }}"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local RDP Group Exists = Failed' ]"
     when: local_rdp_group.changed == true
 
-# Success Debug
-  - name: Success Debug
-    debug:
-      msg: "Both the Admin and RDP groups exist on the server"
-    when:
-      - local_admin_group.changed == false
-      - local_rdp_group.changed == false
+  - name: RDP Account Exists
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local RDP Group Exists = Passed' ]"
+    when: local_rdp_group.changed == false
 
-##################################################################################
-############# Check that interfaces called Primary and Backup exist ##############
-##################################################################################
-  
+# CHeck Primary Network Adapter Exists
   - name: Check Primary Network Adapter exists
     win_shell: |
       Get-NetAdapter -Name "Primary" –ErrorAction SilentlyContinue
@@ -105,9 +96,12 @@
     ignore_errors: yes
     check_mode: no
 
+  - name: Pass if Primary Network Adapter found
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Primary Adapter Exists = Passed' ]"
+    when: primary_nic.rc == 0
+
   - name: Fail if no Primary Network Adapter found
-    fail:
-      msg: "Primary NIC not found!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Primary Adapter Exists = Failed' ]"
     when: primary_nic.rc != 0
 
 # Backup Required Block
@@ -121,18 +115,17 @@
       ignore_errors: yes
       check_mode: no
 
+    - name: Pass if Backup Network Adapter found
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Adapter Exists = Passed' ]"
+      when: backup_nic.rc == 0
+
     - name: Fail if no Backup Network Adapter found
-      fail:
-        msg: "Backup NIC not found!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Adapter Exists = Failed' ]"
       when: backup_nic.rc != 0
 
 # Backup Required Block end
     when: 
       - backup_required
-
-##################################################################################
-####################### Checks required accounts exist ###########################
-##################################################################################
 
 # Check that CCAdmin Account exists and is a member of Administrators
   - name: Check that CCAdmin Account exists and is a member of Administrators
@@ -144,9 +137,13 @@
     register: CCAdmin_user
 
 # Check if the Check local Admin Group membership changed anything
-  - name: Check if the Check CCAdmin changed anything
-    fail:
-      msg: "User Doesnt Exist CCAdmin"
+  - name: Check if the Check CCAdmin changed is false
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CCAdmin Account Exists = Passed' ]"
+    when: CCAdmin_user.changed == false
+
+# Check if the Check local Admin Group membership changed anything
+  - name: Check if the Check CCAdmin changed is true
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CCAdmin Account Exists = Failed' ]"
     when: CCAdmin_user.changed == true
 
 # Check that the Arcsight Account is a member of the event log readers group
@@ -178,10 +175,13 @@
     when: "'ipani' in ansible_domain"
 
 # Check if the Check Arcsight changed anything
-  - name: Check if the Check Arcsight changed anything
-    fail:
-      msg: "User Doesnt Exist {{ short_domain }}\\Arcsight"
+  - name: Check if the Check Arcsight changed true
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Arcsight Account Exists = Failed' ]"
     when: arcsight_user.changed == true
+
+  - name: Check if the Check Arcsight changed false
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Arcsight Account Exists = Passed' ]"
+    when: arcsight_user.changed == false
 
 # Check that SS000DA exists and is in administrators group.
   - name: Check that SS000DA Account exists and is a member of Administrators
@@ -193,10 +193,13 @@
     register: ss000da_user
 
 # Check if the Check SS000DA changed anything
-  - name: Check if the Check SS000DA changed anything
-    fail:
-      msg: "User Doesnt Exist SS000DA"
+  - name: Check if the Check SS000DA changed true
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA Account Exists = Failed' ]"
     when: ss000da_user.changed == true
+
+  - name: Check if the Check SS000DA changed false
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA Account Exists = Passed' ]"
+    when: ss000da_user.changed == false
 
 # GDC Block
   - name: Block for executing when GDC
@@ -212,10 +215,13 @@
       register: sndlgdc_user
 
 # Check if the Check sndlgdc changed anything
-    - name: Check if the Check sndlgdc changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\sndlgdc"
+    - name: Check if the Check sndlgdc changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndlgdc Account Exists = Failed' ]"
       when: sndlgdc_user.changed == true
+
+    - name: Check if the Check sndlgdc changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndlgdc Account Exists = Passed' ]"
+      when: sndlgdc_user.changed == false
 
 # Check that ADMIN EGOC Operations exists and is in administrators group.
     - name: Check that ADMIN EGOC Operations Account exists and is a member of Administrators GDC
@@ -227,10 +233,13 @@
       register: EGOC_OP_user
 
 # Check if the Check ADMIN EGOC Operations changed anything
-    - name: Check if the Check ADMIN EGOC Operations changed anything
-      fail:
-        msg: "UserDoesnt Exist {{ short_domain }}\\ADMIN EGOC Operations"
+    - name: Check if the Check ADMIN EGOC Operations changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN EGOC Operations Account Exists = Failed' ]"
       when: EGOC_OP_user.changed == true
+
+    - name: Check if the Check ADMIN EGOC Operations changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN EGOC Operations Account Exists = Passed' ]"
+      when: EGOC_OP_user.changed == false
 
 # Check that ADMIN DSG Engineers exists and is in administrators group.
     - name: Check that ADMIN DSG Engineers Account exists and is a member of Administrators GDC
@@ -239,13 +248,16 @@
         members:
           - "{{ short_domain }}\\ADMIN DSG Engineers"
         state: present
-      register: ADMIN_DSG_user
+      register: admin_dsg_user
 
 # Check if the Check ADMIN DSG Engineers changed anything
-    - name: Check if the Check ADMIN DSG Engineers changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\ADMIN DSG Engineers"
-      when: ADMIN_DSG_user.changed == true
+    - name: Check if the Check ADMIN DSG Engineers changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN DSG Engineers Account Exists = Failed' ]"
+      when: admin_dsg_user.changed == true
+
+    - name: Check if the Check ADMIN DSG Engineers changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN DSG Engineers Account Exists = Passed' ]"
+      when: admin_dsg_user.changed == false
 
 # GDC Block End
     when:
@@ -265,12 +277,15 @@
       register: sndipaniuk_user
 
 # Check if the Check sndipaniuk changed anything
-    - name: Check if the Check sndipaniuk changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\sndipaniuk"
+    - name: Check if the Check sndipaniuk changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndipaniuk Account Exists = Failed' ]"
       when: sndipaniuk_user.changed == true
 
-# Check that Domain Admins exists and is in administrators group.
+    - name: Check if the Check sndipaniuk changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndipaniuk Account Exists = Passed' ]"
+      when: sndipaniuk_user.changed == false
+
+# Check that Domain Admins Account exists and is a member of Administrators IPANIUK
     - name: Check that Domain Admins Account exists and is a member of Administrators IPANIUK
       win_group_membership:
         name: Administrators
@@ -280,10 +295,13 @@
       register: domain_admin_user
 
 # Check if the Check Domain Admins changed anything
-    - name: Check if the Check Domain Admins changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\Domain Admins"
+    - name: Check if the Check Domain Admins changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Exists = Failed' ]"
       when: domain_admin_user.changed == true
+
+    - name: Check if the Check Domain Admins changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Exists = Passed' ]"
+      when: domain_admin_user.changed == false
 
 # Check that ts command centre all users exists and is in administrators group.
     - name: Check that ts command centre all users Account exists and is a member of Administrators IPANIUK
@@ -295,10 +313,13 @@
       register: command_user
 
 # Check if the Check ts command centre all users changed anything
-    - name: Check if the Check ts command centre all users changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\ts command centre all users"
+    - name: Check if the Check ts command centre all users true anything
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Failed' ]"
       when: command_user.changed == true
+
+    - name: Check if the Check ts command centre all users false anything
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Passed' ]"
+      when: command_user.changed == false
 
 # Check that ts-t-hs-serverops exists and is in administrators group.
     - name: Check that ts-t-hs-serverops Account exists and is a member of Administrators IPANIUK
@@ -310,10 +331,13 @@
       register: ts_t_user
 
 # Check if the Check ts-t-hs-serverops changed anything
-    - name: Check if the Check ts-t-hs-serverops changed anything IPANIUK
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\ts-t-hs-serverops"
+    - name: Check if the Check ts-t-hs-serverops changed true IPANIUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Failed' ]"
       when: ts_t_user.changed == true
+
+    - name: Check if the Check ts-t-hs-serverops changed false IPANIUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Passed' ]"
+      when: ts_t_user.changed == false
 
 # IPANIUK Block End
     when:
@@ -333,10 +357,13 @@
       register: snduk_user
 
 # Check if the Check snduk changed anything
-    - name: Check if the Check snduk changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\snduk"
+    - name: Check if the Check snduk changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'snduk Account Exists = Failed' ]"
       when: snduk_user.changed == true
+
+    - name: Check if the Check snduk changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'snduk Account Exists = Passed' ]"
+      when: snduk_user.changed == false
 
 # Check that ts command centre all users exists and is in administrators group.
     - name: Check that ts command centre all users Account exists and is a member of Administrators EXPERIANUK
@@ -348,10 +375,13 @@
       register: command_user
 
 # Check if the Check ts command centre all users changed anything
-    - name: Check if the Check ts command centre all users changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\ts command centre all users"
+    - name: Check if the Check ts command centre all users changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Failed' ]"
       when: command_user.changed == true
+
+    - name: Check if the Check ts command centre all users changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Passed' ]"
+      when: command_user.changed == false
 
 # Check that ts-t-hs-serverops exists and is in administrators group.
     - name: Check that ts-t-hs-serverops Account exists and is a member of Administrators EXPERIANUK
@@ -363,10 +393,13 @@
       register: ts_t_user
 
 # Check if the Check ts-t-hs-serverops changed anything
-    - name: Check if the Check ts-t-hs-serverops changed anything
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\\ts-t-hs-serverops"
+    - name: Check if the Check ts-t-hs-serverops changed true
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Failed' ]"
       when: ts_t_user.changed == true
+
+    - name: Check if the Check ts-t-hs-serverops changed false
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Passed' ]"
+      when: ts_t_user.changed == false
 
 # Check that tdmukuser exists and is in administrators group.
     - name: Check that tdmukuser Account exists and is a member of Administrators EXPERIANUK
@@ -378,10 +411,13 @@
       register: tdmukuser_user
 
 # Check if the Check tdmukuser changed anything
-    - name: Check if the Check tdmukuser changed anything EXPERIANUK
-      fail:
-        msg: "User Doesnt Exist {{ short_domain }}\tdmukuser"
+    - name: Check if the Check tdmukuser changed true EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'tdmukuser Account Exists = Failed' ]"
       when: tdmukuser_user.changed == true
+
+    - name: Check if the Check tdmukuser changed false EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'tdmukuser Account Exists = Passed' ]"
+      when: tdmukuser_user.changed == false
 
 # EXPERIANUK Block End
     when:
@@ -390,34 +426,37 @@
 # Check that Domain Admins has been removed from local administrators GDC and EXPRIANUK Only
 
 # EXPERIANUK Block
-  - name: Block for executing when EXPERIANUK
-    block:
+#  - name: Block for executing when EXPERIANUK
+#    block:
 
 # Check that Domain Admins doesnt exists in administrators
-    - name: Check that Domain Admins Account doesnt exists in Administrators EXPERIANUK
-      win_group_membership:
-        name: Administrators
-        members:
-          - "{{ short_domain }}\\Domain Admins"
-        state: absent
-      register: Domain_Admins_user
+#    - name: Check that Domain Admins Account doesnt exists in Administrators EXPERIANUK
+#      win_group_membership:
+#        name: Administrators
+#        members:
+#          - "{{ short_domain }}\\Domain Admins"
+#        state: absent
+#      register: Domain_Admins_user
 
 # Check if the Check Domain Admins changed anything
-    - name: Check if the Check Domain Admins changed anything EXPERINAUK
-      fail:
-        msg: "{{ short_domain }}\\Domain Admins has not been removed from the local administrators group"
-      when: Domain_Admins_user.changed == true
+#    - name: Check if the Check Domain Admins changed true EXPERINAUK
+#      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Failed' ]"
+#      when: Domain_Admins_user.changed == true
+
+#    - name: Check if the Check Domain Admins changed false EXPERINAUK
+#      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Passed' ]"
+#      when: Domain_Admins_user.changed == false
 
 # EXPERIANUK Block End
-    when:
-      - ansible_windows_domain == 'uk.experian.local'
+#    when:
+#      - ansible_windows_domain == 'uk.experian.local'
 
 # GDC Block
-  - name: Block for executing when GDC
+  - name: Block for executing when GDC or EXPERIANUK
     block:
 
 # Check that Domain_Admins doesnt exists in administrators
-    - name: Check that Domain Admins Account doesnt exists in Administrators GDC
+    - name: Check that Domain Admins Account doesnt exists in Administrators GDC or EXPERIANUK
       win_group_membership:
         name: Administrators
         members:
@@ -426,14 +465,16 @@
       register: Domain_Admins_user
 
 # Check if the Check Domain Admins changed anything
-    - name: Check if the Check Domain Admins changed anything GDC
-      fail:
-        msg: "{{ short_domain }}\\Domain Admins has not been removed from the local administrators group"
+    - name: Check if the Check Domain Admins changed true GDC or EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Failed' ]"
       when: Domain_Admins_user.changed == true
 
+    - name: Check if the Check Domain Admins changed false GDC or EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Passed' ]"
+      when: Domain_Admins_user.changed == false
+
 # GDC Block End
-    when:
-      - ansible_windows_domain == 'gdc.local'
+    when: ansible_windows_domain == 'gdc.local' or ansible_windows_domain == 'uk.experian.local'
 
 #Check that various groups/users have been removed from local administrators in case server was created in the computers container EXPERIANUK Only
 
@@ -451,10 +492,13 @@
       register: Admin_ws_user
 
 # Check if the Check ADMIN Workstation Administration changed anything
-    - name: Check if the Check ADMIN Workstation Administration changed anything EXPERIANUK
-      fail:
-        msg: "{{ short_domain }}\\ADMIN Workstation Administration has not been removed from the local administrators group"
+    - name: Check if the Check ADMIN Workstation Administration changed ture EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Workstation Administration Account Doesnt Exists = Failed' ]"
       when: Admin_ws_user.changed == true
+
+    - name: Check if the Check ADMIN Workstation Administration changed false EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Workstation Administration Account Doesnt Exists = Passed' ]"
+      when: Admin_ws_user.changed == false
 
 # Check that CL-T-DskAdmin doesnt exists in administrators
     - name: Check that CL-T-DskAdmin Account doesnt exists in Administrators EXPERIANUK
@@ -467,9 +511,12 @@
 
 # Check if the Check CL-T-DskAdmin changed anything
     - name: Check if the Check CL-T-DskAdmin changed anything EXPERIANUK
-      fail:
-        msg: "{{ short_domain }}\\CL-T-DskAdmin has not been removed from the local administrators group"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CL-T-DskAdmin Account Doesnt Exists = Failed' ]"
       when: DskAdmin_user.changed == true
+
+    - name: Check if the Check CL-T-DskAdmin changed anything EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CL-T-DskAdmin Account Doesnt Exists = Passed' ]"
+      when: DskAdmin_user.changed == false
 
 # Check that Dept_BN_PCSupport doesnt exists in administrators
     - name: Check that Dept_BN_PCSupport Account doesnt exists in Administrators EXPERIANUK
@@ -482,9 +529,12 @@
 
 # Check if the Check Dept_BN_PCSupport changed anything
     - name: Check if the Check Dept_BN_PCSupport changed anything EXPERIANUK
-      fail:
-        msg: "{{ short_domain }}\\Dept_BN_PCSupport has not been removed from the local administrators group"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dept_BN_PCSupport Account Doesnt Exists = Failed' ]"
       when: PCSupport_user.changed == true
+
+    - name: Check if the Check Dept_BN_PCSupport changed anything EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dept_BN_PCSupport Account Doesnt Exists = Passed' ]"
+      when: PCSupport_user.changed == false
 
 # Check that SSMgmtWKUKSvc doesnt exists in administrators
     - name: Check that SSMgmtWKUKSvc Account doesnt exists in Administrators EXPERIANUK
@@ -496,18 +546,17 @@
       register: SSMgmtWKUKSvc_user
 
 # Check if the Check SSMgmtWKUKSvc changed anything
-    - name: Check if the Check SSMgmtWKUKSvc changed anything EXPERIANUK
-      fail:
-        msg: "{{ short_domain }}\\SSMgmtWKUKSvc has not been removed from the local administrators group"
+    - name: Check if the Check SSMgmtWKUKSvc changed true EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SSMgmtWKUKSvc Account Doesnt Exists = Failed' ]"
       when: SSMgmtWKUKSvc_user.changed == true
+
+    - name: Check if the Check SSMgmtWKUKSvc changed false EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SSMgmtWKUKSvc Account Doesnt Exists = Passed' ]"
+      when: SSMgmtWKUKSvc_user.changed == false
 
 # EXPERIANUK Block End
     when:
       - ansible_windows_domain == 'uk.experian.local'
-
-##################################################################################
-########################## Checks required Services ##############################
-##################################################################################
 
 #Check that Telnet Client feature is installed
   - name: Check Telnet Client
@@ -519,10 +568,13 @@
      include_management_tools: yes
     register: telnet_results
 
-  - name: Check if the Check Telnet Client changed anything
-    fail:
-      msg: "Telnet Client Service has not been installed!"
+  - name: Check if the Check Telnet Client changed true
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Telnet Client Installed = Failed' ]"
     when: telnet_results.changed == true
+
+  - name: Check if the Check Telnet Client changed false
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Telnet Client Installed = Passed' ]"
+    when: telnet_results.changed == false
 
 #Check that SNMP Service is installed
   - name: Check SNMP Service
@@ -534,10 +586,13 @@
      include_management_tools: yes
     register: snmp_reults
 
-  - name: Check if the Check SNMP Service changed anything
-    fail:
-      msg: "SNMP Service has not been installed!"
+  - name: Check if the Check SNMP Service changed true
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP Service Installed = Failed' ]"
     when: snmp_reults.changed == true
+
+  - name: Check if the Check SNMP Service changed false
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP Service Installed = Passed' ]"
+    when: snmp_reults.changed == false
 
 #Check that Windows-Server-Backup feature is installed
   - name: Check Windows-Server-Backup
@@ -550,15 +605,14 @@
     register: win_backup_results
 
   - name: Check if the Check Windows-Server-Backup changed anything
-    fail:
-      msg: "Windows-Server-Backup Service has not been installed!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Server Backup Service Installed = Failed' ]"
     when: win_backup_results.changed == true
 
+  - name: Check if the Check Windows-Server-Backup changed anything
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Server Backup Service Installed = Passed' ]"
+    when: win_backup_results.changed == false
 
-##################################################################################
-############################ Checks Firewall Rules ###############################
-##################################################################################
-
+# Firewall Rule Checks
   - name: Check Remote Desktop Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Remote Desktop').Enabled -eq 'True'
@@ -566,9 +620,12 @@
     check_mode: no
 
   - name: Fail if Check Remote Desktop Firewall Rule group not enabled
-    fail:
-      msg: "Remote Desktop Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Desktop Firewall Group enabled = Failed' ]"
     when: rd_firewall_rules.rc != 0
+
+  - name: Pass if Check Remote Desktop Firewall Rule group enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Desktop Firewall Group enabled = Passed' ]"
+    when: rd_firewall_rules.rc == 0
 
 # File and Printer Sharing
 
@@ -579,9 +636,12 @@
     check_mode: no
 
   - name: Fail if Check File and Printer Sharing Firewall Rule group not enabled
-    fail:
-      msg: "File and Printer Sharing Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'File and Printer Sharing Firewall Group enabled = Failed' ]"
     when: fps_firewall_rules.rc != 0
+
+  - name: Pass if Check File and Printer Sharing Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'File and Printer Sharing Firewall Group enabled = Passed' ]"
+    when: fps_firewall_rules.rc == 0
 
 # Remote Service Management
 
@@ -592,9 +652,12 @@
     check_mode: no
 
   - name: Fail if Check Remote Service Management Firewall Rule group not enabled
-    fail:
-      msg: "Remote Service Management Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Service Management Firewall Group enabled = Failed' ]"
     when: rsm_firewall_rules.rc != 0
+
+  - name: Pass if Check Remote Service Management Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Service Management Firewall Group enabled = Passed' ]"
+    when: rsm_firewall_rules.rc == 0
 
 # Performance Logs and Alerts
 
@@ -605,9 +668,12 @@
     check_mode: no
 
   - name: Fail if Check Performance Logs and Alerts Firewall Rule group not enabled
-    fail:
-      msg: "Performance Logs and Alerts Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Performance Logs and Alerts Firewall Group enabled = Failed' ]"
     when: pla_firewall_rules.rc != 0
+
+  - name: Pass if Check Performance Logs and Alerts Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Performance Logs and Alerts Firewall Group enabled = Passed' ]"
+    when: pla_firewall_rules.rc == 0
 
 # Remote Event Log Management
 
@@ -618,9 +684,12 @@
     check_mode: no
 
   - name: Fail if Check Remote Event Log Management Firewall Rule group not enabled
-    fail:
-      msg: "Remote Event Log Management Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Event Log Management Firewall Group enabled = Failed' ]"
     when: relm_firewall_rules.rc != 0
+
+  - name: Pass if Check Remote Event Log Management Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Event Log Management Firewall Group enabled = Passed' ]"
+    when: relm_firewall_rules.rc == 0
 
 # Remote Scheduled Tasks Management
 
@@ -631,9 +700,12 @@
     check_mode: no
 
   - name: Fail if Check Remote Scheduled Tasks Management Firewall Rule group not enabled
-    fail:
-      msg: "Remote Scheduled Tasks Management Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Scheduled Tasks Management Firewall Group enabled = Failed' ]"
     when: rstm_firewall_rules.rc != 0
+
+  - name: Pass if Check Remote Scheduled Tasks Management Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Scheduled Tasks Management Firewall Group enabled = Passed' ]"
+    when: rstm_firewall_rules.rc == 0
 
 # Remote Volume Management
 
@@ -644,9 +716,12 @@
     check_mode: no
 
   - name: Fail if Check Remote Volume Management Firewall Rule group not enabled
-    fail:
-      msg: "Remote Volume Management Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Volume Management Firewall Group enabled = Failed' ]"
     when: rvm_firewall_rules.rc != 0
+
+  - name: Pass if Check Remote Volume Management Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Volume Management Firewall Group enabled = Passed' ]"
+    when: rvm_firewall_rules.rc == 0
 
 # Windows Firewall Remote Management
 
@@ -657,9 +732,12 @@
     check_mode: no
 
   - name: Fail if Check Windows Firewall Remote Management Firewall Rule group not enabled
-    fail:
-      msg: "Windows Firewall Remote Management Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Firewall Remote Management Firewall Group enabled = Failed' ]"
     when: wfrm_firewall_rules.rc != 0
+
+  - name: Pass if Check Windows Firewall Remote Management Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Firewall Remote Management Firewall Group enabled = Passed' ]"
+    when: wfrm_firewall_rules.rc == 0
 
 # windows management instrumentation (wmi)
 
@@ -670,9 +748,12 @@
     check_mode: no
 
   - name: Fail if Check windows management instrumentation (wmi) Firewall Rule group not enabled
-    fail:
-      msg: "windows management instrumentation (wmi) Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Management Instrumentation Firewall Group enabled = Failed' ]"
     when: wmi_firewall_rules.rc != 0
+
+  - name: Pass if Check windows management instrumentation (wmi) Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Management Instrumentation Firewall Group enabled = Passed' ]"
+    when: wmi_firewall_rules.rc == 0
 
 # Com+ Network Access
 
@@ -683,9 +764,12 @@
     check_mode: no
 
   - name: Fail if Check windows Com+ Network Access Firewall Rule group not enabled
-    fail:
-      msg: "windows Com+ Network Access Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Network Access Firewall Group enabled = Failed' ]"
     when: cna_firewall_rules.rc != 0
+
+  - name: Pass if Check windows Com+ Network Access Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Network Access Firewall Group enabled = Passed' ]"
+    when: cna_firewall_rules.rc == 0
 
 # Com+ Remote Administration
 
@@ -696,13 +780,12 @@
     check_mode: no
 
   - name: Fail if Check windows Com+ Remote Administration Firewall Rule group not enabled
-    fail:
-      msg: "windows Com+ Remote Administration Firewall Rule group not enabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Remote Administration Firewall Group enabled = Failed' ]"
     when: cra_firewall_rules.rc != 0
 
-##################################################################################
-########## Check for UAC LocalAccountTokenFilterPolicy registry setting ##########
-##################################################################################
+  - name: Pass if Check windows Com+ Remote Administration Firewall Rule group not enabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Remote Administration Firewall Group enabled = Passed' ]"
+    when: cra_firewall_rules.rc == 0
 
 # Block for UAC LocalAccountTokenFilterPolicy registry if server is 2012
   - name: Block for executing command only when Windows Server 2012
@@ -715,47 +798,42 @@
         name: LocalAccountTokenFilterPolicy
       register: uac_results
     
-    - name: UAC LocalAccountTokenFilterPolicy registry Version Check
-      debug:
-        msg: "UAC LocalAccountTokenFilterPolicy registry setting exists"
+    - name: Pass if UAC LocalAccountTokenFilterPolicy registry is installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'UAC LocalAccountTokenFilterPolicy registry setting = Passed' ]"
       when:
         - uac_results.value == 1
         - uac_results is defined
 
     - name: Fail if UAC LocalAccountTokenFilterPolicy registry is not installed
-      fail:
-        msg: "UAC LocalAccountTokenFilterPolicy registry not found or is set wrong!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'UAC LocalAccountTokenFilterPolicy registry setting = Failed' ]"
       when: uac_results is undefined or uac_results.value == 0
 
 # UAC LocalAccountTokenFilterPolicy Block End
     when:
       - "'2012' in ansible_os_name"
 
-##################################################################################
-######################## Check ReceiveSideScaling setting ########################
-##################################################################################
-
-  - name: Check ReceiveSideScaling is enabled 2016
+# Check ReceiveSideScaling setting
+  - name: Check ReceiveSideScaling is enabled
     win_shell: |
       (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Enabled'
     register: rss_results
     check_mode: no
 
+  - name: debug rss_results
+    debug:
+      var: rss_results
+
 # Block to check ReceiveSideScaling is disabled if server is 2012
   - name: Block for executing command only when Windows Server 2012
     block:
 
-    - name: UAC LocalAccountTokenFilterPolicy registry Version Check 2012
-      debug:
-        msg: "UAC LocalAccountTokenFilterPolicy is Disabled"
-      when:
-        - rss_results.rc == 0
-        - rss_results is defined
+    - name: Fail if ReceiveSideScaling setting is enabled 2012
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Disabled Check = Passed' ]"
+      when: "'False' in rss_results.stdout"
 
-    - name: Fail if UAC LocalAccountTokenFilterPolicy is enabled 2012
-      fail:
-        msg: "UAC LocalAccountTokenFilterPolicy is Enabled!"
-      when: rss_results is undefined or rss_results.rc == 1
+    - name: Pass if ReceiveSideScaling setting is disabled 2012
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Disabled Check = Failed' ]"
+      when: "'True' in rss_results.stdout"
 
 # ReceiveSideScaling 2012 Block End
     when:
@@ -765,26 +843,19 @@
   - name: Block for executing command only when Windows Server 2016
     block:
 
-    - name: UAC LocalAccountTokenFilterPolicy registry Version Check 2016
-      debug:
-        msg: "UAC LocalAccountTokenFilterPolicy is Enabled"
-      when:
-        - rss_results.rc == 0
-        - rss_results is defined
+    - name: Pass if ReceiveSideScaling setting is enabled 2016
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Enabled Check = Passed' ]"
+      when: "'True' in rss_results.stdout"
 
-    - name: Fail if UAC LocalAccountTokenFilterPolicy is enabled 2016
-      fail:
-        msg: "UAC LocalAccountTokenFilterPolicy is Enabled!"
-      when: rss_results is undefined or rss_results.rc == 1
+    - name: Fail if ReceiveSideScaling setting is disabled 2016
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Enabled Check = Failed' ]"
+      when: "'False' in rss_results.stdout"
 
 # ReceiveSideScaling 2016 Block End
     when:
       - "'2016' in ansible_os_name"
 
-##################################################################################
-############ Check that SS000DA account has a non-expiring password ##############
-##################################################################################
-
+# Check that SS000DA account has a non-expiring password
   - name: Check that SS000DA account has a non-expiring password
     win_user:
       name: SS000DA
@@ -798,14 +869,12 @@
 
 # Fail if SS000DA account has an expiring password
     - name: Fail if SS000DA account has a non-expiring password
-      fail:
-        msg: "SS000DA Password is set to expire!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Failed' ]"
       when: ss000da_results is undefined or ss000da_results.password_never_expires == false
 
 # Debug if SS000DA account has an non-expiring password
     - name: Debug if SS000DA account has an non-expiring password
-      debug:
-        msg: "SS000DA Password is set to never expire!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Passed' ]"
       when: 
         - ss000da_results is defined
         - ss000da_results.password_never_expires == true
@@ -820,14 +889,12 @@
 
 # Fail if SS000DA account has an expiring password 2016
     - name: Fail if SS000DA account has a non-expiring password
-      fail:
-        msg: "SS000DA Password is set to never expire!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Failed' ]"
       when: ss000da_results is undefined or ss000da_results.password_never_expires == true
 
 # Debug if SS000DA account has an non-expiring password 2016
     - name: Debug if SS000DA account has an expiring password
-      debug:
-        msg: "SS000DA Password is set to expire!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Passed' ]"
       when: 
         - ss000da_results is defined
         - ss000da_results.password_never_expires == false
@@ -836,10 +903,7 @@
     when:
       - "'2016' in ansible_os_name"
 
-##################################################################################
-################### Check that experian key has been created #####################
-##################################################################################
-
+# Check that experian key has been created
 # Gather experian registry key value
   - name: Gather experian registry key value from Registry
     win_reg_stat:
@@ -852,15 +916,13 @@
     block:
 
     - name: Check that experian registry key for 2012 R2 exists
-      debug:
-        msg: "Experian Hardening registry key exists"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2012 R2 build Check = Passed' ]"
       when:
         - build_desc_results.exists == true
         - "'Windows Server 2012 R2 Standard Hardened Build' in build_desc_results.value"
 
-    - name: Fail if Fail if Experian registry key for 2016 doesnt exist or is incorrect version
-      fail:
-        msg: "Fail if Experian registry key for 2016 doesnt exist or is incorrect version!"
+    - name: Fail if Fail if Experian registry key for 2012 R2 doesnt exist or is incorrect version
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2012 R2 build Check = Failed' ]"
       when: build_desc_results.exists == false or build_desc_results.value != 'Windows Server 2012 R2 Standard Hardened Build'
 
 # Check that experian registry key Block End 2012 R2
@@ -872,24 +934,19 @@
     block:
 
     - name: Check that experian registry key for 2016 exists
-      debug:
-        msg: "Experian Hardening registry key exists"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2016 build Check = Passed' ]"
       when:
         - build_desc_results.exists == true
         - "'Windows Server 2016 Hardened Build' in build_desc_results.value"
 
     - name: Fail if Experian registry key for 2016 doesnt exist or is incorrect version
-      fail:
-        msg: "Fail if Experian registry key for 2016 doesnt exist or is incorrect version!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2016 build Check = Failed' ]"
       when: build_desc_results.exists == false or build_desc_results.value != 'Windows Server 2016 Hardened Build'
 
 # Check that experian registry key Block End 2016
     when:
       - "'2016' in ansible_os_name"
 
-##################################################################################
-###################### Check NIc's have protocols removed ########################
-##################################################################################
 # Check that no NICs have Link-Layer Topolgy Discovery Mapper I/O Driver, Link-Layer Topolgy Discovery Responder, QOS Packet Scheduler installed.
 
 #Uninstall the following protocols / services:
@@ -902,30 +959,39 @@
     register: ms_pacer_result
     check_mode: no
 
-  - name: Fail if MS LLDP Protocol Driver is installed
-    fail: 
-      msg: "Fail MS LLDP Protocol Driver is installed"
+  - name: Fail if ms_pacer Protocol Driver is installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_pacer Protocol Driver is not installed Check = Failed' ]"
     when: "'is not installed' not in ms_pacer_result.stdout"
+
+  - name: Pass if ms_pacer Protocol Driver is installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_pacer Protocol Driver is not installed Check = Passed' ]"
+    when: "'is not installed' in ms_pacer_result.stdout"
 
   - name: 
     win_shell: C:\Windows\System32\netcfg.exe -u ms_lltdio
     register: ms_lltdio_result
     check_mode: no
 
-  - name: Fail if MS LLDP Protocol Driver is installed
-    fail: 
-      msg: "Fail MS LLDP Protocol Driver is installed"
+  - name: Fail if ms_lltdio Protocol Driver is installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_lltdio Protocol Driver is not installed Check = Failed' ]"
     when: "'is not installed' not in ms_lltdio_result.stdout"
+
+  - name: Pass if ms_lltdio Protocol Driver is not installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_lltdio Protocol Driver is not installed Check = Passed' ]"
+    when: "'is not installed' in ms_lltdio_result.stdout"
 
   - name: 
     win_shell: C:\Windows\System32\netcfg.exe -u ms_rspndr
     register: ms_rspndr_result
     check_mode: no
 
-  - name: Fail if MS LLDP Protocol Driver is installed
-    fail: 
-      msg: "Fail MS LLDP Protocol Driver is installed"
+  - name: Fail if ms_rspndr Protocol Driver is installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_rspndr Protocol Driver is not installed Check = Failed' ]"
     when: "'is not installed' not in ms_rspndr_result.stdout"
+
+  - name: Pass if ms_rspndr Protocol Driver is not installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_rspndr Protocol Driver is not installed Check = Passed' ]"
+    when: "'is not installed' in ms_rspndr_result.stdout"
 
 # Block for Check that experian registry key if server is 2016
   - name: Block for executing command only when Windows Server 2016
@@ -938,18 +1004,18 @@
       check_mode: no
 
     - name: Fail if MS LLDP Protocol Driver is installed 2016
-      fail: 
-        msg: "Fail MS LLDP Protocol Driver is installed 2016"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'MS LLDP Protocol Driver is not installed Check = Failed' ]"
       when: "'is not installed' not in ms_lldp_result.stdout"
+
+    - name: Pass if MS LLDP Protocol Driver is not installed 2016
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'MS LLDP Protocol Driver is not installed Check = Passed' ]"
+      when: "'is not installed' in ms_lldp_result.stdout"
 
 # Check that experian registry key Block End 2016
     when:
       - "'2016' in ansible_os_name"
 
-##################################################################################
-###################### Check that IPv6 is disabled Primary########################
-##################################################################################
-
+# Check that IPv6 is disabled Primary
   - name: Check IPv6 Protocol is uninstalled Primary
     win_shell: |
       (Get-NetAdapterBinding -Name 'Primary' –ComponentID ms_tcpip6).Enabled
@@ -957,14 +1023,14 @@
     check_mode: no
 
   - name: Fail if IPv6 Protocol is installed Primary
-    fail: 
-      msg: "Fail IPv6 Protocol is installed Primary"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Primary Check = Failed' ]"
     when: "'True' in ipv6_p_result.stdout"
 
-##################################################################################
-################### Check that Backup protocols are disabled #####################
-##################################################################################
+  - name: Pass if IPv6 Protocol is installed Primary
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Primary Check = Passed' ]"
+    when: "'False' in ipv6_p_result.stdout"
 
+# Check that Backup protocols are disabled 
 # Backup Required Block
   - name: Block for executing command only when backup required
     block:
@@ -976,9 +1042,12 @@
       check_mode: no
 
     - name: Fail if IPv6 Protocol is installed Backup
-      fail: 
-        msg: "Fail IPv6 Protocol is installed Backup"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Backup Check = Failed' ]"
       when: "'True' in ipv6_bk_result.stdout"
+
+    - name: Pass if IPv6 Protocol is installed Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Backup Check = Passed' ]"
+      when: "'False' in ipv6_bk_result.stdout"
 
     - name: Check msclient Protocol is uninstalled Backup
       win_shell: |
@@ -987,9 +1056,12 @@
       check_mode: no
 
     - name: Fail if msclient Protocol is installed Backup
-      fail: 
-        msg: "Fail msclient Protocol is installed Backup"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msclient Protocol is not installed Backup Check = Failed' ]"
       when: "'True' in msc_bk_result.stdout"
+
+    - name: Pass if msclient Protocol is not installed Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msclient Protocol is not installed Backup Check = Passed' ]"
+      when: "'False' in msc_bk_result.stdout"
 
     - name: Check msserver Protocol is uninstalled Backup
       win_shell: |
@@ -998,18 +1070,18 @@
       check_mode: no
 
     - name: Fail if msserver Protocol is installed Backup
-      fail: 
-        msg: "Fail msserver Protocol is installed Backup"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msserver Protocol is not installed Backup Check = Failed' ]"
       when: "'True' in mss_bk_result.stdout"
+
+    - name: Pass if msserver Protocol is not installed Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msserver Protocol is not installed Backup Check = Passed' ]"
+      when: "'False' in mss_bk_result.stdout"
 
 # Backup Required Block end
     when: 
       - backup_required
 
-##################################################################################
-################### Check ConnectionSpecificSuffix on Primary ####################
-##################################################################################
-
+# Check ConnectionSpecificSuffix on Primary
 # EXPERIANUK Block
   - name: Block for executing when EXPERIANUK
     block:
@@ -1021,9 +1093,12 @@
       check_mode: no
 
     - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
-      fail: 
-        msg: "Check ConnectionSpecificSuffix on Primary Interface"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Failed' ]"
       when: "'uk.experian.local' not in css_p_result.stdout"
+
+    - name: Pass if Check ConnectionSpecificSuffix on Primary Interface
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Passed' ]"
+      when: "'uk.experian.local' in css_p_result.stdout"
 
 # EXPERIANUK Block End
     when:
@@ -1040,9 +1115,12 @@
       check_mode: no
 
     - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
-      fail: 
-        msg: "Check ConnectionSpecificSuffix on Primary Interface"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Failed' ]"
       when: "'gdc.local' not in css_p_result.stdout"
+
+    - name: Pass if Check ConnectionSpecificSuffix on Primary Interface
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Passed' ]"
+      when: "'gdc.local' in css_p_result.stdout"
 
 # GDC Block End
     when:
@@ -1059,18 +1137,18 @@
       check_mode: no
 
     - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
-      fail: 
-        msg: "Check ConnectionSpecificSuffix on Primary Interface"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Failed' ]"
       when: "'ipani.uk.experian.com' not in css_p_result.stdout"
+
+    - name: Pass if Check ConnectionSpecificSuffix on Primary Interface
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Passed' ]"
+      when: "'ipani.uk.experian.com' in css_p_result.stdout"
 
 # IPANIUK Block End
     when:
       - ansible_windows_domain == 'ipani.uk.experian.com'
 
-##################################################################################
-######################## Check that NETBIOS is disabled ##########################
-##################################################################################
-
+# Check that NETBIOS is disabled
   - name: Check NETBIOS Protocol is disabled
     win_shell: |
       (Get-WmiObject win32_networkadapterconfiguration).TcpipNetbiosOptions
@@ -1078,27 +1156,30 @@
     check_mode: no
 
   - name: Fail when NETBIOS is not disabled Primary
-    fail:
-      msg: "Fail NETBIOS is not diaabled on Primary!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Primary = Failed' ]"
     when: "'2' not in netbios_result.stdout_lines[0]"
+
+  - name: Pass when NETBIOS is disabled Primary
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Primary = Passed' ]"
+    when: "'2' in netbios_result.stdout_lines[0]"
 
 # Backup Required Block
   - name: Block for executing command only when backup
     block:
 
-    - name: Fail when NETBIOS is not disabled
-      fail:
-        msg: "Fail NETBIOS is not diaabled!"
+    - name: Fail when NETBIOS is not disabled Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Backup = Failed' ]"
       when: "'2' not in netbios_result.stdout_lines[1]"
+
+    - name: Pass when NETBIOS is disabled Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Backup = Passed' ]"
+      when: "'2' in netbios_result.stdout_lines[1]"
 
 # Backup Required Block end
     when: 
       - backup_required
 
-##################################################################################
-######################## Check that LMHosts is disabled ##########################
-##################################################################################
-
+# Check that LMHosts is disabled
   - name: Check LMHosts Protocol is disabled
     win_shell: |
       (Get-WmiObject win32_networkadapterconfiguration).WINSEnableLMHostsLookup
@@ -1106,14 +1187,14 @@
     check_mode: no
 
   - name: Fail when LMHosts is not disabled
-    fail:
-      msg: "Fail LMHosts is not diaabled!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'LMHosts is disabled Check = Failed' ]"
     when: "'True' in lmhosts_result.stdout"
 
-##################################################################################
-########### Check that Backup Interface has DNS Registration disabled ############
-##################################################################################
+  - name: Pass when LMHosts is disabled
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'LMHosts is disabled Check = Passed' ]"
+    when: "'False' in lmhosts_result.stdout"
 
+# Backup Interface has DNS Registration disabled
   - name: Check DNS Registration is disabled Backup
     win_shell: |
       (Get-DNSClient –InterfaceAlias ‘Backup’).RegisterThisConnectionsAddress
@@ -1121,14 +1202,14 @@
     check_mode: no
 
   - name: Fail when DNS Registration is not disabled Backup
-    fail:
-      msg: "Fail DNS Registration is not diaabled on Backup!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface has DNS Registration disabled Check = Failed' ]"
     when: "'True' in dnsr_result.stdout"
 
-##################################################################################
-####### Check that Backup Interface does not have a DNS Server registered ########
-##################################################################################
+  - name: Pass when DNS Registration is disabled Backup
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface has DNS Registration disabled Check = Passed' ]"
+    when: "'False' in dnsr_result.stdout"
 
+# Check that Interface does not have a DNS Server registered Backup
   - name: Check that Interface does not have a DNS Server registered Backup
     win_shell: |
       (Get-DNSClientServerAddress –InterfaceAlias ‘Backup’ -AddressFamily IPv4).ServerAddresses
@@ -1136,13 +1217,12 @@
     check_mode: no
 
   - name: Fail Interface has a DNS Server registered Backup
-    fail:
-      msg: "Fail DNS Registra1tion is not diaabled on Backup!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface Doesnt has a DNS Server registered Check = Failed' ]"
     when: dnss_result.stdout != ""
 
-##################################################################################
-############# Check IPv4 Binding Order. Check that primary is first ##############
-##################################################################################
+  - name: Pass Interface doesnt have a DNS Server registered Backup
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface Doesnt has a DNS Server registered Check = Passed' ]"
+    when: dnss_result.stdout == ""
 
 # Block for Check IPv4 Binding Order. Check that primary is first if server is 2012
   - name: Block for executing command only when Windows Server 2012
@@ -1166,9 +1246,12 @@
       check_mode: no
 
     - name: Fail on incorrect IPv4 Binding Order
-      fail:
-        msg: "Incorrect IPv4 Binding Order "
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv4 Binding Order Check = Failed' ]"
       when:  "'   enabled:   Primary' not in ipv4bind_results.stdout_lines[10]"
+
+    - name: Pass on correct IPv4 Binding Order
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv4 Binding Order Check = Passed' ]"
+      when:  "'   enabled:   Primary' in ipv4bind_results.stdout_lines[10]"
 
     - name: remove nvpbind
       win_file:
@@ -1180,9 +1263,7 @@
     when:
       - "'2012' in ansible_os_name"
 
-##################################################################################
-####################### Check that DNS Servers are correct #######################
-##################################################################################
+# Check that DNS Servers are correct
 
 # GDC Block
   - name: Block for executing when GDC
@@ -1195,11 +1276,16 @@
       check_mode: no
 
     - name: Fail on incorrect DNS Servers GDC
-      fail:
-        msg: "Incorrect DNS Servers for GDC.local"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Failed' ]"
       when:
         - "'10.188.21.1' not in dnss_results.stdout_lines[0]"
         - "'10.188.21.2' not in dnss_results.stdout_lines[1]"
+
+    - name: Pass on correct DNS Servers GDC
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Passed' ]"
+      when:
+        - "'10.188.21.1' in dnss_results.stdout_lines[0]"
+        - "'10.188.21.2' in dnss_results.stdout_lines[1]"
 
 # GDC Block End
     when:
@@ -1216,11 +1302,16 @@
       check_mode: no
 
     - name: Fail on incorrect DNS Servers IPANIUK
-      fail:
-        msg: "Incorrect DNS Servers for IPANIUK"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Failed' ]"
       when:  
         - "'194.60.173.145' not in dnss_results.stdout_lines[0]"
         - "'194.60.173.146' not in dnss_results.stdout_lines[1]"
+
+    - name: Pass on correct DNS Servers IPANIUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Passed' ]"
+      when:  
+        - "'194.60.173.145' in dnss_results.stdout_lines[0]"
+        - "'194.60.173.146' in dnss_results.stdout_lines[1]"
 
 # IPANIUK Block End
     when:
@@ -1237,19 +1328,20 @@
       check_mode: no
 
     - name: Fail on incorrect DNS Servers EXPERIANUK
-      fail:
-        msg: "Incorrect DNS Servers for EXPERIANUK"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Failed' ]"
       when:  
         - "'10.215.252.10' not in dnss_results.stdout_lines[0]"
         - "'10.173.251.106' not in dnss_results.stdout_lines[1]"
 
+    - name: Pass on correct DNS Servers EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Passed' ]"
+      when:  
+        - "'10.215.252.10' in dnss_results.stdout_lines[0]"
+        - "'10.173.251.106' in dnss_results.stdout_lines[1]"
+
 # EXPERIANUK Block End
     when:
       - ansible_windows_domain == 'uk.experian.local'
-
-##################################################################################
-######################### Check WINS Servers are correct #########################
-##################################################################################
 
 # EXPERIANUK Block
   - name: Block for executing when EXPERIANUK
@@ -1261,41 +1353,45 @@
       register: wins_p_results
       check_mode: no
 
-    - name: Fail on incorrect DNS Servers EXPERIANUK
-      fail:
-        msg: "Incorrect Primary WINS Server defined EXPERIANUK"
-      when: wins_p_results.stdout_lines[0] != "10.215.252.12"
-
     - name: 
       win_shell: |
         (Get-WmiObject win32_networkadapterconfiguration).WINSSecondaryServer
       register: wins_s_results
       check_mode: no
 
-    - name: Fail on incorrect DNS Servers EXPERIANUK
-      fail:
-        msg: "Incorrect Secondary WINS Server defined EXPERIANUK"
-      when: wins_s_results.stdout_lines[0] != "10.173.243.146"
+    - name: Fail on incorrect WINS Servers EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'WINS Servers Check = Failed' ]"
+      when:
+        - wins_p_results.stdout_lines[0] != "10.215.252.12"
+        - wins_s_results.stdout_lines[0] != "10.173.243.146"
+
+    - name: Pass on correct DNS Servers EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'WINS Servers Check = Passed' ]"
+      when:
+        - wins_p_results.stdout_lines[0] == "10.215.252.12"
+        - wins_s_results.stdout_lines[0] == "10.173.243.146"
 
     when:
       - ansible_windows_domain == 'uk.experian.local'
 
-##################################################################################
-################### Check C Volume Label, use win_disk_info ######################
-##################################################################################
-#Check C Volume Label, use win_disk_info
+#Check C Volume Label, use win_disk_info?
+########################################################################################################
   - name: 
     win_shell: |
       (Get-Volume -Driveletter 'C').FileSystemLabel -eq 'System'
     register: drivec_results
     check_mode: no
 
-  - name: Fail when C drive label is not Systsem
-    fail:
-      msg: "C: Label is not SYSTEM"
+  - name: Fail when C drive label is not System
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'C drive label is System Check = Failed' ]"
     when: "'False' in drivec_results.stdout"
 
+  - name: Pass when C drive label is System
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'C drive label is System Check = Passed' ]"
+    when: "'True' in drivec_results.stdout"
+
 #Check Disk 1 is MBR for 2012/2012R2 and all disks GPT for 2016
+#######################################################################################################
 
   # Drive Check Loop
   - name: Check to loop through all drives looking for D
@@ -1344,9 +1440,9 @@
     when:
       - "'2016' in ansible_os_name"
 
-##################################################################################
-########################### Check Disk 1 Driveletter #############################
-##################################################################################
+#######################################################################################################
+
+# Check Disk 1 Driveletter
   - name: Check Disk 1 Drive Letter
     win_shell: |
       (Get-Partition -DiskNumber 1).DriveLetter
@@ -1354,12 +1450,12 @@
     check_mode: no
 
   - name: Debug drive_letter_result
-    debug:
-      var: drive_letter_result
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Disk 1 Drive Letter is Y Check = Passed' ]"
+    when: "'Y' in drive_letter_result.stdout_lines"
 
-##################################################################################
-############################## Check Y Volume Label ##############################
-##################################################################################
+  - name: Fail if Disk 1 Drive Letter is not Y
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Disk 1 Drive Letter is Y Check = Failed' ]"
+    when: "'Y' not in drive_letter_result.stdout_lines"
 
 # Block for Check Y Volume Label if server is 2012
   - name: Block for executing command only when Windows Server 2012
@@ -1372,9 +1468,12 @@
       check_mode: no
 
     - name: Fail when Y drive label is not GTS-Support-Only 2012
-      fail:
-        msg: "Y: Label is not GTS-Support-Only"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is GTS-Support-Only Check = Failed' ]"
       when: "'False' in drivey_results.stdout"
+
+    - name: Pass when Y drive label is not GTS-Support-Only 2012
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is GTS-Support-Only Check = Passed' ]"
+      when: "'True' in drivey_results.stdout"
 
 # Block End
     when:
@@ -1391,17 +1490,18 @@
       check_mode: no
 
     - name: Fail when Y drive label is not EITS-Support-Only 2016
-      fail:
-        msg: "Y: Label is not EITS-Support-Only"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is EITS-Support-Only Check = Failed' ]"
       when: "'False' in drivey_results.stdout"
+
+    - name: Pass when Y drive label is EITS-Support-Only 2016
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is EITS-Support-Only Check = Passed' ]"
+      when: "'True' in drivey_results.stdout"
 
 # Block End
     when:
       - "'2016' in ansible_os_name"
 
-##################################################################################
-########################## Check CDROM is Driveletter Z ##########################
-##################################################################################
+# Check CDROM is Driveletter Z
   - name: Check CD-Rom drive letter
     win_shell: |
       (gwmi win32_cdromdrive).Drive 
@@ -1409,14 +1509,14 @@
     check_mode: no
 
   - name: Fail when CD-Rom drive letter is not Z
-    fail:
-      msg: "CD-ROm drive letter is not Z"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CD-Rom drive Z Check = Failed' ]"
     when: "'Z' not in cd_result.stdout"
 
-##################################################################################
-########################## Software and Version Checks ###########################
-##################################################################################
-#Check for existence and versions of following software and test if running if applicable
+  - name: Pass when CD-Rom drive letter is Z
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CD-Rom drive Z Check = Passed' ]"
+    when: "'Z' in cd_result.stdout"
+
+######################## Check for existence and versions of following software and test if running if applicable ################
 # SAFE - (get-Service -DisplayName "Enstart64").Status -eq "Running"
 # BladeLogic - (get-Service -DisplayName "BMC BladeLogic Server Automation RSCD Agent").Status
 # FireEye - (get-Service -DisplayName "FireEye Endpoint Agent").Status -eq "Running"
@@ -1442,14 +1542,12 @@
   - name: Block for executing command only when safe_result exists
     block:
 
-    - name: SUCCESS SAFE Servlet Version Check
-      debug:
-        msg: "Success SAFE Servlet required Version is {{ safe_version }} installed version is {{ safe_result.value }}"
+    - name: Pass SAFE Servlet Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Check = Passed' ]"
       when: safe_result.value == safe_version
 
     - name: Fail if SAFE Servlet is not installed
-      debug:
-        msg: "Error SAFE Servlet required Version is {{ safe_version }} installed version is {{ safe_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Check = Failed' ]"
       when: safe_result.value != safe_version
 
 # Block End
@@ -1460,8 +1558,7 @@
     block:
 
     - name: Fail if SAFE Servlet is not installed
-      debug:
-        msg: "Error SAFE Servlet is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Check = Failed' ]"
 
 # Block End
     when: safe_result.exists == false
@@ -1477,14 +1574,12 @@
   - name: Block for executing command only when bl_result exists
     block:
 
-    - name: SUCCESS BladeLogic Version Check
-      debug:
-        msg: "Success BladeLogic required Version is {{ bl_version }} installed version is {{ bl_result.value }}"
+    - name: Pass BladeLogic Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Client Check = Passed' ]"
       when: bl_result.value == bl_version
 
     - name: Fail if BladeLogic is not installed
-      debug:
-        msg: "Error BladeLogic required Version is {{ bl_version }} installed version is {{ bl_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Client Check = Failed' ]"
       when: bl_result.value != bl_version
 
 # Block End
@@ -1495,8 +1590,7 @@
     block:
 
     - name: Fail if BladeLogic is not installed
-      debug:
-        msg: "Error BladeLogic is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Client Check = Failed' ]"
 
 # Block End
     when: bl_result.exists == false
@@ -1518,14 +1612,12 @@
     - name: Block for executing command only when fireeye_result exists
       block:
 
-      - name: SUCCESS FireEye Version Check
-        debug:
-          msg: "Success FireEye required Version is {{ fireeye_version }} installed version is {{ fireeye_result.value }}"
+      - name: Pass FireEye Version Check
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Check = Passed' ]"
         when: fireeye_result.value == fireeye_version
 
       - name: Fail if FireEye is not installed
-        debug:
-          msg: "Error FireEye required Version is {{ fireeye_version }} installed version is {{ fireeye_result.value }}"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Check = Failed' ]"
         when: fireeye_result.value != fireeye_version
 
 # Block End
@@ -1537,8 +1629,7 @@
       block:
 
       - name: Fail if FireEye is not installed
-        debug:
-          msg: "Error FireEye is not installed!"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Check = Failed' ]"
 
 # Block End
       when: fireeye_result.exists == false
@@ -1555,7 +1646,6 @@
 # Gather NetBackup Registry version key value
     - name: Gather NetBackup version from Registry
       win_reg_stat:
-       #path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6C85C687-44E1-4E16-97A8-FF784325C8E7}
         path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Veritas NetBackup Client
         name: DisplayVersion
       register: netbackup_result
@@ -1565,14 +1655,12 @@
     - name: Block for executing command only when netbackup_result exists
       block:
 
-      - name: SUCCESS NetBackup Version Check
-        debug:
-          msg: "Success Netbackup required Version is {{ netbackup_version }} installed version is {{ netbackup_result.value }}"
+      - name: Pass NetBackup Version Check
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Check = Passed' ]"
         when: netbackup_result.value == netbackup_version
 
       - name: Fail if NetBackup is not installed
-        debug:
-          msg: "Error NetBackup required Version is {{ netbackup_version }} installed version is {{ netbackup_result.value }}"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Check = Failed' ]"
         when: netbackup_result.value != netbackup_version
 
 # Block End
@@ -1584,8 +1672,7 @@
       block:
 
       - name: Fail if NetBackup is not installed
-        debug:
-          msg: "Error NetBackup is not installed!"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Check = Failed' ]"
 
 # Block End
       when: netbackup_result.exists == false
@@ -1601,14 +1688,12 @@
       name: DisplayVersion
     register: vmtools_result
 
-  - name: SUCCESS VMWare Tools Installed
-    debug:
-      msg: "SUCCESS VMWare Tools is Installed"
+  - name: Pass VMWare Tools Installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Check = Passed' ]"
     when:  vmtools_result.exists == true
 
   - name: Fail if VMWare Tools is not installed
-    debug:
-      msg: "Error VMWare Tools is not installed!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Check = Failed' ]"
     when: vmtools_result.exists == false
 
 # McAfee Framework Agent
@@ -1622,18 +1707,27 @@
   - name: Block for executing command only when mcafee_result exists
     block:
 
-    - name: SUCCESS McAfee Framework Agent Version Check
+    - name: Pass McAfee Framework Agent Version Check
       debug:
-        msg: "Success McAfee Framework Agent required Version is {{ mcafee_version }} installed version is {{ mcafee_result.value }}"
+        msg: "Pass McAfee Framework Agent required Version is {{ mcafee_version }} installed version is {{ mcafee_result.value }}"
       when: mcafee_result.value == mcafee_version
 
     - name: Fail if McAfee Framework Agent is not installed
-      debug:
-        msg: "Error McAfee Framework Agent required Version is {{ mcafee_version }} installed version is {{ mcafee_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Check = Failed' ]"
       when: mcafee_result.value != mcafee_version
 
 # Block End
     when:  mcafee_result.exists == true
+
+# Block Start
+  - name: Block for executing command only when mcafee_result doesnt exists
+    block:
+
+    - name: Fail if McAfee Framework Agent is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Check = Failed' ]"
+
+# Block End
+    when: mcafee_result.exists == false
 
 # McAfee Agent (Only checks if installed not version)
   - name: Check McAfee EndPoint Security Platform Installed
@@ -1642,26 +1736,13 @@
       name: DisplayVersion
     register: mcend_result
 
-  - name: SUCCESS McAfee EndPoint Installed
-    debug:
-      msg: "SUCCESS McAfee EndPoint Security Platform is Installed"
+  - name: Pass McAfee EndPoint Installed
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee EndPoint Installed Check = Passed' ]"
     when:  mcend_result.exists == true
 
   - name: Fail if McAfee EndPoint is not installed
-    debug:
-      msg: "Error McAfee EndPoint Security Platform is not installed!"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee EndPoint Installed Check = Failed' ]"
     when: mcend_result.exists == false
-
-# Block Start
-  - name: Block for executing command only when mcafee_result doesnt exists
-    block:
-
-    - name: Fail if McAfee Framework Agent is not installed
-      debug:
-        msg: "Error McAfee Framework Agent is not installed!"
-
-# Block End
-    when: mcafee_result.exists == false
 
 # Tanium
   - name: Check Tanium Installed Version
@@ -1674,14 +1755,12 @@
   - name: Block for executing command only when tanium_result exists
     block:
 
-    - name: SUCCESS Tanium Version Check
-      debug:
-        msg: "Success Tanium required Version is {{ tanium_version }} installed version is {{ tanium_result.value }}"
+    - name: Pass Tanium Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Check = Passed' ]"
       when: tanium_result.value == tanium_version
 
     - name: Fail if Tanium is not installed
-      debug:
-        msg: "Error Tanium required Version is {{ tanium_version }} installed version is {{ tanium_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Check = Failed' ]"
       when: tanium_result.value != tanium_version
 
 # Block End
@@ -1692,8 +1771,7 @@
     block:
 
     - name: Fail if Tanium is not installed
-      debug:
-        msg: "Error Tanium is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Check = Failed' ]"
 
 # Block End
     when: tanium_result.exists == false
@@ -1709,14 +1787,12 @@
   - name: Block for executing command only when dotnet_result exists
     block:
 
-    - name: SUCCESS .NET Framework Version Check
-      debug:
-        msg: "Success .NET Framework required Version is {{ dotnet_version }} installed version is {{ dotnet_result.value }}"
+    - name: Pass .NET Framework Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ '.NET Framework Check = Passed' ]"
       when: dotnet_result.value == dotnet_version
 
     - name: Fail if .NET Framework is not installed
-      debug:
-        msg: "Error .NET Framework required Version is {{ dotnet_version }} installed version is {{ dotnet_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ '.NET Framework Check = Failed' ]"
       when: dotnet_result.value != dotnet_version
 
 # Block End
@@ -1727,8 +1803,7 @@
     block:
 
     - name: Fail if .NET Framework is not installed
-      debug:
-        msg: "Error .NET Framework is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ '.NET Framework Check = Failed' ]"
 
 # Block End
     when: dotnet_result.exists == false
@@ -1744,15 +1819,33 @@
   - name: Block for executing command only when ps_result exists
     block:
 
-    - name: SUCCESS Powershell Version Check
-      debug:
-        msg: "Success Powershell required Version is {{ ps_version }} installed version is {{ ps_result.value }}"
-      when: ps_result.value == ps_version
+    - name: Block for executing command only on 2016 Servers
+      block:
 
-    - name: Fail if Powershell is not installed
-      debug:
-        msg: "Error Powershell required Version is {{ ps_version }} installed version is {{ ps_result.value }}"
-      when: ps_result.value != ps_version
+      - name: Pass Powershell Version Check
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Passed' ]"
+        when: ps_result.value == ps_version_2016
+
+      - name: Fail if Powershell is not installed
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Failed' ]"
+        when: ps_result.value != ps_version_2016
+
+# Block End
+      when: "'2016' in ansible_os_name"
+
+    - name: Block for executing command only when ps_result exists
+      block:
+
+      - name: Pass Powershell Version Check
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Passed' ]"
+        when: ps_result.value == ps_version_2012
+
+      - name: Fail if Powershell is not installed
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Failed' ]"
+        when: ps_result.value != ps_version_2012
+
+# Block End
+      when: "'2012' in ansible_os_name"
 
 # Block End
     when:  ps_result.exists == true
@@ -1762,8 +1855,7 @@
     block:
 
     - name: Fail if Powershell is not installed
-      debug:
-        msg: "Error Powershell is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Failed' ]"
 
 # Block End
     when: ps_result.exists == false
@@ -1779,14 +1871,12 @@
   - name: Block for executing command only when splunk_result exists
     block:
 
-    - name: SUCCESS Splunk Universal Forwarder Version Check
-      debug:
-        msg: "Success Splunk Universal Forwarder required Version is {{ splunk_version }} installed version is {{ splunk_result.value }}"
+    - name: Pass Splunk Universal Forwarder Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Universal Forwarder Check = Passed' ]"
       when: splunk_result.value == splunk_version
 
     - name: Fail if Splunk Universal Forwarder is not installed
-      debug:
-        msg: "Error Splunk Universal Forwarder required Version is {{ splunk_version }} installed version is {{ splunk_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Universal Forwarder Check = Failed' ]"
       when: splunk_result.value != splunk_version
 
 # Block End
@@ -1797,8 +1887,7 @@
     block:
 
     - name: Fail if Splunk Universal Forwarder is not installed
-      debug:
-        msg: "Error Splunk Universal Forwarder is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Universal Forwarder Check = Failed' ]"
 
 # Block End
     when: splunk_result.exists == false
@@ -1814,14 +1903,12 @@
   - name: Block for executing command only when qualys_result exists
     block:
 
-    - name: SUCCESS Qualys Agent Version Check
-      debug:
-        msg: "Success Qualys Agent required Version is {{ qualys_version }} installed version is {{ qualys_result.value }}"
+    - name: Pass Qualys Agent Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Agent Check = Passed' ]"
       when: qualys_result.value == qualys_version
 
     - name: Fail if Qualys Agent is not installed
-      debug:
-        msg: "Error Qualys Agent required Version is {{ qualys_version }} installed version is {{ qualys_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Agent Check = Failed' ]"
       when: qualys_result.value != qualys_version
 
 # Block End
@@ -1832,8 +1919,7 @@
     block:
 
     - name: Fail if Qualys Agent is not installed
-      debug:
-        msg: "Error Qualys Agent is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Agent Check = Failed' ]"
 
 # Block End
     when: qualys_result.exists == false
@@ -1845,22 +1931,16 @@
       name: DisplayVersion
     register: dyn_result
 
-  - name: Debug Dynatrace Agent Results
-    debug:
-      var: dyn_result
-
 # Block Start
   - name: Block for executing command only when dyn_result exists
     block:
 
-    - name: SUCCESS Dynatrace Agent Version Check
-      debug:
-        msg: "Success Dynatrace Agent required Version is {{ dyn_version }} installed version is {{ dyn_result.value }}"
+    - name: Pass Dynatrace Agent Version Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Check = Passed' ]"
       when: dyn_result.value == dyn_version
 
     - name: Fail if Dynatrace Agent is not installed
-      debug:
-        msg: "Error Dynatrace Agent required Version is {{ dyn_version }} installed version is {{ dyn_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Check = Failed' ]"
       when: dyn_result.value != dyn_version
 
 # Block End
@@ -1871,8 +1951,7 @@
     block:
 
     - name: Fail if Dynatrace Agent is not installed
-      debug:
-        msg: "Error Dynatrace Agent is not installed!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Check = Failed' ]"
 
 # Block End
     when: dyn_result.exists == false
@@ -1888,36 +1967,54 @@
       register: nbu_ping_result
       check_mode: no
 
-    - debug:
-        var: nbu_ping_result
-
-    - name: Success when nbu-not-mast.backup.local ping test success
-      fail:
-        msg: "Success nbu-not-mast.backup.local is reachable!"
+    - name: Pass when nbu-not-mast.backup.local ping test pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Ping NBU-NOT-MAST Check = Passed' ]"
       when: "'True' in nbu_ping_result.stdout"
 
     - name: Fail when nbu-not-mast.backup.local ping test fails
-      fail:
-        msg: "Fail nbu-not-mast.backup.local is not reachable!"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Ping NBU-NOT-MAST Check = Failed' ]"
       when: "'False' in nbu_ping_result.stdout"
 
 # Backup Required Block end
     when: 
       - backup_required
 
-#Check if OS is activated
+# Check if OS is activated
 
   - name: Check O/S is activated
     win_shell: |
-      Get-CimInstance SoftwareLicensingProduct
-      #(Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'" | where licensestatus -eq 1)
+      Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'"
+      #Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'" | where licensestatus -eq 1
     register: osactivate_result
     check_mode: no
 
-  - debug:
+  - name: Debug stdout_lines
+    debug:
       var: osactivate_result
 
+#  - name: Check O/S is activated
+#    debug:
+#      msg: "Pass O/S is activated"
+#    when:
+#      - "'ApplicationID                                  : 55c92734-d682-4d71-983e-d6ec3f' in osactivate_result.stdout_lines"
+#      - "'LicenseStatus                                  : 1' in osactivate_result.stdout_lines"
+
+#  - name: Check O/S is activated
+#    fail:
+#      msg: "Fail O/S is not activated"
+#    when:
+#      - "'ApplicationID                                  : 55c92734-d682-4d71-983e-d6ec3f' not in osactivate_result.stdout_lines"
+#      - "'LicenseStatus                                  : 0' in osactivate_result.stdout_lines"
+
 #check that computer name is 15 characters or less
+
+  - name: Check that computer name is 15 characters or less
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Computer name is 15 characters or less = Passed' ]"
+    when: ansible_hostname | length < 15
+    
+  - name: Fail if computer name is greater than 15 characters
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Computer name is 15 characters or less = Failed' ]"
+    when: ansible_hostname | length > 15
 
 #Check that computer is in the correct OU. OU=Windows Server 201x Member Servers,OU=Servers,OU=Systems...
 #Check that "Default DSG Member Server 201x Baseline Policy" is being applied.
@@ -1981,3 +2078,7 @@
 
 #Check that ServicesPipeTimeout is set to 90 seconds on Server 2016
 
+# Display Service_Acceptance_Results Array
+  - name: Display Results Array
+    debug:
+       msg: "{{ Service_Acceptance_Results }}"

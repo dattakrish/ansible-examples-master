@@ -106,3 +106,8 @@ src_sql_2016_dev_zip: "c:\\tmp\\SQL\\SQL_2016_Dev_x64_inc_SP2.zip"
 src_sql_2017_ent_zip: "c:\\tmp\\SQL\\SQL_2017_Ent_x64_RTM.zip"
 src_sql_2017_std_zip: "c:\\tmp\\SQL\\SQL_2017_Std_x64_RTM.zip"
 src_sql_2017_dev_zip: "c:\\tmp\\SQL\\SQL_2017_Dev_x64_RTM.zip"
+
+# SQL Studio
+src_sqlstudio_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL_Studio/17.9.1.1/
+src_sqlstudio_dest: C:\tmp\SQL_Studio\SSMS-Setup-ENU.exe
+src_sqlstudio_id: '{1D117BF0-C2F4-4B9F-88C9-710F1EAE95F6}'
