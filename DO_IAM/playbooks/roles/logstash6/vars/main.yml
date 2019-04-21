@@ -1,0 +1,18 @@
+---
+# vars file for logstash
+#sqs_nonprod:
+#- 'LS_SQS_QUEUE=BPATestQueue'
+
+#sqs_prod:
+#- 'LS_SQS_QUEUE=BPATestQueue'
+
+#files:
+#- 00-input-application.conf
+#- 10-filters-application_1.conf
+#- 30-output-sqs.conf
+
+logstash:
+- 'LS_OPTS="--allow-env"'
+- 'LS_APP_NAME="IAM"'
+- 'LS_LOG_FILE_PATH="/opt/logs/server.log"'
+- 'KILL_ON_STOP_TIMEOUT=1'

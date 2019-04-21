@@ -1,0 +1,19 @@
+---
+- name: copy systemd unit files
+  copy:
+    src: "{{ item }}.service"
+    dest: "/etc/systemd/system/{{ item }}.service"
+  with_items: "{{ business_srv }}"
+
+- name: daemon-reload
+  command: systemctl daemon-reload
+
+- name: enable services
+  command: systemctl enable {{item}}.service
+  with_items:
+    - "{{ business_srv }}"
+
+- name: start services
+  command: systemctl start {{item}}.service
+  with_items:
+    - "{{ business_srv }}"

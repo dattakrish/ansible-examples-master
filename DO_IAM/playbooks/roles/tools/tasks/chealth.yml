@@ -1,0 +1,10 @@
+---
+
+- name: Download CloudHealth Agent
+  get_url:
+    url: "https://s3.amazonaws.com/remote-collector/agent/v18/install_cht_perfmon.sh"
+    dest: /opt/downloads
+    mode: 0744
+
+- name: Install CloudHealth Agent
+  shell: "PROXY_HOST={{ proxy }} PROXY_PORT=8080 /opt/downloads/install_cht_perfmon.sh 18 224001a5-cb80-4f1a-b468-8a3083009a3a aws"

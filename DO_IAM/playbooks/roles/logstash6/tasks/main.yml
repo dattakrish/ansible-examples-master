@@ -1,0 +1,95 @@
+---
+# tasks file for logstash
+- name: Copy Logstash repo
+  copy:
+    src: logstash.repo
+    dest: /etc/yum.repos.d/logstash.repo
+
+- name: Add Logstash gpg key
+  rpm_key:
+    state: present
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Install Logtash
+  yum:
+    name: logstash
+    state: latest
+
+- name: getting aws instance-id
+  shell: "curl -s http://169.254.169.254/latest/meta-data/instance-id"
+  register: iid
+
+- name: getting aws instance region
+  shell: "curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | sed 's/\\s//g' | tr -d '\",' | cut -f 2 -d ':'"
+  register: region
+
+#- name: create directory
+#  file:
+#    path: /opt/logs/logstash/
+#    state: directory
+#    mode: 0755
+
+#- name: delete /var/log/logstash
+#  file:
+#    path: /var/log/logstash
+#    state: absent
+
+#- name: link logstash log dir
+#  file:
+#    src: /opt/logs/logstash
+#    dest: /var/log/logstash
+#    owner: logstash
+#    group: logstash
+#    state: link
+
+#- name: copy all logstash conf files
+#  copy:
+#   src: "{{ item }}"
+#   dest: /etc/logstash/conf.d/{{ item }}
+#  with_items: "{{ files }}"
+
+#- name: Importing additional variables
+#  lineinfile:
+#    dest: /etc/default/logstash
+#    line: "{{ item }}"
+#    create: yes
+#  with_items:
+#  - "{{ logstash }}"
+#  - "LS_APP_ENV={{ env }}"
+#  - "AWS_INSTANCE_ID={{ iid.stdout }}"
+#  - "LS_SQS_REGION={{ region.stdout }}"
+
+#- name: Importing SQS Name variable
+#  lineinfile:
+#    dest: /etc/default/logstash
+#    line: "{{ item }}"
+#  with_items:
+#    - "{{ sqs_nonprod }}"
+#  when: cloud == "nonprod"
+
+#- name: Importing SQS Name variable
+#  lineinfile:
+#    dest: /etc/default/logstash
+#    line: "{{ item }}"
+#  with_items:
+#    - "{{ sqs_prod }}"
+#  when: cloud == "prod"
+
+#- name: enable logstash.service
+#  command: systemctl enable logstash.service
+
+#- name: daemon-reload
+#  command: systemctl daemon-reload
+
+#- name: start logstash.service
+#  command: systemctl start logstash.service
+
+#- name: status of logstash.service
+#  command: systemctl status logstash.service
+
+#- name: "install logstash plugins - logstash-input-jms, logstash-filter-prune, logstash-filter-mutate"
+#  shell: "/usr/share/logstash/bin/logstash-plugin install {{ item }}"
+#  with_items:
+#    - logstash-input-jms
+#    - logstash-filter-prune
+#    - logstash-filter-mutate

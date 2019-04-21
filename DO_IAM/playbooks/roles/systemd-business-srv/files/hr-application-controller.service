@@ -1,0 +1,10 @@
+[Unit]
+Description=hr-application-controller-service.jar
+
+[Service]
+User=iamuser
+Group=iamuser
+ExecStart=/bin/java -jar /opt/software/hr-application-controller-service.jar &
+Restart=always
+
+[Install]

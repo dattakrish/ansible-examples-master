@@ -1,0 +1,64 @@
+---
+- name: stop scheduler.services
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ scheduler }}"
+  when: target == "scheduler-service"
+  become: yes
+
+- name: stop persistence.services
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ persistence }}"
+  when: target == "persistence-service"
+  become: yes
+
+- name: stop logger.services
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ logger }}"
+  when: target == "logger-service"
+  become: yes
+
+- name: stop model-transformer.service 
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ modeltransformer }}"
+  when: target == "model-transformer-service"
+  become: yes
+
+- name: stop config-service 
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ config }}"
+  when: target == "config-service"
+  become: yes
+
+- name: stop hr-application-controller.service
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ hr_application_controller }}"
+  when: target == "hr-application-controller-service"
+  become: yes
+
+- name: stop hr-scim-controller.service 
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ hr_scim_controller_service }}"
+  when: target == "hr-scim-controller-service"
+  become: yes
+
+- name: stop hr-business-service 
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ hr_business_service }}"
+  when: target == "hr-business-service"
+  become: yes
+
+- name: stop ad-business-service 
+  command: systemctl stop {{item.unit}}
+  with_items:
+    - "{{ ad_business_service }}"
+  when: target == "ad-business-service"
+  become: yes
+

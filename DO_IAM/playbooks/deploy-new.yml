@@ -1,0 +1,14 @@
+---
+- hosts: localhost:all
+  roles:
+  - { role: devmount, when: init == 'true' }
+  - { role: users_iam, when: init == 'true' }
+  - { role: jdk-8u152, when: init == 'true' }
+  - { role: logstash6, when: init == 'true' }
+  - { role: tools, when: init == 'true' }
+  - { role: deploy-platform-srv-new, when: srv_name == 'platform-srv' }
+  - { role: systemd-platform-srv, when: srv_name == 'platform-srv' }
+  - { role: deploy-business-srv-new, when: srv_name == 'business-srv' }
+  - { role: systemd-business-srv, when: srv_name == 'business-srv' }
+  - { role: deploy-scheduler-srv-new, when: srv_name == 'scheduler-srv' }
+  - { role: systemd-scheduler-srv, when: srv_name == 'scheduler-srv' }

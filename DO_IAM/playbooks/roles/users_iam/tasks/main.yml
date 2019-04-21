@@ -1,0 +1,136 @@
+---
+#tasks
+- name: create IAM user
+  user: name={{srv_user}} shell=/bin/bash uid=1019
+
+- name: create iam .ssh directory
+  file: path=/home/{{srv_user}}/.ssh state=directory owner={{srv_user}}
+
+- name: copy key files
+  copy:
+    src: "{{srv_user}}_{{item}}"
+    dest: "/home/{{srv_user}}/.ssh/{{item}}"
+  with_items:
+    - id_rsa
+    - id_rsa.pub
+
+- name: copy jenkins authorized_keys
+  copy:
+    src: jenkins_id_rsa.pub
+    dest: "/home/{{srv_user}}/.ssh/authorized_keys"
+
+- name: chmod and chgrp for iamuser home directory
+  file:
+    path: /home/{{srv_user}}/.ssh/
+    state: directory
+    mode: 0755
+    owner: "{{srv_user}}"
+    group: "{{srv_user}}"
+
+- name: chmod and chgrp for user key file
+  file:
+    path: "/home/{{srv_user}}/.ssh/{{item}}"
+    state: file
+    mode: 0600
+    owner: "{{srv_user}}"
+    group: "{{srv_user}}"
+  with_items:
+    - id_rsa
+    - id_rsa.pub
+    - authorized_keys
+
+- name: create jenkins user
+  user: name=jenkins shell=/bin/bash uid=1020
+
+- name: create jenkins .ssh directory
+  file: path=/home/jenkins/.ssh state=directory owner=jenkins
+
+- name: copy jenkins public key
+  copy:
+    src: "jenkins_{{item}}"
+    dest: /home/jenkins/.ssh/authorized_keys
+  with_items:
+    - id_rsa.pub
+
+- name: jenkins ssh-keyscan
+  shell: ssh-keyscan jenkins-wdev.aws.wiley.com > /home/jenkins/.ssh/known_hosts
+
+- name: chmod and chgrp for jenkins home directory
+  file:
+    path: /home/jenkins/.ssh/
+    state: directory
+    mode: 0755
+    owner: jenkins
+    group: jenkins
+
+- name: chmod and chgrp for jenkins key file
+  file:
+    path: "/home/jenkins/.ssh/{{item}}"
+    state: file
+    mode: 0600
+    owner: jenkins
+    group: jenkins
+  with_items:
+    - authorized_keys
+
+- name: modify sudoer files
+  blockinfile:
+    path: "/etc/sudoers"
+    block: |
+      jenkins    ALL=({{srv_user}}) NOPASSWD:ALL
+      jenkins    ALL=(root) NOPASSWD:ALL
+
+- name: ssh-keyscan
+  shell: ssh-keyscan 192.168.108.198 > "/home/{{srv_user}}/.ssh/known_hosts"
+
+- name: create IAM users in nonprod
+  user:
+    name: "{{ item.id }}"
+    comment: "{{ item.Name }}"
+    shell: /bin/bash
+    password: "{{password}}"
+    groups: wheel,iamuser
+  when: cloud=='nonprod'
+  with_items: "{{ iam_user }}"
+
+- name: create IAM users in prod
+  user:
+    name: "{{ item.id }}"
+    comment: "{{ item.Name }"
+    shell: /bin/bash
+    password: "{{password}}"
+    groups: iamuser
+  when: cloud=='prod'
+  with_items: "{{ iam_user }}"
+
+
+- name: create .ssh directory
+  file:
+    path: "/home/{{ item.id }}/.ssh"
+    state: directory
+    owner: "{{ item.id }}"
+  with_items: "{{ iam_user }}"
+
+- name: copy public key file
+  copy:
+    src: "/home/cftdeploy/DO/OS_scripts/home/{{ item.id }}.txt"
+    dest: "/home/{{ item.id }}/.ssh/authorized_keys"
+  with_items: "{{ iam_user }}"
+
+- name: chmod and chgrp for sftp user home directory
+  file:
+    path: "/home/{{ item.id }}/.ssh/"
+    state: directory
+    mode: 0700
+    owner: "{{ item.id }}"
+    group: "{{item.id}}"
+  with_items: "{{ iam_user }}"
+
+- name: chmod and chgrp for user key file
+  file:
+    path: "/home/{{ item.id }}/.ssh/authorized_keys"
+    state: file
+    mode: 0600
+    owner: "{{ item.id }}"
+    group: "{{ item.id }}"
+  with_items: "{{ iam_user }}"

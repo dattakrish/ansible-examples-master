@@ -1,0 +1,10 @@
+---
+- name: deploy scheduler
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=scheduler-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=scheduler-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/scheduler-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no

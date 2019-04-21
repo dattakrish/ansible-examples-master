@@ -1,0 +1,31 @@
+---
+- name: Create directory
+  file: path=/opt/software/aws-scripts-mon state=directory
+
+- name: install dependencies RHEL
+  shell: yum install perl-Switch perl-DateTime perl-Sys-Syslog perl-LWP-Protocol-https perl-Digest-SHA --enablerepo="rhui-REGION-rhel-server-optional" -y
+  when: ansible_distribution == "RedHat"
+
+- name: install dependencies RHEL
+  shell: yum install perl-Switch perl-DateTime perl-Sys-Syslog perl-LWP-Protocol-https perl-Digest-SHA -y
+  when: ansible_distribution == "CentOS"
+
+- name: install zip
+  shell: yum install zip -y
+
+- name: Download CloudWatch Agent
+  get_url:
+    url: "http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip"
+    dest: /opt/downloads
+
+- name: Unzip CloudWatch Agent
+  unarchive:
+    src: /opt/downloads/CloudWatchMonitoringScripts-1.2.1.zip
+    dest: /opt/software
+    remote_src: yes
+
+- name: Setup cron job
+  cron:
+     name: "Run CW Monitor"
+     minute: "*/5"
+     job: "/opt/software/aws-scripts-mon/mon-put-instance-data.pl --mem-util --mem-used --mem-avail"

@@ -1,0 +1,40 @@
+---
+- name: deploy hr-application-controller-service.jar
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=hr-application-controller-service&v={{app_ver}}-{{build}}"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=hr-application-controller-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/hr-application-controller-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: deploy hr-scim-controller-service.jar
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=hr-scim-controller-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=hr-scim-controller-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/hr-scim-controller-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: deploy hr-business-service.jar
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=hr-business-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=hr-business-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/hr-business-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: deploy ad-business-service
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=ad-business-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=ad-business-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/ad-business-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no

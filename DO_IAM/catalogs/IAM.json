@@ -1,0 +1,599 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "ami-6704bb18 - AWS RHEL 7.5",
+
+  "Parameters" : {
+    "AMI" : {
+      "Description" : "AMI id",
+      "Default" : "ami-6704bb18",
+      "Type" : "String"
+    },
+
+    "RequestID": {
+      "Description": "GIS request ID for tracking purposes (if one exists)",
+      "Type": "String"
+    },
+
+    "APPName" : {
+      "Default": "OKTA_IAM",
+      "Description" : "OKTA_IAM",
+      "Type": "String",
+      "AllowedValues" : [ "OKTA_IAM" ]
+    },
+
+    "AwsVpcName" : {
+      "Default": "DEV",
+      "Description" : "AWS VPC name. Used to determine propper mapping of resources and will be stored in /etc/env_name",
+      "Type": "String",
+      "AllowedValues" : [ "DEV", "QA", "PROD" ]
+    },
+
+    "UpTime" : {
+      "Default": "ScheduledStart-Stop-needed",
+      "Description" : "uptime",
+      "Type": "String",
+      "AllowedValues" : [ "24x7", "StartWhenNeeded", "ScheduledStart-Stop-needed", "Mo-Fr-9AM-7PM-EST", "KeepStopped" ]
+    },
+
+    "HealthCheckType" : {
+      "Description" : "Health check type for the auto scaling group (ELB/EC2). If ELB is not specified then value is ignored and EC2 check is used",
+      "Type": "String",
+      "Default" : "ELB",
+      "AllowedValues" : [ "ELB", "EC2" ]
+    },
+
+    "ServiceName" : {
+      "Description": "Must match linux service name. Name of the application that will be used in ec2 tag, will be populated in ELK and used as indexName in ElasticSearch.",
+      "Default": "platform-srv",
+      "Type": "String",
+      "AllowedValues" : [ "platform-srv", "business-srv", "scheduler-srv" ]
+    },
+
+    "ServiceEnvName" : {
+      "Description" : "Application environment name.",
+      "Default": "dev",
+      "Type": "String",
+      "AllowedValues" : [ "dev", "qa", "perf", "prod" ]
+    },
+
+    "ComponentName" : {
+      "Description" : "Specifies user-friendly host name (DNS CNAME). Will only be applied to the single isntance cluster",
+      "Type": "String"
+    },
+
+    "BuildLabel" : {
+      "Description" : "Application build label",
+      "Type": "String"
+    },
+
+    "BuildType": {
+      "Description" : "Application Build Type",
+      "Type": "String",
+      "AllowedValues" : [ "SNAPSHOT", "RELEASE" ]
+    },
+
+    "AppVersion":{
+      "Description" : "Application Version",
+      "Default": "1.0",
+      "Type": "String"
+    },
+
+    "ProjName":{
+      "Default": "OKTA_IAM",
+      "Description" : "Project Name",
+      "Type": "String"
+    },
+
+    "PathToLogsFolder" : {
+      "Description" : "Path to the folder where application logs will be stored. Used by bot CF script to create a folder and as a part of logstash log file path",
+      "Default": "/opt/logs",
+      "Type": "String"
+    }
+  },
+
+  "Conditions": {
+    "ELBTest":
+      {"Fn::Or":[
+        {"Fn::Equals": ["BECO-APP", {"Ref": "ServiceName"}]},
+        {"Fn::Equals": ["BECO-DPP", {"Ref": "ServiceName"}]}
+      ]},
+
+    "IsMultiInstanceGroup" : {
+      "Fn::Not" : [{
+        "Fn::Equals" : [
+          { "Fn::FindInMap" : [ "MaxSizeMap", { "Ref" : "ServiceName" }, { "Ref": "ServiceEnvName"} ]},
+          "1"
+        ]
+      }]
+    },
+
+    "IsProd": {"Fn::Equals": ["PROD", {"Ref": "AwsVpcName"} ]}
+  },
+
+  "Mappings" : {
+    "SubnetMap" : {
+      "DEV" : {
+        "AppA" : "subnet-e629a890",
+        "AppB" : "subnet-e606d0cc"
+      },
+      "QA" : {
+        "AppA" : "subnet-2708de0d",
+        "AppB" : "subnet-bf35b4c9"
+      },
+      "PROD" : {
+        "AppA" : "subnet-9e41f4b4",
+        "AppB" : "subnet-d297f3a4"
+      }
+    },
+
+    "SecurityGroup":{
+      "SecurityGroups": {
+        "DEV" : "sg-f6ba6c8e",
+        "QA" : "sg-f6bf698e",
+        "PROD": "sg-e3b91499"
+      }
+    },
+
+    "InstanceNameMap":{
+      "platform-srv": {
+        "dev" : "aue1ldiamA01",
+        "qa" : "aue1lqiamA01",
+        "perf" : "aue1lsiamA01",
+        "prod" : "aue1lpiamA01"
+      },
+      "business-srv": {
+        "dev" : "aue1ldiamA02",
+        "qa" : "aue1lqiamA02",
+        "perf" : "aue1lsiamA02",
+        "prod" : "aue1lpiamA02"
+      },
+      "scheduler-srv": {
+        "dev" : "aue1ldiamA03",
+        "qa" : "aue1lqiamA03",
+        "perf" : "aue1lsiamA03",
+        "prod" : "aue1lpiamA03"
+      }
+    },
+
+    "InstanceTypeMap": {
+      "platform-srv": {
+        "dev" : "t2.large",
+        "qa" : "t2.large",
+        "perf" : "t2.large",
+        "prod" : "t2.large"
+      },
+      "business-srv": {
+        "dev" : "t2.large",
+        "qa" : "t2.large",
+        "perf" : "t2.large",
+        "prod" : "t2.large"
+      },
+      "scheduler-srv": {
+        "dev" : "t2.medium",
+        "qa" : "t2.medium",
+        "perf" : "t2.medium",
+        "prod" : "t2.medium"
+      }
+    },
+
+    "ProxyMap" : {
+      "proxy" : {
+        "DEV" : "http://proxy-dev.aws.wiley.com:8080",
+        "QA": "http://proxy-qa.aws.wiley.com:8080",
+        "PROD": "http://proxy-prod.aws.wiley.com:8080"
+      }
+    },
+
+    "ProxyName" : {
+          "proxy" : {
+            "DEV" : "proxy-dev.aws.wiley.com",
+            "QA"  : "proxy-qa.aws.wiley.com",
+            "PROD": "proxy-prod.aws.wiley.com"
+          }
+    },
+
+    "KeyName" : {
+      "keys" : {
+        "DEV" : "AWS-NONPROD-WILEY",
+        "QA": "AWS-NONPROD-WILEY",
+        "PROD": "AWS-PROD-WILEY"
+      }
+    },
+
+    "TargetName" : {
+      "platform-srv": {
+        "dev":"arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-persistence-service/5e23eb430b16fc34,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-logger-service/e3c93e6a4b8cd8f0,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-model-transformer-srv/4c7daea3e15d5058,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-config-service/26fe0babf7219438",
+        "qa":"arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-persistence-service/ea2dd2cb63b51d12,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-logger-service/7290b1956641e801,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-config-service/df1b22218620ea77",
+        "perf":"placeholder",
+        "prod":"arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/persistence-service/199ddc0df28fc3b4,arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/logger-service/d79529c7211b8d87,arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/config-service/64b02a02973d4ae5"
+      },
+      "business-srv":{
+        "dev":"arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-hr-app-controller-srv/8a7fb66699bbd78a,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-hr-scim-controller-srv/e3715a9f9f14abf7,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-hr-business-service/2c97a8bc3727ac0d,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-ad-business-service/de5311cd77789e6b",
+        "qa":"arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-hr-app-controller-srv/50384616ab91196c,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-hr-scim-controller-srv/03d09d7d6f9a5b29,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-hr-business-service/d3e8103ddf3f3018,arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-ad-business-service/12a02b0d978c856a",
+        "perf":"placeholder",
+        "prod":"arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/hr-app-controller-service/8b713da2daa957a4,arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/hr-scim-controller-service/0dc6fd06cb6ed8d5,arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/hr-business-service/c84794a07a102408,arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/ad-business-service/254d4e4aed6d2269"
+      },
+      "scheduler-srv":{
+        "dev":"arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-dev-scheduler-service/fada6c43ad3ab22c",
+        "qa":"arn:aws:elasticloadbalancing:us-east-1:868651433674:targetgroup/okta-qa-scheduler-service/270a1312e22a7ae5",
+        "perf":"placeholder",
+        "prod":"arn:aws:elasticloadbalancing:us-east-1:297427851722:targetgroup/scheduler-service/fac16b9fd16fb102"
+      }
+    },
+
+    "MinSizeMap":{
+      "platform-srv" : {
+        "dev" : "2",
+        "qa" : "2",
+        "prod" : "2"
+      },
+      "business-srv" : {
+        "dev" : "2",
+        "qa" : "2",
+        "prod" : "2"
+      },
+      "scheduler-srv" : {
+        "dev" : "1",
+        "qa" : "1",
+        "prod" : "1"
+      }
+    },
+
+    "MaxSizeMap":{
+      "platform-srv" : {
+        "dev" : "5",
+        "qa" : "5",
+        "prod" : "5"
+      },
+      "business-srv" : {
+        "dev" : "5",
+        "qa" : "5",
+        "prod" : "5"
+      },
+      "scheduler-srv" : {
+        "dev" : "1",
+        "qa" : "1",
+        "prod" : "1"
+      }
+    },
+
+    "IAMRole" : {
+      "roles" : {
+        "DEV" : "aws-nonprod-okta-resource-ec2",
+        "QA": "aws-nonprod-okta-resource-ec2",
+        "PROD": "aws-prod-okta-resource-ec2"
+      }
+    },
+
+    "TopicMap" : {
+      "Topics" : {
+        "dev" : "arn:aws:sns:us-east-1:868651433674:IAM_dev",
+        "qa" : "arn:aws:sns:us-east-1:868651433674:IAM_qa",
+        "perf":"arn:aws:sns:us-east-1:868651433674:IAM_perf",
+        "prod":"arn:aws:sns:us-east-1:297427851722:IAM_prod"
+      }
+    },
+
+    "LogstashSQSQueue" : {
+      "queue" : {
+        "DEV" : "IAM-OKTA-nonprod",
+        "QA": "IAM-OKTA-nonprod",
+        "PROD":"IAM-OKTA-prod"
+      }
+    }
+  },
+
+  "Resources" : {
+    "ServiceGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "VPCZoneIdentifier" : [
+                                { "Fn::FindInMap" : [ "SubnetMap", { "Ref" : "AwsVpcName" }, "AppA" ]},
+                                { "Fn::FindInMap" : [ "SubnetMap", { "Ref" : "AwsVpcName" }, "AppB" ]}
+                              ],
+        "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
+        "TargetGroupARNs" : { "Fn::Split" : [ ",", { "Fn::FindInMap" : [ "TargetName", { "Ref" : "ServiceName" }, {"Ref":"ServiceEnvName"} ]} ] },
+        "MinSize" : { "Fn::FindInMap" : [ "MinSizeMap", { "Ref" : "ServiceName" }, { "Ref": "ServiceEnvName"} ]},
+        "MaxSize" : { "Fn::FindInMap" : [ "MaxSizeMap", { "Ref" : "ServiceName" }, { "Ref": "ServiceEnvName"} ]},
+        "DesiredCapacity" : { "Fn::FindInMap" : [ "MinSizeMap", { "Ref" : "ServiceName" }, { "Ref": "ServiceEnvName"} ]},
+        "NotificationConfigurations" : [
+          {
+            "TopicARN" : { "Fn::FindInMap" : [ "TopicMap", "Topics", {"Ref":"ServiceEnvName"} ]},
+            "NotificationTypes" : [
+            "autoscaling:EC2_INSTANCE_LAUNCH",
+            "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+            "autoscaling:EC2_INSTANCE_TERMINATE",
+            "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+            ]
+          }
+        ],
+        "HealthCheckType" : {"Fn::If": ["ELBTest", {"Ref": "HealthCheckType"}, "EC2"]},
+        "HealthCheckGracePeriod" : 900,
+        "MetricsCollection" : [{
+          "Granularity" : "1Minute"
+        }],
+        "Tags": [
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Fn::FindInMap" : [ "InstanceNameMap", { "Ref" : "ServiceName" }, {"Ref":"ServiceEnvName"} ]},
+                "Key": "Name"
+            },
+
+            {
+                "PropagateAtLaunch": true,
+                "Key": "Image_Id",
+                "Value": { "Ref": "AMI" }
+            },
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "AwsVpcName" },
+                "Key": "AwsVpcName"
+            },
+            {
+                "PropagateAtLaunch": {"Fn::If": ["IsMultiInstanceGroup", false, true] },
+                "Value": { "Ref" : "ComponentName" },
+                "Key": "ComponentName"
+            },
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "ServiceName" },
+                "Key": "ServiceName"
+            },
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "ServiceEnvName" },
+                "Key": "ServiceEnvName"
+            },
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "BuildLabel" },
+                "Key": "BuildLabel"
+            },
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "BuildType" },
+                "Key": "BuildType"
+            },
+
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "AppVersion" },
+                "Key": "AppVersion"
+            },
+            {
+                  "PropagateAtLaunch": true,
+                  "Key": "UpTime",
+                  "Value": { "Ref": "UpTime" }
+            },
+
+            {
+                  "PropagateAtLaunch": true,
+                  "Key": "ProjName",
+                  "Value": { "Ref": "ProjName" }
+            },
+
+            {
+                "PropagateAtLaunch": true,
+                "Value": { "Ref" : "RequestID" },
+                "Key": "RequestID"
+            }
+        ]
+      },
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Timeout" : "PT20M",
+          "Count"   : { "Fn::FindInMap" : [ "MinSizeMap", { "Ref" : "ServiceName" }, { "Ref": "ServiceEnvName"} ]}
+        }
+      }
+    },
+
+    "LaunchConfig" : {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Properties" : {
+        "KeyName" : { "Fn::FindInMap" : [ "KeyName", "keys", {"Ref":"AwsVpcName"} ]},
+        "ImageId" : { "Ref" : "AMI"},
+        "IamInstanceProfile" : { "Fn::FindInMap" : [ "IAMRole", "roles", {"Ref":"AwsVpcName"} ]},
+        "InstanceType" : { "Fn::FindInMap" : [ "InstanceTypeMap", {"Ref":"ServiceName"}, {"Ref":"ServiceEnvName"} ]},
+        "SecurityGroups" : [ { "Fn::FindInMap" : [ "SecurityGroup", "SecurityGroups", {"Ref":"AwsVpcName"} ]} ],
+        "BlockDeviceMappings":[
+                    {
+                        "DeviceName":"/dev/sda1",
+                        "Ebs":{
+                            "DeleteOnTermination": "true",
+                            "VolumeType" : "gp2"
+                        }
+                    },
+
+                    {
+                        "DeviceName":"/dev/sdf",
+                        "Ebs":{
+                            "VolumeSize":"20",
+                            "DeleteOnTermination": "true",
+                            "VolumeType" : "gp2",
+                            "Encrypted" : "True"
+                        }
+                    },
+
+                    {
+                        "DeviceName":"/dev/sdg",
+                        "Ebs":{
+                            "VolumeSize":"20",
+                            "DeleteOnTermination": "true",
+                            "VolumeType" : "gp2",
+                            "Encrypted" : "True"
+                        }
+                    }
+                ],
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash -xe\n",
+
+            "chmod 755 /var/log/cloud-init.log\n",
+            "echo 'export http_proxy=", { "Fn::FindInMap" : [ "ProxyMap", "proxy", {"Ref":"AwsVpcName"} ]}, "'>> /etc/environment\n",
+            "echo 'export https_proxy=", { "Fn::FindInMap" : [ "ProxyMap", "proxy", {"Ref":"AwsVpcName"} ]}, "'>> /etc/environment\n",
+            "echo 'export NO_PROXY=169.254.169.254,.aws.wiley.com' >> /etc/environment\n",
+            "source /etc/environment\n",
+            "/bin/systemctl restart network\n",
+            "setenforce 0\n",
+            "mkdir /opt/downloads\n",
+            "sed -i -e 's/SELINUX=.*/SELINUX=disabled/g' /etc/sysconfig/selinux\n",
+
+            {"Fn::If": ["IsProd", "",
+             { "Fn::Join" : ["", [
+               "useradd sshtest\n",
+               "echo abc123 | passwd --stdin sshtest\n",
+               "usermod -a sshtest -G wheel\n"
+             ]]}
+            ]},
+
+          "sed -e 's/requiretty/!requiretty/' -i.bak /etc/sudoers\n",
+          "sed -e 's/PasswordAuthentication no/PasswordAuthentication yes/' -i.bak /etc/ssh/sshd_config\n",
+          "systemctl reload sshd.service\n",
+
+          "export http_proxy=", { "Fn::FindInMap" : [ "ProxyMap", "proxy", {"Ref":"AwsVpcName"} ]},"\n",
+          "export https_proxy=", { "Fn::FindInMap" : [ "ProxyMap", "proxy", {"Ref":"AwsVpcName"} ]},"\n",
+          "export NO_PROXY=169.254.169.254\n",
+
+          "default_user=$(grep \" name:\" /etc/cloud/cloud.cfg | awk '{print $2}')\n",
+          "usermod -l awsadmin -d /home/awsadmin $default_user\n",
+          "groupmod -n awsadmin $default_user\n",
+          "mv /home/$default_user /home/awsadmin\n",
+          "sed -i -e s/$default_user/awsadmin/g /etc/sudoers\n",
+          "find /etc/sudoers.d/ -type f -exec sed -i -e s/$default_user/awsadmin/g {} \\;\n",
+
+          "echo \"proxy=$http_proxy\" >>  /etc/yum.conf\n",
+          "sed -i -e 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Base.repo || true\n",
+          "sed -i -e 's/#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo || true\n",
+
+          "yum-config-manager --enable rhui-REGION-rhel-server-extras || true\n",
+
+          "yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm\n",
+          "sed -i -e 's/metalink/#metalink/g' /etc/yum.repos.d/epel.repo\n",
+          "sed -i -e 's/#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo\n",
+          "yum install -y python2-pip python-lxml ansible git wget unzip bzip2 gcc\n",
+          "pip install awscli\n",
+          "pip install botocore boto3\n",
+          "pip install --upgrade pip\n",
+          "yum update -y\n",
+
+          "#  --- Centos end\n",
+
+            "useradd cftdeploy\n",
+            "mkdir /home/cftdeploy/.ssh; chmod 700 /home/cftdeploy/.ssh\n",
+
+            "/usr/bin/aws s3 cp s3://aws-", {"Fn::If": ["IsProd", "prod", "nonprod"]}, "-wiley/cftdeploy/cftdeploy_aws_s3.yml /root/cftdeploy_aws_s3.yml\n",
+            "ansible-playbook /root/cftdeploy_aws_s3.yml -e \"env=",{"Fn::If": ["IsProd", "prod", "nonprod"]}, "\"\n",
+
+            "chmod 755 /var/log/cloud-init.log\n",
+
+            "chmod 755 /var/log/messages\n",
+
+            "runuser -l cftdeploy -c \"git clone git@192.168.108.198:DO /home/cftdeploy/DO\"\n",
+
+            {"Fn::If": ["IsProd",
+              { "Fn::Join" : ["",["runuser -l cftdeploy -c \"git clone git@192.168.108.198:DO_IAM /home/cftdeploy/DO_IAM\"\n"]
+              ]},
+
+              { "Fn::Join" : ["",["runuser -l cftdeploy -c \"git clone git@192.168.108.198:DO_IAM /home/cftdeploy/DO_IAM\"\n"]
+              ]}
+            ]},
+
+            "# this line is not necessary, it is here for debugging purpose\n",
+            "chmod 755 /home/cftdeploy\n",
+
+            "cd /home/cftdeploy/DO/ansible/DevOpsUsers\n",
+            "ansible-playbook -i ",  {"Fn::If": ["IsProd", "prod", "nonprod"]}, " user_devops.yml\n",
+
+            "cd /home/cftdeploy/DO_IAM/playbooks\n",
+            "ansible-playbook deploy.yml -i ", {"Ref":"ServiceEnvName"}, " -e",
+            " init=true",
+            " -e app_ver=",  {"Ref":"AppVersion" },
+            " -e srv_name=", {"Ref":"ServiceName" },
+            " -e srv_user=iamuser",
+            " -e env=",      {"Ref":"ServiceEnvName" },
+            " -e cloud=",    {"Fn::If": ["IsProd", "prod", "nonprod"]},
+            " -e build=",    {"Ref":"BuildType" },
+            "\n",
+
+            "#=##make cloud formation helpers executable\n",
+            "yum install -y https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.amzn1.noarch.rpm\n",
+            "ln -s /usr/local/lib/python2.7/site-packages/cfnbootstrap /usr/lib/python2.7/site-packages/cfnbootstrap\n",
+            "chmod +x /opt/aws/bin/* \n",
+
+            "unset http_proxy && unset https_proxy\n",
+
+            "/opt/aws/bin/cfn-signal -e $? ",
+            "         --stack ", { "Ref" : "AWS::StackName" },
+            "         --resource ServiceGroup ",
+            "         --region ", { "Ref" : "AWS::Region" }, "\n"
+
+          ]]}
+        }
+      }
+    },
+
+    "ServiceScaleUpPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Condition": "IsMultiInstanceGroup",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "ServiceGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "1"
+      }
+    },
+    "ServiceScaleDownPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Condition": "IsMultiInstanceGroup",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "ServiceGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "-1"
+      }
+    },
+
+    "CPUAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Condition": "IsMultiInstanceGroup",
+      "Properties": {
+        "AlarmDescription": "Scale-up if CPU > 70% for 10 minutes",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "2",
+        "Threshold": "70",
+        "AlarmActions": [ { "Ref": "ServiceScaleUpPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": { "Ref": "ServiceGroup" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "CPUAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Condition": "IsMultiInstanceGroup",
+      "Properties": {
+        "AlarmDescription": "Scale-down if CPU < 40% for 10 minutes",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "2",
+        "Threshold": "40",
+        "AlarmActions": [ { "Ref": "ServiceScaleDownPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": { "Ref": "ServiceGroup" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    }
+  }
+}

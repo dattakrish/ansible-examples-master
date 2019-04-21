@@ -1,0 +1,23 @@
+---
+
+- name: Create download dir
+  file:
+    path: /opt/downloads/cstrike
+    state: directory
+
+- name: Copy rpm file
+  shell: "/usr/bin/aws s3 sync s3://aws-{{ cloud }}-wiley-infrastructure/infrastructure/crowdstrike/linux/ /opt/downloads/cstrike/ --exclude \"*\" --include \"*final.rpm\""
+
+- name: Install falcon rpm
+  yum:
+    name: /opt/downloads/cstrike/falcon-sensor-3.3.0-3302.el7.x86_64-final.rpm  
+    state: present
+
+- name: Run Falcon Sensor
+  shell: "/opt/CrowdStrike/falconctl -s --aph={{ proxy }} --app=8080"
+
+- name: Check that CrowdStrike service is enabled and running
+  service:
+    name: falcon-sensor
+    enabled: yes
+    state: started

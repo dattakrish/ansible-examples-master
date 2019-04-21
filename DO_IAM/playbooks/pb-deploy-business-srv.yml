@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  gather_facts: False
+  roles:
+  - deploy-business-srv
+  - systemd-business-srv
