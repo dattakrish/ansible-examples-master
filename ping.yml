@@ -13,7 +13,7 @@
       command: ping -c4 {{ primary_ip_address }}
       ignore_errors: yes
       register: ping_result
-      becomes: true
+      become: true
       run_once: true
 
     - name: Check if the IP address exists
