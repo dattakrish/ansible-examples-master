@@ -1,0 +1,26 @@
+---
+
+# Check that server IP does not ping which would indicate that in use IP has been provided.
+# Please see README.md for more information.
+
+# Execute template on Tower Servers inventory
+
+- hosts: localhost
+  gather_facts: no
+  tasks:
+
+    - name: Check if the server can ping the address {{ primary_ip_address }}
+      command: ping -c4 {{ primary_ip_address }}
+      ignore_errors: yes
+      register: ping_result
+      run_once: true
+
+    - name: Check if the IP address exists
+      fail:
+        msg: "{{ primary_ip_address }} is already present so do not continue"
+      when: ping_result.rc == 0
+    
+    - name: Continue if the IP address does not exists
+      debug:
+        msg: "{{ primary_ip_address }} is not present so continue"
+      when: ping_result.rc != 0
