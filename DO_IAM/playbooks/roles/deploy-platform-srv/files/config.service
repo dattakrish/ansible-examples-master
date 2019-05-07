@@ -1,0 +1,10 @@
+[Unit]
+Description=config-service
+
+[Service]
+User=iamuser
+Group=iamuser
+ExecStart=/bin/java -jar /opt/software/config-service.jar &
+Restart=always
+
+[Install]

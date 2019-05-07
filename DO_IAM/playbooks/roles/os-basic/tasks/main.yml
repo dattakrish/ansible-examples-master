@@ -1,0 +1,71 @@
+---
+- name: "OS: increase size of file handles and inode cache"
+  lineinfile:
+    dest: /etc/sysctl.conf
+    line: fs.file-max=8192
+    backup: yes
+
+- name: "OS: update ulimits"
+  lineinfile:
+    dest: /etc/security/limits.conf
+    line: "{{ item }}"
+    backup: yes
+  with_items:
+  - '*    soft    nofile         8192'
+  - '*    hard    nofile         8192'
+  - '*    soft    nproc          8192'
+  - '*    hard    nproc          8192'
+
+#- name: disable requiretty
+#  replace:
+#    dest: "/etc/sudoers"
+#    regexp: 'requiretty'
+#    replace: '!requiretty'
+#    backup: yes
+
+# - name: "OS: enable rhel-7-server-optional-rpms (ignored for CentOS)"
+#   command: subscription-manager repos --enable rhel-7-server-optional-rpms
+#   ignore_errors: true
+
+# NTP/Postfix section START
+- name: "OS: install/configure ntpd and postfix"
+  yum:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+  - postfix
+#  - ntp
+  - unzip
+- service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: yes
+  with_items:
+  - postfix
+  - ntpd
+#- replace:
+#    dest: /etc/ntp.conf
+#    regexp: '^server '
+#    replace: '#server '
+- lineinfile:
+    dest: "{{ item.dest }}"
+    line: "{{ item.line }}"
+  with_items:
+  - { dest: '/etc/postfix/main.cf', line: 'relayhost = smtpgate.wiley.com' }
+  #- { dest: '/etc/ntp.conf', line: 'server nbu_master.wiley.com' }
+- service:
+    name: "{{ item }}"
+    state: started
+  with_items:
+  - postfix
+  - ntpd
+
+- name:  set password authentication to no
+  replace: dest=/etc/ssh/sshd_config regexp='^PasswordAuthentication yes' replace='PasswordAuthentication no' backup=yes
+  notify: restart sshd
+
+- name: install sysstat (performance environment)
+  yum:
+    name: sysstat
+    state: installed
+  when: env == "wperf"

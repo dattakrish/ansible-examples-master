@@ -1,0 +1,37 @@
+    # created with:
+    # python -c 'import crypt; print crypt.crypt("abc123", "$1$SomeSalt$")'
+    # password is abc123
+
+     env: nonprod
+     password: $1$SomeSalt$.L5DvbHUFf8.GH3KBBX5d1
+
+     user:
+      - id: sjagarapu
+        Name: "Suryanarayana Jagarapu"
+
+      - id: vreshmakis
+        Name: "Varsha Reshma Kispotta"
+
+      - id: jitak
+        Name: "Jitendra Tak"
+
+      - id: rpamecha
+        Name: "Rahul Pamecha"
+
+      #- id: subiswas
+      #  Name: "Supriyo Biswas"
+
+      - id: schhetri
+        Name: "Safal Chhetri"
+
+      - id: ajbetai
+        Name: "Ankita Jagdish Betai"
+
+      - id: pasati
+        Name: "Priyanka Asati"
+
+      - id: shugupta
+        Name: "Shubham Gupta"
+
+      - id: klimbachiy
+        Name: "Kangana Limbachiya"

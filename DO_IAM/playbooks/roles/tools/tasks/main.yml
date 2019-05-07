@@ -1,0 +1,11 @@
+---
+# tasks file for tools
+
+- name: Install CloudWatch Monitoring Scripts
+  include_tasks: cwmon.yml
+
+- name: Install CrowdStrike Falcon Sensor
+  include_tasks: cstrike.yml
+
+#- name: Install CloudHealth Agent
+#  include_tasks: chealth.yml

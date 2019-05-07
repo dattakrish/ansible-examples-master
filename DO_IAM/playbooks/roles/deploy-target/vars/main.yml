@@ -1,0 +1,36 @@
+---
+scheduler: 
+  - { "name": "scheduler-service",
+      "unit": "scheduler.service"}
+
+persistence:
+  - { "name": "persistence-service",
+      "unit": "persistence.service"}
+
+logger:
+  - { "name": "logger-service",
+      "unit": "logger.service"}
+
+modeltransformer:
+  - { "name": "model-transformer-service",
+      "unit": "model-transformer.service"}
+
+config:
+  - { "name": "config-service",
+      "unit": "config.service"}
+
+hr_application_controller:
+  - { "name": "hr-application-controller-service",
+      "unit": "hr-application-controller.service"}
+
+hr_scim_controller_service:
+  - {"name": "hr-scim-controller-service",
+     "unit": "hr-scim-controller.service"}
+
+hr_business_service:
+  - {"name": "hr-business-service",
+     "unit": "hr-business.service"}
+
+ad_business_service:
+  - {"name": "ad-business-service",
+    "unit": "ad-business.service"}

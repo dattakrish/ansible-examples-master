@@ -1,0 +1,9 @@
+---
+- hosts: localhost
+  gather_facts: False
+  roles:
+  - logstash6
+
+  environment:
+    http_proxy: "{{http_proxy}}"
+    https_proxy: "{{http_proxy}}"

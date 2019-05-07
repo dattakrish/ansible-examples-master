@@ -1,0 +1,5 @@
+---
+platform_srv:
+- persistence
+- logger
+- model-transformer

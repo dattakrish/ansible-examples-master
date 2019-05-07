@@ -1,0 +1,10 @@
+[Unit]
+Description=model-transformer-service.jar
+
+[Service]
+User=iamuser
+Group=iamuser
+ExecStart=/bin/java -jar /opt/software/model-transformer-service.jar &
+Restart=always
+
+[Install]

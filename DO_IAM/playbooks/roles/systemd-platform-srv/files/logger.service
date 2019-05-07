@@ -1,0 +1,10 @@
+[Unit]
+Description=logger-service.jar
+
+[Service]
+User=iamuser
+Group=iamuser
+ExecStart=/bin/java -jar /opt/software/logger-service.jar &
+Restart=always
+
+[Install]

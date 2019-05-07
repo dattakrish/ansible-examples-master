@@ -1,0 +1,13 @@
+---
+service_link:
+  #persistence-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/releases/content/com/wiley/spr"
+  persistence-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/snapshots/content/com/wiley/iam/scim/"
+  logger-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/releases/content/com/wiley/spr"
+  model-transformer-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/releases/content/com/wiley/wpp/transformation/"
+  config-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/thirdparty/content/com/ixxus/wiley/eeo"
+  hr-application-controller-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/thirdparty/content/com/ixxus/wiley/eeo"
+  hr-scim-controller-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/releases/content/com/wiley/spr"
+  hr-business-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/releases/content/com/wiley/wpp"
+  ad-business-service: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/thirdparty/content/org/grobid"
+  wpp-submission-api: "http://nexus.aws.wiley.com:8081/nexus/service/local/repositories/releases/content/com/wiley/wpp"
+  scheduler-service: "http://docker.aws.wiley.com/v2/latex-transform-app/tags/list"

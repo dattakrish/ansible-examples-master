@@ -1,0 +1,20 @@
+---
+- import_tasks: stop_target.yml
+
+- name: remove old jar
+  file:
+    path: /opt/software/{{target}}.jar
+    state: absent
+  become: yes
+
+- name: deploy artifact
+  get_url:
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a={{target}}&v={{app_ver}}-{{build}}"
+    dest: /opt/software/{{target}}.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+  become: yes
+
+- import_tasks: start_target.yml

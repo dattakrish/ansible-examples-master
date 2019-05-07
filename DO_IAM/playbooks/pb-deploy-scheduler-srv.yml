@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  gather_facts: False
+  roles:
+  - deploy-scheduler-srv
+  - systemd-business-srv

@@ -1,0 +1,9 @@
+---
+- hosts: localhost:all
+  gather_facts: False
+
+#  environment:
+#    host_key_checking: false
+
+  roles:
+  - deploy-target 

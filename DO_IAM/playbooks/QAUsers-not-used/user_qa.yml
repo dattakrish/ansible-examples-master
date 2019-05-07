@@ -1,0 +1,23 @@
+- hosts: localhost
+
+  tasks:   
+   - name: create BPA users in nonprod
+     user: name={{ item.id }} comment={{ item.Name }} shell=/bin/bash password={{password}} groups=wheel
+     when: env=='nonprod'
+     with_items: "{{ user }}"
+
+   - name: create .ssh directory
+     file: path=/home/{{ item.id }}/.ssh state=directory owner={{ item.id }}
+     with_items: "{{ user }}"
+
+   - name: copy public key file
+     copy: src=/home/cftdeploy/DO/OS_scripts/home/{{ item.id }}.txt dest=/home/{{ item.id }}/.ssh/authorized_keys
+     with_items: "{{ user }}" 
+
+   - name: chmod and chgrp for sftp user home directory
+     file: path=/home/{{ item.id }}/.ssh/ state=directory mode=0700 owner={{ item.id }} group={{item.id}}
+     with_items: "{{ user }}"
+
+   - name: chmod and chgrp for user key file
+     file: path=/home/{{ item.id }}/.ssh/authorized_keys state=file mode=0600 owner={{ item.id }} group={{ item.id }}
+     with_items: "{{ user }}"

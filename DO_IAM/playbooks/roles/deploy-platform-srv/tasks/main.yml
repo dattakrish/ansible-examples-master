@@ -1,0 +1,68 @@
+---
+- name: deploy config-service
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=config-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=config-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/config-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: copy systemd unit files
+  copy:
+    src: "config.service"
+    dest: "/etc/systemd/system/config.service"
+
+- name: daemon-reload
+  command: systemctl daemon-reload
+
+- name: enable config services
+  command: systemctl enable config.service
+
+- name: start config service,
+  command: systemctl start config.service
+
+- name: check config service, check curl http://ENV.iam.aws.wiley.com/config-service/health
+  command: curl http://{{env}}.iam.aws.wiley.com/config-service/health
+  register: result
+
+- debug:
+    msg: "{{result }}"
+
+- name: deploy persistence-service
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=persistence-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=persistence-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/persistence-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: deploy logger-service
+  get_url:
+    #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r=snapshots&g=com.wiley.iam.scim&a=logger-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=logger-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/logger-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: deploy model-transformer-service
+  get_url:
+  #url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=model-transformer-service&v=0.0.1-SNAPSHOT"
+    url: "http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven/redirect?r={{build|lower}}s&g=com.wiley.iam.scim&a=model-transformer-service&v={{app_ver}}-{{build}}"
+    dest: /opt/software/model-transformer-service.jar
+    mode: 0750
+    owner: iamuser
+    group: iamuser
+    use_proxy: no
+
+- name: check config service
+  command: curl http://{{env}}.iam.aws.wiley.com/config-service/health
+  register: result
+
+- debug:
+    msg: "{{result }}"

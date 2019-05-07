@@ -1,0 +1,33 @@
+---
+- name: create /opt/downloads/
+  file: path=/opt/downloads/ state=directory
+
+- name: download jdk from s3
+  aws_s3:
+    bucket: aws-{{ cloud }}-wiley
+    object: application/JDK/jdk-8u152-linux-x64.tar.gz
+    dest: /opt/downloads/jdk-8u152-linux-x64.tar.gz
+    mode: get
+
+- name: create /usr/java
+  file:
+    path: /usr/jdk/
+    state: directory
+
+- name: unzip java
+  unarchive:
+    src: /opt/downloads/jdk-8u152-linux-x64.tar.gz
+    dest: /usr/jdk
+    copy: no
+
+- name: create java symlink
+  file:
+    src: /usr/jdk/jdk1.8.0_152
+    dest: /usr/java
+    state: link
+
+- name: create another java symlink
+  file:
+    src: /usr/jdk/jdk1.8.0_152/bin/java
+    dest: /bin/java
+    state: link

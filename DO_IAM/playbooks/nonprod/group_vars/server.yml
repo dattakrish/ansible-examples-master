@@ -1,0 +1,64 @@
+# created with:
+# python -c 'import crypt; print crypt.crypt("abc123", "$1$SomeSalt$")'
+# password is abc123
+
+env: nonprod
+password: $1$SomeSalt$.L5DvbHUFf8.GH3KBBX5d1
+cloud: nonprod
+
+iam_user:
+ - id: rohroy
+   Name: "Rohit Roy"
+
+ - id: tspandey
+   Name: "Tanay Shankar Pandey"
+
+ - id: papaul
+   Name: "Pampa Paul"
+
+ - id: krdatta
+   Name: "Krishnendu Datta"
+
+ - id: nrajput
+   Name: "Narendra Rajput"
+
+ - id: sdutta
+   Name: "Sumon Dutta"
+
+ - id: sthiyagara
+   Name: "Saravanan Thiyagarajan"
+
+ - id: anghosh
+   Name: "Anubhab Ghosh"
+
+ - id: ahabib
+   Name: "Ahasan Habib"
+
+
+iam_QA_user:
+ - id: sjagarapu
+   Name: "Suryanarayana Jagarapu"
+
+ - id: vreshmakis
+   Name: "Varsha Reshma Kispotta"
+
+ - id: jitak
+   Name: "Jitendra Tak"
+
+ - id: rpamecha
+   Name: "Rahul Pamecha"
+
+ - id: schhetri
+   Name: "Safal Chhetri"
+
+ - id: ajbetai
+   Name: "Ankita Jagdish Betai"
+
+ - id: pasati
+   Name: "Priyanka Asati"
+
+ - id: shugupta
+   Name: "Shubham Gupta"
+
+ - id: klimbachiy
+   Name: "Kangana Limbachiya"

@@ -1,0 +1,4 @@
+---
+# vars file for deployment 
+link:
+- 'http://nexus.aws.wiley.com:8081/nexus/service/local/artifact/maven'

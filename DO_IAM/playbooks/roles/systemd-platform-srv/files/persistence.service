@@ -1,0 +1,10 @@
+[Unit]
+Description=persistence-service.jar
+
+[Service]
+User=iamuser
+Group=iamuser
+ExecStart=/bin/java -jar /opt/software/persistence-service.jar &
+Restart=always
+
+[Install]
