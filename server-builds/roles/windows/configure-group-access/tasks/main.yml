@@ -23,7 +23,6 @@
       members:
         - "{{ short_domain }}\\{{ domain_adm_group }}"
         - "{{ short_domain }}\\{{ grp_expuk_admin_1 }}"
-        - "{{ short_domain }}\\{{ grp_expuk_admin_2 }}"
         - "{{ short_domain }}\\{{ grp_all_admin_1 }}"
         - "{{ short_domain }}\\{{ grp_all_admin_2 }}"
       state: present
@@ -34,9 +33,9 @@
       name: Administrators
       members:
         - "{{ short_domain }}\\{{ domain_adm_group }}"
+        - "{{ short_domain }}\\{{ grp_ipani_admin_1 }}"
         - "{{ short_domain }}\\{{ grp_all_admin_1 }}"
         - "{{ short_domain }}\\{{ grp_all_admin_2 }}"
-        - "{{ short_domain }}\\{{ grp_ipani_admin_1 }}"
       state: present
     when: short_domain == 'IPANIUK'
 
@@ -48,26 +47,8 @@
         - "{{ short_domain }}\\{{ grp_gdc_admin_1 }}"
         - "{{ short_domain }}\\{{ grp_gdc_admin_2 }}"
         - "{{ short_domain }}\\{{ grp_gdc_admin_3 }}"
-        - "{{ short_domain }}\\{{ grp_gdc_admin_4 }}"
       state: present
     when: short_domain == 'GDC'
-
-  # Add to Event Log Reader Groups
-  - name: Add GDC Event Log Reader Groups
-    win_group_membership:
-      name: 'Event Log Readers'
-      members:
-        - "{{ short_domain }}\\{{ grp_gdc_event }}"
-      state: present
-    when: short_domain == 'GDC'
-
-  - name: Add EXPERIANUK/IPANI Event Log Reader Groups
-    win_group_membership:
-      name: 'Event Log Readers'
-      members:
-        - "{{ short_domain }}\\{{ grp_all_event }}"
-      state: present
-    when: (short_domain == 'EXPERIANUK' or short_domain == 'IPANIUK')
 
   # Add to local Remote Desktop Users Group
   - name: Add EXPERIANUK local Remote Desktop Users

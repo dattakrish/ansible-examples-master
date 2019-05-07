@@ -42,7 +42,13 @@
         vcenter_hostname: ukblpcbvcs02.uk.experian.local
         vcenter_datacenter: Bulwell
       when: vcenter_site == 'Bulwell Synergy'
- 
+
+    - name: Define vCenter for Fairham VDI
+      set_fact:
+        vcenter_hostname: ukfhpcbvcs03.uk.experian.local
+        vcenter_datacenter: Fairham House
+      when: vcenter_site == 'Fairham VDI'
+
     - include_role:
         name: shared/check-vm-status
     

@@ -20,7 +20,7 @@
       state: present
       name: "{{ domain_adm_group }}"
       description: "Windows Server Local Administrator access group"
-      scope: global
+      scope: universal
       organizational_unit: "{{ domain_group_ou }}"
     
   - name: Create Server Remote Desktop Group
@@ -28,5 +28,5 @@
       state: present
       name: "{{ domain_std_group }}"
       description: "Windows Server Local RDP access group"
-      scope: global
+      scope: universal
       organizational_unit: "{{ domain_group_ou }}"

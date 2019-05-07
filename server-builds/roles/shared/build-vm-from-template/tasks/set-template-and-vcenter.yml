@@ -40,6 +40,16 @@
       - os == 'Windows Server 2016'
       - vcenter_site == 'Bulwell Synergy'
 
+  - name: Define template and vCenter for Windows 2016 - Fairham VDI
+    set_fact:
+      template_name: "{{ tmp_fh_win_2016 }}"
+      vcenter_hostname: ukfhpcbvcs03.uk.experian.local
+      vcenter_datacenter: Fairham House
+      compatible_os: true
+    when:
+      - os == 'Windows Server 2016'
+      - vcenter_site == 'Fairham VDI'
+
   - fail:
       msg: "Incompatible OS and vCenter configuration"
-    when: not compatible_os
+    when: compatible_os is not defined

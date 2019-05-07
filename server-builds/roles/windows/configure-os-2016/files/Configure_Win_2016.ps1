@@ -255,7 +255,8 @@ if($YDriveFound -eq "no")
         {
             Initialize-Disk –Number 1 –PartitionStyle GPT
             New-Partition –DiskNumber 1 –UseMaximumSize –Driveletter Y
-            Format-Volume –FileSystem NTFS –NewFileSystemLabel ‘EITS-Support-Only’ –DriveLetter Y -Confirm:$false   
+            Format-Volume –FileSystem NTFS –NewFileSystemLabel ‘EITS-Support-Only’ –DriveLetter Y -Confirm:$false 
+            Set-Disk -Number 1 -IsOffline $False -ErrorAction SilentlyContinue
         }
         Else
         {

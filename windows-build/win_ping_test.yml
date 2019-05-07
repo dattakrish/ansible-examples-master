@@ -1,0 +1,8 @@
+---
+- name: win_ping
+  hosts: all
+  gather_facts: no
+  tasks:
+
+  - name: Win_Ping
+    win_ping:

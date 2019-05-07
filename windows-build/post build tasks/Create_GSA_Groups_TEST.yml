@@ -45,16 +45,14 @@
      organizational_unit: "{{ ou }}"
     when: result1 is success
 
-  - name: Check if user exists
-    win_domain_user:
-      name: "{{ lanid }}"
-      state: query
-    register: user_result
-    ignore_errors: yes
-
-  - fail:
-      msg: "Can`t find user in Active Directory"
-    when: "'FAILED' in user_result.stderr"
+#  - name: Check if user exists
+#    win_domain_user:
+#      name: "{{ lanid }}"
+#      state: query
+#    register: user_result
+#    fail:
+#      msg: "Can`t find user in Active Directory"
+#    when: "'FAILED' in user_result.stderr"
 
 
   - name: Add user to admin group
@@ -106,16 +104,14 @@
      organizational_unit: "{{ ou }}"
     when: hostvars[dc1]['result1'] is failed
 
-  - name: Check if user exists
-    win_domain_user:
-      name: "{{ lanid }}"
-      state: query
-    register: user_result
-    ignore_errors: yes
-
-  - fail:
-      msg: "Can`t find user in Active Directory"
-    when: not user_result.sid
+#  - name: Check if user exists
+#    win_domain_user:
+#      name: "{{ lanid }}"
+#      state: query
+#    register: user_result
+#    fail:
+#      msg: "Can`t find user in Active Directory"
+#    when: "'FAILED' in user_result.stderr"
 
   - name: Add user to admin group
     win_domain_user:

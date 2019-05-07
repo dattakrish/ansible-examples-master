@@ -65,7 +65,7 @@
     - set_fact:
         dc_success: true
     
-    when: dc_ping_result.ping
+    when: dc_ping_result.ping is defined
     run_once: true
 
   - fail:

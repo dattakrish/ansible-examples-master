@@ -6,10 +6,15 @@
 - hosts: all
   tasks:
 
-# Create an Array to store results
+# Create an Array to store Passed results - moved to service-acceptance-vars.yml
   - name: Create Results Array
     set_fact: Service_Acceptance_Results="[ 'Service Acceptance Results' ]"
 
+# Create an Array to store Failed results - Not used!
+#  - name: Create Results Array
+#    set_fact: Service_Acceptance_Results="[ 'Service Acceptance Failed Results' ]"
+
+# Remove after moving all backup checks to service-acceptance-backup
   - name: Check Backup Network Adapter exists
     win_shell: |
       Get-NetAdapter -Name "Backup" –ErrorAction SilentlyContinue
@@ -17,42 +22,47 @@
     ignore_errors: yes
     check_mode: no
 
+# Remove after moving all backup checks to service-acceptance-backup
   - name: Register backup_required true if backup NIC exists
     set_fact:
       backup_required: true
     when: backup_check.rc == 0
 
+# Remove after moving all backup checks to service-acceptance-backup
   - name: Register backup_required false if backup NIC doesnt exists
     set_fact:
       backup_required: false
     when: backup_check.rc != 0
 
-  # Work out short domain name from full doamin name and store as fact
+# Work out short domain name from full doamin name and store as fact - Moved to service-acceptance-experianuk.yml
   - name: Define short name for EXPERIANUK
     set_fact:
       short_domain: EXPERIANUK
     when: ansible_windows_domain == 'uk.experian.local'
 
+# - Moved to service-acceptance-gdc.yml
   - name: Define short name for GDC
     set_fact:
       short_domain: GDC
     when: ansible_windows_domain == 'gdc.local'
 
+# - Moved to service-acceptance-ipaniuk.yml
   - name: Define short name for IPANI
     set_fact:
       short_domain: IPANIUK
     when: ansible_windows_domain == 'ipani.uk.experian.com'
 
-# Work out Admin and RDP Group names from hostname and store as fact
+# Work out Admin and RDP Group names from hostname and store as fact - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Define Admin Group Name
     set_fact:
       admin_account: "WS-ADM_{{ ansible_hostname }}"
   
+# - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Define RDP Group Name
     set_fact:
       rdp_account: "WS-STD_{{ ansible_hostname }}"
 
-# Local access groups exist created by Configure Local Group Access role Admin
+# Local access groups exist created by Configure Local Group Access role Admin - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Check local Admin Group membership
     win_group_membership:
       name: Administrators
@@ -61,7 +71,7 @@
       state: present
     register: local_admin_group
 
-# Local access groups exist created by Configure Local Group Access role RDP
+# Local access groups exist created by Configure Local Group Access role RDP - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Check local RDP Group membership
     win_group_membership:
       name: Remote Desktop Users
@@ -70,25 +80,27 @@
       state: present
     register: local_rdp_group
 
-# Check if the Check local Admin Group membership changed anything
+# Check if the Check local Admin Group membership changed anything - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Check if the Check local Admin Group membership changed anything
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local Admin Group Exists = Failed' ]"
     when: local_admin_group.changed == true
 
+# - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Admin account exists
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local Admin Group Exists = Passed' ]"
     when: local_admin_group.changed == false
 
-# Check if the Check local Admin Group membership changed anything
+# Check if the Check local Admin Group membership changed anything - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: Check if the Check local RDP Group membership changed anything
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local RDP Group Exists = Failed' ]"
     when: local_rdp_group.changed == true
 
+# - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
   - name: RDP Account Exists
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Local RDP Group Exists = Passed' ]"
     when: local_rdp_group.changed == false
 
-# CHeck Primary Network Adapter Exists
+# CHeck Primary Network Adapter Exists - Moved to service-acceptance-global.yml
   - name: Check Primary Network Adapter exists
     win_shell: |
       Get-NetAdapter -Name "Primary" –ErrorAction SilentlyContinue
@@ -96,18 +108,21 @@
     ignore_errors: yes
     check_mode: no
 
+# CHeck Primary Network Adapter Exists - Moved to service-acceptance-global.yml
   - name: Pass if Primary Network Adapter found
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Primary Adapter Exists = Passed' ]"
     when: primary_nic.rc == 0
 
+# CHeck Primary Network Adapter Exists - Moved to service-acceptance-global.yml
   - name: Fail if no Primary Network Adapter found
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Primary Adapter Exists = Failed' ]"
     when: primary_nic.rc != 0
 
-# Backup Required Block
+# Backup Required Block - Moved to service-accepatnce-backup.yml
   - name: Block for executing command only when backup required
     block:
 
+# - Moved to service-accepatnce-backup.yml
     - name: Check Backup Network Adapter exists
       win_shell: |
         Get-NetAdapter -Name "Backup" –ErrorAction SilentlyContinue
@@ -115,75 +130,79 @@
       ignore_errors: yes
       check_mode: no
 
+# - Moved to service-accepatnce-backup.yml
     - name: Pass if Backup Network Adapter found
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Adapter Exists = Passed' ]"
       when: backup_nic.rc == 0
 
+# - Moved to service-accepatnce-backup.yml
     - name: Fail if no Backup Network Adapter found
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Adapter Exists = Failed' ]"
       when: backup_nic.rc != 0
 
-# Backup Required Block end
+# Backup Required Block end - Moved to service-accepatnce-backup.yml
     when: 
       - backup_required
 
-# Check that CCAdmin Account exists and is a member of Administrators
-  - name: Check that CCAdmin Account exists and is a member of Administrators
+# Check that CCAdmin Account doesnt exists and is not a member of Administrators - Moved to service-acceptance-global.yml
+  - name: Check that CCAdmin Account doesnt exists and is not a member of Administrators
     win_group_membership:
       name: Administrators
       members:
         - "CCAdmin"
-      state: present
+      state: absent
     register: CCAdmin_user
 
-# Check if the Check local Admin Group membership changed anything
+# Check if the Check local Admin Group membership changed anything - Moved to service-acceptance-global.yml
   - name: Check if the Check CCAdmin changed is false
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CCAdmin Account Exists = Passed' ]"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CCAdmin Account Doesnt Exist = Passed' ]"
     when: CCAdmin_user.changed == false
 
-# Check if the Check local Admin Group membership changed anything
+# Check if the Check local Admin Group membership changed anything - Moved to service-acceptance-global.yml
   - name: Check if the Check CCAdmin changed is true
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CCAdmin Account Exists = Failed' ]"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CCAdmin Account Doesnt Exist = Failed' ]"
     when: CCAdmin_user.changed == true
 
-# Check that the Arcsight Account is a member of the event log readers group
+# Check that the Arcsight Account is not a member of the event log readers group - Moved to service-acceptance-experianuk.yml
   - name: Ensure user Arcsight is present EXPERIANUK Domain
     win_group_membership:
       name: Event Log Readers
       members:
         - "{{ short_domain }}\\arcsight"
-      state: present
+      state: absent
     register: arcsight_user
     when: "'uk.experian.local' in ansible_domain"
 
+# - Moved to service-acceptance-gdc.yml
   - name: Ensure user ArcSvc is present GDC.LOCAL Domain
     win_group_membership:
       name: Event Log Readers
       members:
         - "{{ short_domain }}\\arcsvc"
-      state: present
+      state: absent
     register: arcsight_user
     when: "'gdc' in ansible_domain"
 
+# Moved to service-acceptance-ipaniuk.yml
   - name: Ensure user Arcsight is present IPANI.UK.EXPERIAN.COM Domain
     win_group_membership:
       name: Event Log Readers
       members:
         - "{{ short_domain }}\\arcsight"
-      state: present
+      state: absent
     register: arcsight_user
     when: "'ipani' in ansible_domain"
 
-# Check if the Check Arcsight changed anything
+# Check if the Check Arcsight changed anything - Moved to service-acceptance-gdc.yml & service-acceptance-experianuk.yml & service-acceptance-ipaniuk.yml
   - name: Check if the Check Arcsight changed true
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Arcsight Account Exists = Failed' ]"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Arcsight Account Doesnt Exist = Failed' ]"
     when: arcsight_user.changed == true
 
   - name: Check if the Check Arcsight changed false
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Arcsight Account Exists = Passed' ]"
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Arcsight Account Doesnt Exist = Passed' ]"
     when: arcsight_user.changed == false
 
-# Check that SS000DA exists and is in administrators group.
+# Check that SS000DA exists and is in administrators group - Moved to service-acceptance-global.yml
   - name: Check that SS000DA Account exists and is a member of Administrators
     win_group_membership:
       name: Administrators
@@ -192,20 +211,40 @@
       state: present
     register: ss000da_user
 
-# Check if the Check SS000DA changed anything
+# Check if the Check SS000DA changed anything - Moved to service-acceptance-global.yml
   - name: Check if the Check SS000DA changed true
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA Account Exists = Failed' ]"
     when: ss000da_user.changed == true
 
+# Check if the Check SS000DA changed anything - Moved to service-acceptance-global.yml
   - name: Check if the Check SS000DA changed false
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA Account Exists = Passed' ]"
     when: ss000da_user.changed == false
 
-# GDC Block
+# Check that Domain_Admins doesnt exists in administrators - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+  - name: Check that Domain Admins Account doesnt exists in Administrators
+    win_group_membership:
+      name: Administrators
+      members:
+        - "{{ short_domain }}\\Domain Admins"
+      state: absent
+    register: Domain_Admins_user
+
+# Check if the Check Domain Admins changed anything - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+  - name: Check if the Check Domain Admins changed true
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Failed' ]"
+    when: Domain_Admins_user.changed == true
+
+# - Moved to service-acceptance-experianuk.yml & service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+  - name: Check if the Check Domain Admins changed false
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Passed' ]"
+    when: Domain_Admins_user.changed == false
+
+# GDC Block - Moved to service-acceptance-gdc.yml
   - name: Block for executing when GDC
     block:
 
-# Check that sndlgdc exists and is in administrators group.
+# Check that sndlgdc exists and is in administrators group - Moved to service-acceptance-gdc.yml
     - name: Check that sndlgdc Account exists and is a member of Administrators GDC
       win_group_membership:
         name: Administrators
@@ -214,16 +253,17 @@
         state: present
       register: sndlgdc_user
 
-# Check if the Check sndlgdc changed anything
+# Check if the Check sndlgdc changed anything - Moved to service-acceptance-gdc.yml
     - name: Check if the Check sndlgdc changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndlgdc Account Exists = Failed' ]"
       when: sndlgdc_user.changed == true
 
+# - Moved to service-acceptance-gdc.yml
     - name: Check if the Check sndlgdc changed false
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndlgdc Account Exists = Passed' ]"
       when: sndlgdc_user.changed == false
 
-# Check that ADMIN EGOC Operations exists and is in administrators group.
+# Check that ADMIN EGOC Operations exists and is in administrators group - Moved to service-acceptance-gdc.yml
     - name: Check that ADMIN EGOC Operations Account exists and is a member of Administrators GDC
       win_group_membership:
         name: Administrators
@@ -232,42 +272,44 @@
         state: present
       register: EGOC_OP_user
 
-# Check if the Check ADMIN EGOC Operations changed anything
+# Check if the Check ADMIN EGOC Operations changed anything - Moved to service-acceptance-gdc.yml
     - name: Check if the Check ADMIN EGOC Operations changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN EGOC Operations Account Exists = Failed' ]"
       when: EGOC_OP_user.changed == true
 
+# - Moved to service-acceptance-gdc.yml
     - name: Check if the Check ADMIN EGOC Operations changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN EGOC Operations Account Exists = Passed' ]"
       when: EGOC_OP_user.changed == false
 
-# Check that ADMIN DSG Engineers exists and is in administrators group.
-    - name: Check that ADMIN DSG Engineers Account exists and is a member of Administrators GDC
+# Check that ADMIN DSG Engineers doesnt exist and is not in administrators group - Moved to service-acceptance-gdc.yml
+    - name: Check that ADMIN DSG Engineers Account doesnt exist and is not a member of Administrators GDC
       win_group_membership:
         name: Administrators
         members:
           - "{{ short_domain }}\\ADMIN DSG Engineers"
-        state: present
+        state: absent
       register: admin_dsg_user
 
-# Check if the Check ADMIN DSG Engineers changed anything
+# Check if the Check ADMIN DSG Engineers changed anything - Moved to service-acceptance-gdc.yml
     - name: Check if the Check ADMIN DSG Engineers changed true
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN DSG Engineers Account Exists = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN DSG Engineers Account doesnt Exists = Failed' ]"
       when: admin_dsg_user.changed == true
 
+# - Moved to service-acceptance-gdc.yml
     - name: Check if the Check ADMIN DSG Engineers changed false
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN DSG Engineers Account Exists = Passed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN DSG Engineers Account doesnt Exists = Passed' ]"
       when: admin_dsg_user.changed == false
 
-# GDC Block End
+# GDC Block End - Moved to service-acceptance-gdc.yml
     when:
       - ansible_windows_domain == 'gdc.local'
 
-# IPANIUK Block
+# IPANIUK Block - Moved to service-acceptance-ipaniuk.yml
   - name: Block for executing when IPANIUK
     block:
 
-# Check that sndipaniuk exists and is in administrators group.
+# Check that sndipaniuk exists and is in administrators group - Moved to service-acceptance-ipaniuk.yml
     - name: Check that sndipaniuk Account exists and is a member of Administrators IPANIUK
       win_group_membership:
         name: Administrators
@@ -276,34 +318,17 @@
         state: present
       register: sndipaniuk_user
 
-# Check if the Check sndipaniuk changed anything
+# Check if the Check sndipaniuk changed anything - Moved to service-acceptance-ipaniuk.yml
     - name: Check if the Check sndipaniuk changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndipaniuk Account Exists = Failed' ]"
       when: sndipaniuk_user.changed == true
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Check if the Check sndipaniuk changed false
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndipaniuk Account Exists = Passed' ]"
       when: sndipaniuk_user.changed == false
 
-# Check that Domain Admins Account exists and is a member of Administrators IPANIUK
-    - name: Check that Domain Admins Account exists and is a member of Administrators IPANIUK
-      win_group_membership:
-        name: Administrators
-        members:
-          - "{{ short_domain }}\\Domain Admins"
-        state: present
-      register: domain_admin_user
-
-# Check if the Check Domain Admins changed anything
-    - name: Check if the Check Domain Admins changed true
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Exists = Failed' ]"
-      when: domain_admin_user.changed == true
-
-    - name: Check if the Check Domain Admins changed false
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Exists = Passed' ]"
-      when: domain_admin_user.changed == false
-
-# Check that ts command centre all users exists and is in administrators group.
+# Check that ts command centre all users exists and is in administrators group - Moved to service-acceptance-ipaniuk.yml
     - name: Check that ts command centre all users Account exists and is a member of Administrators IPANIUK
       win_group_membership:
         name: Administrators
@@ -312,16 +337,17 @@
         state: present
       register: command_user
 
-# Check if the Check ts command centre all users changed anything
+# Check if the Check ts command centre all users changed anything - Moved to service-acceptance-ipaniuk.yml
     - name: Check if the Check ts command centre all users true anything
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Failed' ]"
       when: command_user.changed == true
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Check if the Check ts command centre all users false anything
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Passed' ]"
       when: command_user.changed == false
 
-# Check that ts-t-hs-serverops exists and is in administrators group.
+# Check that ts-t-hs-serverops exists and is in administrators group - Moved to service-acceptance-ipaniuk.yml
     - name: Check that ts-t-hs-serverops Account exists and is a member of Administrators IPANIUK
       win_group_membership:
         name: Administrators
@@ -330,7 +356,7 @@
         state: present
       register: ts_t_user
 
-# Check if the Check ts-t-hs-serverops changed anything
+# Check if the Check ts-t-hs-serverops changed anything - Moved to service-acceptance-ipaniuk.yml
     - name: Check if the Check ts-t-hs-serverops changed true IPANIUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Failed' ]"
       when: ts_t_user.changed == true
@@ -339,15 +365,34 @@
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Passed' ]"
       when: ts_t_user.changed == false
 
-# IPANIUK Block End
+# Check that ADMIN Storage Administration doesnt exist and is not in administrators group - Moved to service-acceptance-ipaniuk.yml
+    - name: Check that ADMIN Storage Administration Account doesnt exist and is not a member of Administrators EXPERIANUK
+      win_group_membership:
+        name: Administrators
+        members:
+          - "{{ short_domain }}\\ADMIN Storage Administration"
+        state: absent
+      register: a_s_a_user
+
+# Check if the Check ADMIN Storage Administration changed anything - Moved to service-acceptance-ipaniuk.yml
+    - name: Check if the Check ADMIN Storage Administration changed true EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Storage Administration Account Exists = Failed' ]"
+      when: a_s_a_user.changed == true
+
+# - Moved to service-acceptance-ipaniuk.yml
+    - name: Check if the Check ADMIN Storage Administration changed false EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Storage Administration Account Exists = Passed' ]"
+      when: a_s_a_user.changed == false
+
+# IPANIUK Block End - Moved to service-acceptance-ipaniuk.yml
     when:
       - ansible_windows_domain == 'ipani.uk.experian.com'
 
-# EXPERIANUK Block
+# EXPERIANUK Block - Moved to service-acceptance-experianuk.yml
   - name: Block for executing when EXPERIANUK
     block:
 
-# Check that snduk exists and is in administrators group.
+# Check that snduk exists and is in administrators group. - Moved to service-acceptance-experianuk.yml
     - name: Check that snduk Account exists and is a member of Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -356,16 +401,17 @@
         state: present
       register: snduk_user
 
-# Check if the Check snduk changed anything
+# Check if the Check snduk changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check snduk changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'snduk Account Exists = Failed' ]"
       when: snduk_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check snduk changed false
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'snduk Account Exists = Passed' ]"
       when: snduk_user.changed == false
 
-# Check that ts command centre all users exists and is in administrators group.
+# Check that ts command centre all users exists and is in administrators group - Moved to service-acceptance-experianuk.yml
     - name: Check that ts command centre all users Account exists and is a member of Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -374,16 +420,17 @@
         state: present
       register: command_user
 
-# Check if the Check ts command centre all users changed anything
+# Check if the Check ts command centre all users changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check ts command centre all users changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Failed' ]"
       when: command_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check ts command centre all users changed false
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts command centre all users Account Exists = Passed' ]"
       when: command_user.changed == false
 
-# Check that ts-t-hs-serverops exists and is in administrators group.
+# Check that ts-t-hs-serverops exists and is in administrators group - Moved to service-acceptance-experianuk.yml
     - name: Check that ts-t-hs-serverops Account exists and is a member of Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -392,97 +439,111 @@
         state: present
       register: ts_t_user
 
-# Check if the Check ts-t-hs-serverops changed anything
+# Check if the Check ts-t-hs-serverops changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check ts-t-hs-serverops changed true
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Failed' ]"
       when: ts_t_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check ts-t-hs-serverops changed false
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ts-t-hs-serverops Account Exists = Passed' ]"
       when: ts_t_user.changed == false
 
-# Check that tdmukuser exists and is in administrators group.
-    - name: Check that tdmukuser Account exists and is a member of Administrators EXPERIANUK
+# Check that tdmukuser doesnt exist and is not in administrators group - Moved to service-acceptance-experianuk.yml
+    - name: Check that tdmukuser Account doesnt exist and is not a member of Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
         members:
           - "{{ short_domain }}\\tdmukuser"
-        state: present
+        state: absent
       register: tdmukuser_user
 
-# Check if the Check tdmukuser changed anything
+# Check if the Check tdmukuser changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check tdmukuser changed true EXPERIANUK
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'tdmukuser Account Exists = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'tdmukuser Account has been removed = Failed' ]"
       when: tdmukuser_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check tdmukuser changed false EXPERIANUK
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'tdmukuser Account Exists = Passed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'tdmukuser Account has been removed = Passed' ]"
       when: tdmukuser_user.changed == false
 
-# EXPERIANUK Block End
-    when:
-      - ansible_windows_domain == 'uk.experian.local'
-
-# Check that Domain Admins has been removed from local administrators GDC and EXPRIANUK Only
-
-# EXPERIANUK Block
-#  - name: Block for executing when EXPERIANUK
-#    block:
-
-# Check that Domain Admins doesnt exists in administrators
-#    - name: Check that Domain Admins Account doesnt exists in Administrators EXPERIANUK
-#      win_group_membership:
-#        name: Administrators
-#        members:
-#          - "{{ short_domain }}\\Domain Admins"
-#        state: absent
-#      register: Domain_Admins_user
-
-# Check if the Check Domain Admins changed anything
-#    - name: Check if the Check Domain Admins changed true EXPERINAUK
-#      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Failed' ]"
-#      when: Domain_Admins_user.changed == true
-
-#    - name: Check if the Check Domain Admins changed false EXPERINAUK
-#      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Passed' ]"
-#      when: Domain_Admins_user.changed == false
-
-# EXPERIANUK Block End
-#    when:
-#      - ansible_windows_domain == 'uk.experian.local'
-
-# GDC Block
-  - name: Block for executing when GDC or EXPERIANUK
-    block:
-
-# Check that Domain_Admins doesnt exists in administrators
-    - name: Check that Domain Admins Account doesnt exists in Administrators GDC or EXPERIANUK
+# Check that ADMIN Storage Administration doesnt exist and is not in administrators group - Moved to service-acceptance-experianuk.yml
+    - name: Check that ADMIN Storage Administration Account doesnt exist and is not a member of Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
         members:
-          - "{{ short_domain }}\\Domain Admins"
+          - "{{ short_domain }}\\ADMIN Storage Administration"
         state: absent
-      register: Domain_Admins_user
+      register: a_s_a_user
 
-# Check if the Check Domain Admins changed anything
-    - name: Check if the Check Domain Admins changed true GDC or EXPERIANUK
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Failed' ]"
-      when: Domain_Admins_user.changed == true
+# Check if the Check ADMIN Storage Administration changed anything - Moved to service-acceptance-experianuk.yml
+    - name: Check if the Check ADMIN Storage Administration changed true EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Storage Administration Account Exists = Failed' ]"
+      when: a_s_a_user.changed == true
 
-    - name: Check if the Check Domain Admins changed false GDC or EXPERIANUK
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Domain Admins Account Doesnt Exists = Passed' ]"
-      when: Domain_Admins_user.changed == false
+# - Moved to service-acceptance-experianuk.yml
+    - name: Check if the Check ADMIN Storage Administration changed false EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Storage Administration Account Exists = Passed' ]"
+      when: a_s_a_user.changed == false
 
-# GDC Block End
-    when: ansible_windows_domain == 'gdc.local' or ansible_windows_domain == 'uk.experian.local'
+# Check that RDP-Build_Team_Network_Engineers_Server_RDP_Access Account exists and is a member of Remote Users EXPERIANUK - Moved to service-acceptance-experianuk.yml
+    - name: Check that RDP-Build_Team_Network_Engineers_Server_RDP_Access Account exists and is a member of Remote Users EXPERIANUK
+      win_group_membership:
+        name: Remote Desktop Users
+        members:
+          - "{{ short_domain }}\\RDP-Build_Team_Network_Engineers_Server_RDP_Access"
+        state: present
+      register: net_eng_user
+
+# Check if the Check RDP-Build_Team_Network_Engineers_Server_RDP_Access changed anything - Moved to service-acceptance-experianuk.yml
+    - name: Check if the Check RDP-Build_Team_Network_Engineers_Server_RDP_Access changed true EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'RDP-Build_Team_Network_Engineers_Server_RDP_Access Account Exists = Failed' ]"
+      when: net_eng_user.changed == true
+
+# - Moved to service-acceptance-experianuk.yml
+    - name: Check if the Check RDP-Build_Team_Network_Engineers_Server_RDP_Access changed false EXPERIANUK
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'RDP-Build_Team_Network_Engineers_Server_RDP_Access Account Exists = Passed' ]"
+      when: net_eng_user.changed == false
+
+# EXPERIANUK Block End - Moved to service-acceptance-experianuk.yml
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+# IPANIUK or GDC Block - Moved to service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+  - name: Block for executing when IPANIUK or GDC
+    block:
+
+# Check that Build_Team_Network_Engineers_Server_RDP_Access Account exists and is a member of Remote Users IPANIUK & GDC - Moved to service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+    - name: Check that Build_Team_Network_Engineers_Server_RDP_Access Account exists and is a member of Remote Users IPANIUK & GDC
+      win_group_membership:
+        name: Remote Desktop Users
+        members:
+          - "{{ short_domain }}\\Build_Team_Network_Engineers_Server_RDP_Access"
+        state: present
+      register: net_eng_user
+
+# Check if the Check Build_Team_Network_Engineers_Server_RDP_Access changed anything - Moved to service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+    - name: Check if the Check Build_Team_Network_Engineers_Server_RDP_Access changed true IPANIUK or GDC
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Build_Team_Network_Engineers_Server_RDP_Access Account Exists = Failed' ]"
+      when: net_eng_user.changed == true
+
+# - Moved to service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+    - name: Check if the Check Build_Team_Network_Engineers_Server_RDP_Access changed false IPANIUK or GDC
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Build_Team_Network_Engineers_Server_RDP_Access Account Exists = Passed' ]"
+      when: net_eng_user.changed == false
+
+# IPANIUK or GDC Block End - Moved to service-acceptance-gdc.yml & service-acceptance-ipaniuk.yml
+    when:
+      - ansible_windows_domain == 'ipani.uk.experian.com' or ansible_windows_domain == 'gdc.local'
 
 #Check that various groups/users have been removed from local administrators in case server was created in the computers container EXPERIANUK Only
 
-# EXPERIANUK Block
+# EXPERIANUK Block - Moved to service-acceptance-experianuk.yml
   - name: Block for executing when EXPERIANUK
     block:
 
-# Check that ADMIN Workstation Administration doesnt exists in administrators
+# Check that ADMIN Workstation Administration doesnt exists in administrators - Moved to service-acceptance-experianuk.yml
     - name: Check that ADMIN Workstation Administration Account doesnt exists in Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -491,16 +552,17 @@
         state: absent
       register: Admin_ws_user
 
-# Check if the Check ADMIN Workstation Administration changed anything
+# Check if the Check ADMIN Workstation Administration changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check ADMIN Workstation Administration changed ture EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Workstation Administration Account Doesnt Exists = Failed' ]"
       when: Admin_ws_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check ADMIN Workstation Administration changed false EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN Workstation Administration Account Doesnt Exists = Passed' ]"
       when: Admin_ws_user.changed == false
 
-# Check that CL-T-DskAdmin doesnt exists in administrators
+# Check that CL-T-DskAdmin doesnt exists in administrators - Moved to service-acceptance-experianuk.yml
     - name: Check that CL-T-DskAdmin Account doesnt exists in Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -509,16 +571,17 @@
         state: absent
       register: DskAdmin_user
 
-# Check if the Check CL-T-DskAdmin changed anything
+# Check if the Check CL-T-DskAdmin changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check CL-T-DskAdmin changed anything EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CL-T-DskAdmin Account Doesnt Exists = Failed' ]"
       when: DskAdmin_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check CL-T-DskAdmin changed anything EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CL-T-DskAdmin Account Doesnt Exists = Passed' ]"
       when: DskAdmin_user.changed == false
 
-# Check that Dept_BN_PCSupport doesnt exists in administrators
+# Check that Dept_BN_PCSupport doesnt exists in administrators - Moved to service-acceptance-experianuk.yml
     - name: Check that Dept_BN_PCSupport Account doesnt exists in Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -527,16 +590,17 @@
         state: absent
       register: PCSupport_user
 
-# Check if the Check Dept_BN_PCSupport changed anything
+# Check if the Check Dept_BN_PCSupport changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check Dept_BN_PCSupport changed anything EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dept_BN_PCSupport Account Doesnt Exists = Failed' ]"
       when: PCSupport_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check Dept_BN_PCSupport changed anything EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dept_BN_PCSupport Account Doesnt Exists = Passed' ]"
       when: PCSupport_user.changed == false
 
-# Check that SSMgmtWKUKSvc doesnt exists in administrators
+# Check that SSMgmtWKUKSvc doesnt exists in administrators - Moved to service-acceptance-experianuk.yml
     - name: Check that SSMgmtWKUKSvc Account doesnt exists in Administrators EXPERIANUK
       win_group_membership:
         name: Administrators
@@ -545,20 +609,21 @@
         state: absent
       register: SSMgmtWKUKSvc_user
 
-# Check if the Check SSMgmtWKUKSvc changed anything
+# Check if the Check SSMgmtWKUKSvc changed anything - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check SSMgmtWKUKSvc changed true EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SSMgmtWKUKSvc Account Doesnt Exists = Failed' ]"
       when: SSMgmtWKUKSvc_user.changed == true
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check if the Check SSMgmtWKUKSvc changed false EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SSMgmtWKUKSvc Account Doesnt Exists = Passed' ]"
       when: SSMgmtWKUKSvc_user.changed == false
 
-# EXPERIANUK Block End
+# EXPERIANUK Block End - Moved to service-acceptance-experianuk.yml
     when:
       - ansible_windows_domain == 'uk.experian.local'
 
-#Check that Telnet Client feature is installed
+# Check that Telnet Client feature is installed - Moved to service-acceptance-global.yml
   - name: Check Telnet Client
     win_feature:
      name: "Telnet-Client"
@@ -568,15 +633,17 @@
      include_management_tools: yes
     register: telnet_results
 
+# Check that Telnet Client feature is installed - Moved to service-acceptance-global.yml
   - name: Check if the Check Telnet Client changed true
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Telnet Client Installed = Failed' ]"
     when: telnet_results.changed == true
 
+# Check that Telnet Client feature is installed - Moved to service-acceptance-global.yml
   - name: Check if the Check Telnet Client changed false
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Telnet Client Installed = Passed' ]"
     when: telnet_results.changed == false
 
-#Check that SNMP Service is installed
+# Check that SNMP Service is installed - Moved to service-acceptance-global.yml
   - name: Check SNMP Service
     win_feature:
      name: "SNMP-Service"
@@ -586,15 +653,17 @@
      include_management_tools: yes
     register: snmp_reults
 
+# Check that SNMP Service is installed - Moved to service-acceptance-global.yml
   - name: Check if the Check SNMP Service changed true
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP Service Installed = Failed' ]"
     when: snmp_reults.changed == true
 
+# Check that SNMP Service is installed - Moved to service-acceptance-global.yml
   - name: Check if the Check SNMP Service changed false
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP Service Installed = Passed' ]"
     when: snmp_reults.changed == false
 
-#Check that Windows-Server-Backup feature is installed
+# Check that Windows-Server-Backup feature is installed - Moved to service-acceptance-global.yml
   - name: Check Windows-Server-Backup
     win_feature:
      name: "Windows-Server-Backup"
@@ -604,258 +673,274 @@
      include_management_tools: yes
     register: win_backup_results
 
+# Check that SNMP Service is installed - Moved to service-acceptance-global.yml
   - name: Check if the Check Windows-Server-Backup changed anything
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Server Backup Service Installed = Failed' ]"
     when: win_backup_results.changed == true
 
+# Check that SNMP Service is installed - Moved to service-acceptance-global.yml
   - name: Check if the Check Windows-Server-Backup changed anything
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Server Backup Service Installed = Passed' ]"
     when: win_backup_results.changed == false
 
-# Firewall Rule Checks
+# Firewall Rule Checks - Moved to service-acceptance-global.yml
   - name: Check Remote Desktop Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Remote Desktop').Enabled -eq 'True'
     register: rd_firewall_rules
     check_mode: no
 
+# Firewall Rule Checks - Moved to service-acceptance-global.yml
   - name: Fail if Check Remote Desktop Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Desktop Firewall Group enabled = Failed' ]"
     when: rd_firewall_rules.rc != 0
 
+# Firewall Rule Checks - Moved to service-acceptance-global.yml
   - name: Pass if Check Remote Desktop Firewall Rule group enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Desktop Firewall Group enabled = Passed' ]"
     when: rd_firewall_rules.rc == 0
 
-# File and Printer Sharing
-
+# File and Printer Sharing - Moved to service-acceptance-global.yml
   - name: Check File and Printer Sharing Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'File and Printer Sharing').Enabled -eq 'True'
     register: fps_firewall_rules
     check_mode: no
 
+# File and Printer Sharing - Moved to service-acceptance-global.yml
   - name: Fail if Check File and Printer Sharing Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'File and Printer Sharing Firewall Group enabled = Failed' ]"
     when: fps_firewall_rules.rc != 0
 
+# File and Printer Sharing - Moved to service-acceptance-global.yml
   - name: Pass if Check File and Printer Sharing Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'File and Printer Sharing Firewall Group enabled = Passed' ]"
     when: fps_firewall_rules.rc == 0
 
-# Remote Service Management
-
+# Remote Service Management - Moved to service-acceptance-global.yml
   - name: Check Remote Service Management Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Remote Service Management').Enabled -eq 'True'
     register: rsm_firewall_rules
     check_mode: no
 
+# Remote Service Management - Moved to service-acceptance-global.yml
   - name: Fail if Check Remote Service Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Service Management Firewall Group enabled = Failed' ]"
     when: rsm_firewall_rules.rc != 0
 
+# Remote Service Management - Moved to service-acceptance-global.yml
   - name: Pass if Check Remote Service Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Service Management Firewall Group enabled = Passed' ]"
     when: rsm_firewall_rules.rc == 0
 
-# Performance Logs and Alerts
-
+# Performance Logs and Alerts - Moved to service-acceptance-global.yml
   - name: Check Performance Logs and Alerts Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Performance Logs and Alerts').Enabled -eq 'True'
     register: pla_firewall_rules
     check_mode: no
 
+# Performance Logs and Alerts - Moved to service-acceptance-global.yml
   - name: Fail if Check Performance Logs and Alerts Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Performance Logs and Alerts Firewall Group enabled = Failed' ]"
     when: pla_firewall_rules.rc != 0
 
+# Performance Logs and Alerts - Moved to service-acceptance-global.yml
   - name: Pass if Check Performance Logs and Alerts Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Performance Logs and Alerts Firewall Group enabled = Passed' ]"
     when: pla_firewall_rules.rc == 0
 
-# Remote Event Log Management
-
+# Remote Event Log Management - Moved to service-acceptance-global.yml
   - name: Check Remote Event Log Management Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Remote Event Log Management').Enabled -eq 'True'
     register: relm_firewall_rules
     check_mode: no
 
+# Remote Event Log Management - Moved to service-acceptance-global.yml
   - name: Fail if Check Remote Event Log Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Event Log Management Firewall Group enabled = Failed' ]"
     when: relm_firewall_rules.rc != 0
 
+# Remote Event Log Management - Moved to service-acceptance-global.yml
   - name: Pass if Check Remote Event Log Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Event Log Management Firewall Group enabled = Passed' ]"
     when: relm_firewall_rules.rc == 0
 
-# Remote Scheduled Tasks Management
-
+# Remote Scheduled Tasks Management - Moved to service-acceptance-global.yml
   - name: Check Remote Scheduled Tasks Management Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Remote Scheduled Tasks Management').Enabled -eq 'True'
     register: rstm_firewall_rules
     check_mode: no
 
+# Remote Scheduled Tasks Management - Moved to service-acceptance-global.yml
   - name: Fail if Check Remote Scheduled Tasks Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Scheduled Tasks Management Firewall Group enabled = Failed' ]"
     when: rstm_firewall_rules.rc != 0
 
+# Remote Scheduled Tasks Management - Moved to service-acceptance-global.yml
   - name: Pass if Check Remote Scheduled Tasks Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Scheduled Tasks Management Firewall Group enabled = Passed' ]"
     when: rstm_firewall_rules.rc == 0
 
-# Remote Volume Management
-
+# Remote Volume Management - Moved to service-acceptance-global.yml
   - name: Check Remote Volume Management Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Remote Volume Management').Enabled -eq 'True'
     register: rvm_firewall_rules
     check_mode: no
 
+# Remote Volume Management - Moved to service-acceptance-global.yml
   - name: Fail if Check Remote Volume Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Volume Management Firewall Group enabled = Failed' ]"
     when: rvm_firewall_rules.rc != 0
 
+# Remote Volume Management - Moved to service-acceptance-global.yml
   - name: Pass if Check Remote Volume Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Remote Volume Management Firewall Group enabled = Passed' ]"
     when: rvm_firewall_rules.rc == 0
 
-# Windows Firewall Remote Management
-
+# Windows Firewall Remote Management - Moved to service-acceptance-global.yml
   - name: Check Windows Firewall Remote Management Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Windows Firewall Remote Management').Enabled -eq 'True'
     register: wfrm_firewall_rules
     check_mode: no
 
+# Windows Firewall Remote Management - Moved to service-acceptance-global.yml
   - name: Fail if Check Windows Firewall Remote Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Firewall Remote Management Firewall Group enabled = Failed' ]"
     when: wfrm_firewall_rules.rc != 0
 
+# Windows Firewall Remote Management - Moved to service-acceptance-global.yml
   - name: Pass if Check Windows Firewall Remote Management Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Firewall Remote Management Firewall Group enabled = Passed' ]"
     when: wfrm_firewall_rules.rc == 0
 
-# windows management instrumentation (wmi)
-
+# windows management instrumentation (wmi) - Moved to service-acceptance-global.yml
   - name: Check windows management instrumentation (wmi) Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'windows management instrumentation (wmi)').Enabled -eq 'True'
     register: wmi_firewall_rules
     check_mode: no
 
+# windows management instrumentation (wmi) - Moved to service-acceptance-global.yml
   - name: Fail if Check windows management instrumentation (wmi) Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Management Instrumentation Firewall Group enabled = Failed' ]"
     when: wmi_firewall_rules.rc != 0
 
+# windows management instrumentation (wmi) - Moved to service-acceptance-global.yml
   - name: Pass if Check windows management instrumentation (wmi) Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Management Instrumentation Firewall Group enabled = Passed' ]"
     when: wmi_firewall_rules.rc == 0
 
-# Com+ Network Access
-
+# Com+ Network Access - Moved to service-acceptance-global.yml
   - name: Check Com+ Network Access Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Com+ Network Access').Enabled -eq 'True'
     register: cna_firewall_rules
     check_mode: no
 
+# Com+ Network Access - Moved to service-acceptance-global.yml
   - name: Fail if Check windows Com+ Network Access Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Network Access Firewall Group enabled = Failed' ]"
     when: cna_firewall_rules.rc != 0
 
+# Com+ Network Access - Moved to service-acceptance-global.yml
   - name: Pass if Check windows Com+ Network Access Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Network Access Firewall Group enabled = Passed' ]"
     when: cna_firewall_rules.rc == 0
 
-# Com+ Remote Administration
-
+# Com+ Remote Administration - Moved to service-acceptance-global.yml
   - name: Check Com+ Remote Administration Firewall Rule group is enabled
     win_shell: |
       (get-netfirewallrule -displaygroup 'Com+ Remote Administration').Enabled -eq 'True'
     register: cra_firewall_rules
     check_mode: no
 
+# Com+ Remote Administration - Moved to service-acceptance-global.yml
   - name: Fail if Check windows Com+ Remote Administration Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Remote Administration Firewall Group enabled = Failed' ]"
     when: cra_firewall_rules.rc != 0
 
+# Com+ Remote Administration - Moved to service-acceptance-global.yml
   - name: Pass if Check windows Com+ Remote Administration Firewall Rule group not enabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Com+ Remote Administration Firewall Group enabled = Passed' ]"
     when: cra_firewall_rules.rc == 0
 
-# Block for UAC LocalAccountTokenFilterPolicy registry if server is 2012
-  - name: Block for executing command only when Windows Server 2012
+# Block for UAC LocalAccountTokenFilterPolicy registry if server is 2012 R2 - Moved to service-acceptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
     block:
 
-# Gather for UAC LocalAccountTokenFilterPolicy version key value
+# Gather for UAC LocalAccountTokenFilterPolicy version key value - Moved to service-acceptance-2012R2.yml
     - name: Gather UAC LocalAccountTokenFilterPolicy registry version from Registry
       win_reg_stat:
         path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system\
         name: LocalAccountTokenFilterPolicy
       register: uac_results
-    
+
+# - Moved to service-acceptance-2012R2.yml
     - name: Pass if UAC LocalAccountTokenFilterPolicy registry is installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'UAC LocalAccountTokenFilterPolicy registry setting = Passed' ]"
       when:
         - uac_results.value == 1
         - uac_results is defined
 
+# - Moved to service-acceptance-2012R2.yml
     - name: Fail if UAC LocalAccountTokenFilterPolicy registry is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'UAC LocalAccountTokenFilterPolicy registry setting = Failed' ]"
       when: uac_results is undefined or uac_results.value == 0
 
 # UAC LocalAccountTokenFilterPolicy Block End
     when:
-      - "'2012' in ansible_os_name"
+      - "'2012 R2' in ansible_os_name"
 
-# Check ReceiveSideScaling setting
+# Check ReceiveSideScaling setting - Moved to service-acceptance2012R2.yml and service-acceptance-2016.yml
   - name: Check ReceiveSideScaling is enabled
     win_shell: |
       (Get-NetOffloadGlobalSetting).ReceiveSideScaling -eq 'Enabled'
     register: rss_results
     check_mode: no
 
-  - name: debug rss_results
-    debug:
-      var: rss_results
-
-# Block to check ReceiveSideScaling is disabled if server is 2012
-  - name: Block for executing command only when Windows Server 2012
+# Block to check ReceiveSideScaling is disabled if server is 2012 R2 - Moved to service-accptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
     block:
 
-    - name: Fail if ReceiveSideScaling setting is enabled 2012
+# - Moved to service-accptance-2012R2.yml
+    - name: Fail if ReceiveSideScaling setting is enabled 2012 R2
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Disabled Check = Passed' ]"
       when: "'False' in rss_results.stdout"
 
-    - name: Pass if ReceiveSideScaling setting is disabled 2012
+# - Moved to service-accptance-2012R2.yml
+    - name: Pass if ReceiveSideScaling setting is disabled 2012 R2
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Disabled Check = Failed' ]"
       when: "'True' in rss_results.stdout"
 
-# ReceiveSideScaling 2012 Block End
+# ReceiveSideScaling 2012 Block End - Moved to service-accptance-2012R2.yml
     when:
       - "'2012' in ansible_os_name"
 
-# Check ReceiveSideScaling registry is enabled if server is 2016
+# Check ReceiveSideScaling registry is enabled if server is 2016 - Moved to service-accptance-2016.yml
   - name: Block for executing command only when Windows Server 2016
     block:
 
+# - Moved to service-accptance-2016.yml
     - name: Pass if ReceiveSideScaling setting is enabled 2016
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Enabled Check = Passed' ]"
       when: "'True' in rss_results.stdout"
 
+# - Moved to service-accptance-2016.yml
     - name: Fail if ReceiveSideScaling setting is disabled 2016
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ReceiveSideScaling setting Enabled Check = Failed' ]"
       when: "'False' in rss_results.stdout"
 
-# ReceiveSideScaling 2016 Block End
+# ReceiveSideScaling 2016 Block End - Moved to service-accptance-2016.yml
     when:
       - "'2016' in ansible_os_name"
 
-# Check that SS000DA account has a non-expiring password
+# Check that SS000DA account has a non-expiring password - Moved to service-accptance-2012R2.yml and service-accptance-2016.yml
   - name: Check that SS000DA account has a non-expiring password
     win_user:
       name: SS000DA
@@ -863,159 +948,173 @@
     register: ss000da_results
     check_mode: no
 
-# Check SS000DA account has an non-expiring password if server is 2012
-  - name: Block for executing command only when Windows Server 2012
+# Check SS000DA account has an non-expiring password if server is 2012 R2 - Moved to service-accptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
     block:
 
-# Fail if SS000DA account has an expiring password
-    - name: Fail if SS000DA account has a non-expiring password
+# Fail if SS000DA account has an expiring password - Moved to service-accptance-2012R2.yml
+    - name: Check SS000DA account has an non-expiring password Fail
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Failed' ]"
       when: ss000da_results is undefined or ss000da_results.password_never_expires == false
 
-# Debug if SS000DA account has an non-expiring password
-    - name: Debug if SS000DA account has an non-expiring password
+# Pass if SS000DA account has an non-expiring password - Moved to service-accptance-2012R2.yml
+    - name: Check SS000DA account has an non-expiring password Pass
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Passed' ]"
       when: 
         - ss000da_results is defined
         - ss000da_results.password_never_expires == true
 
-# Check SS000DA account has an non-expiring password 2012 Block End
+# Check SS000DA account has an non-expiring password 2012 Block End - Moved to service-accptance-2012R2.yml
     when:
       - "'2012' in ansible_os_name"
 
-# Check SS000DA account has an expiring password if server is 2016
+# Check SS000DA account has an expiring password if server is 2016 - Moved to service-accptance-2016.yml
   - name: Block for executing command only when Windows Server 2016
     block:
 
-# Fail if SS000DA account has an expiring password 2016
-    - name: Fail if SS000DA account has a non-expiring password
+# Fail if SS000DA account has an expiring password 2016 - Moved to service-accptance-2016.yml
+    - name: Cheeck SS000DA account has a non-expiring password Fail
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Failed' ]"
       when: ss000da_results is undefined or ss000da_results.password_never_expires == true
 
-# Debug if SS000DA account has an non-expiring password 2016
-    - name: Debug if SS000DA account has an expiring password
+# Pass if SS000DA account has an non-expiring password 2016 - Moved to service-accptance-2016.yml
+    - name: Check SS000DA account has an expiring password Pass
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000DA account has a non-expiring password Check = Passed' ]"
       when: 
         - ss000da_results is defined
         - ss000da_results.password_never_expires == false
 
-# ReceiveSideScaling 2016 Block End
+# ReceiveSideScaling 2016 Block End - Moved to service-accptance-2016.yml
     when:
       - "'2016' in ansible_os_name"
 
 # Check that experian key has been created
-# Gather experian registry key value
+# Gather experian registry key value - Moved to service-accepatnce-2012R2.yml and service-acceptance-2016.yml
   - name: Gather experian registry key value from Registry
     win_reg_stat:
       path: HKLM:\SOFTWARE\Experian\
       name: Build Description
     register: build_desc_results
 
-# Block for Check that experian registry key if server is 2012 R2
+# Block for Check that experian registry key if server is 2012 R2 - Moved to service-accepatnce-2012R2.yml
   - name: Block for executing command only when Windows Server 2012 R2
     block:
 
+# - Moved to service-accepatnce-2012R2.yml
     - name: Check that experian registry key for 2012 R2 exists
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2012 R2 build Check = Passed' ]"
       when:
         - build_desc_results.exists == true
         - "'Windows Server 2012 R2 Standard Hardened Build' in build_desc_results.value"
 
+# - Moved to service-accepatnce-2012R2.yml
     - name: Fail if Fail if Experian registry key for 2012 R2 doesnt exist or is incorrect version
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2012 R2 build Check = Failed' ]"
       when: build_desc_results.exists == false or build_desc_results.value != 'Windows Server 2012 R2 Standard Hardened Build'
 
-# Check that experian registry key Block End 2012 R2
+# Check that experian registry key Block End 2012 R2 - Moved to service-acceptance-2012R2.yml
     when:
       - "'2012 R2' in ansible_os_name"
 
-# Block for Check that experian registry key if server is 2016
+# Block for Check that experian registry key if server is 2016 - Moved to service-acceptance-2016.yml
   - name: Block for executing command only when Windows Server 2016
     block:
 
+# - Moved to service-acceptance-2016.yml
     - name: Check that experian registry key for 2016 exists
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2016 build Check = Passed' ]"
       when:
         - build_desc_results.exists == true
         - "'Windows Server 2016 Hardened Build' in build_desc_results.value"
 
+# - Moved to service-acceptance-2016.yml
     - name: Fail if Experian registry key for 2016 doesnt exist or is incorrect version
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Experian registry key for 2016 build Check = Failed' ]"
       when: build_desc_results.exists == false or build_desc_results.value != 'Windows Server 2016 Hardened Build'
 
-# Check that experian registry key Block End 2016
+# Check that experian registry key Block End 2016 - Moved to service-acceptance-2016.yml
     when:
       - "'2016' in ansible_os_name"
 
-# Check that no NICs have Link-Layer Topolgy Discovery Mapper I/O Driver, Link-Layer Topolgy Discovery Responder, QOS Packet Scheduler installed.
+# Check that no NICs have Link-Layer Topolgy Discovery Mapper I/O Driver, Link-Layer Topolgy Discovery Responder, QOS Packet Scheduler installed - Moved to service-acceptance-global.yml
 
-#Uninstall the following protocols / services:
-#QOS Packet Scheduler
-#Link-Layer Topology Mapper IO Driver
-#Link-Layer Topology Mapper IO Responder
-#MS LLDP Protocol Driver is new for server 2016
-  - name: 
+#Uninstall the following protocols / services: - Moved to service-acceptance-global.yml
+#QOS Packet Scheduler - Moved to service-acceptance-global.yml
+#Link-Layer Topology Mapper IO Driver - Moved to service-acceptance-global.yml
+#Link-Layer Topology Mapper IO Responder - Moved to service-acceptance-global.yml
+#MS LLDP Protocol Driver is new for server 2016 - Moved to service-acceptance-2016.yml
+  - name: Check ms_pacer Protocol Driver status
     win_shell: C:\Windows\System32\netcfg.exe -u ms_pacer
     register: ms_pacer_result
     check_mode: no
 
+# Moved to service-acceptance-global.yml
   - name: Fail if ms_pacer Protocol Driver is installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_pacer Protocol Driver is not installed Check = Failed' ]"
     when: "'is not installed' not in ms_pacer_result.stdout"
 
+# Moved to service-acceptance-global.yml
   - name: Pass if ms_pacer Protocol Driver is installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_pacer Protocol Driver is not installed Check = Passed' ]"
     when: "'is not installed' in ms_pacer_result.stdout"
 
-  - name: 
+# Moved to service-acceptance-global.yml
+  - name: Check ms_lltdio Protocol Driver status
     win_shell: C:\Windows\System32\netcfg.exe -u ms_lltdio
     register: ms_lltdio_result
     check_mode: no
 
+# Moved to service-acceptance-global.yml
   - name: Fail if ms_lltdio Protocol Driver is installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_lltdio Protocol Driver is not installed Check = Failed' ]"
     when: "'is not installed' not in ms_lltdio_result.stdout"
 
+# Moved to service-acceptance-global.yml
   - name: Pass if ms_lltdio Protocol Driver is not installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_lltdio Protocol Driver is not installed Check = Passed' ]"
     when: "'is not installed' in ms_lltdio_result.stdout"
 
-  - name: 
+# Moved to service-acceptance-global.yml
+  - name: Check ms_rspndr Protocol Driver status
     win_shell: C:\Windows\System32\netcfg.exe -u ms_rspndr
     register: ms_rspndr_result
     check_mode: no
 
+# Moved to service-acceptance-global.yml
   - name: Fail if ms_rspndr Protocol Driver is installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_rspndr Protocol Driver is not installed Check = Failed' ]"
     when: "'is not installed' not in ms_rspndr_result.stdout"
 
+# Moved to service-acceptance-global.yml
   - name: Pass if ms_rspndr Protocol Driver is not installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ms_rspndr Protocol Driver is not installed Check = Passed' ]"
     when: "'is not installed' in ms_rspndr_result.stdout"
 
-# Block for Check that experian registry key if server is 2016
+# Block for Check that experian registry key if server is 2016 - Moved to service-acceptance-2016.yml
   - name: Block for executing command only when Windows Server 2016
     block:
 
-# Check MS LLDP Protocol Driver is uninstalled 2016
-    - name: Check MS LLDP Protocol Driver is uninstalled 2016
+# Check MS LLDP Protocol Driver status 2016 - Moved to service-acceptance-2016.yml
+    - name: Check MS LLDP Protocol Driver status 2016
       win_shell: C:\Windows\System32\netcfg.exe -u ms_lldp
       register: ms_lldp_result
       check_mode: no
 
+# - Moved to service-acceptance-2016.yml
     - name: Fail if MS LLDP Protocol Driver is installed 2016
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'MS LLDP Protocol Driver is not installed Check = Failed' ]"
       when: "'is not installed' not in ms_lldp_result.stdout"
 
+# - Moved to service-acceptance-2016.yml
     - name: Pass if MS LLDP Protocol Driver is not installed 2016
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'MS LLDP Protocol Driver is not installed Check = Passed' ]"
       when: "'is not installed' in ms_lldp_result.stdout"
 
-# Check that experian registry key Block End 2016
+# Check that experian registry key Block End 2016 - Moved to service-acceptance-2016.yml
     when:
       - "'2016' in ansible_os_name"
 
-# Check that IPv6 is disabled Primary
+# Check that IPv6 is disabled Primary - Moved to service-acceptance-global.yml
   - name: Check IPv6 Protocol is uninstalled Primary
     win_shell: |
       (Get-NetAdapterBinding -Name 'Primary' –ComponentID ms_tcpip6).Enabled
@@ -1030,366 +1129,411 @@
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Primary Check = Passed' ]"
     when: "'False' in ipv6_p_result.stdout"
 
-# Check that Backup protocols are disabled 
-# Backup Required Block
+# Check that Backup protocols are disabled  - Moved to service-acceptance-backup.yml
+# Backup Required Block - Moved to service-acceptance-backup.yml
   - name: Block for executing command only when backup required
     block:
 
+# - Moved to service-acceptance-backup.yml
     - name: Check IPv6 Protocol is uninstalled Backup
       win_shell: |
         (Get-NetAdapterBinding -Name 'Backup' –ComponentID ms_tcpip6).Enabled
       register: ipv6_bk_result
       check_mode: no
 
+# - Moved to service-acceptance-backup.yml
     - name: Fail if IPv6 Protocol is installed Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Backup Check = Failed' ]"
       when: "'True' in ipv6_bk_result.stdout"
 
+# - Moved to service-acceptance-backup.yml
     - name: Pass if IPv6 Protocol is installed Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv6 Protocol is not installed Backup Check = Passed' ]"
       when: "'False' in ipv6_bk_result.stdout"
 
+# - Moved to service-acceptance-backup.yml
     - name: Check msclient Protocol is uninstalled Backup
       win_shell: |
         (Get-NetAdapterBinding -Name 'Backup' –ComponentID ms_msclient).Enabled
       register: msc_bk_result
       check_mode: no
 
+# - Moved to service-acceptance-backup.yml
     - name: Fail if msclient Protocol is installed Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msclient Protocol is not installed Backup Check = Failed' ]"
       when: "'True' in msc_bk_result.stdout"
 
+# - Moved to service-acceptance-backup.yml
     - name: Pass if msclient Protocol is not installed Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msclient Protocol is not installed Backup Check = Passed' ]"
       when: "'False' in msc_bk_result.stdout"
 
+# - Moved to service-acceptance-backup.yml
     - name: Check msserver Protocol is uninstalled Backup
       win_shell: |
         (Get-NetAdapterBinding -Name 'Backup' –ComponentID ms_server).Enabled
       register: mss_bk_result
       check_mode: no
 
+# - Moved to service-acceptance-backup.yml
     - name: Fail if msserver Protocol is installed Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msserver Protocol is not installed Backup Check = Failed' ]"
       when: "'True' in mss_bk_result.stdout"
 
+# - Moved to service-acceptance-backup.yml
     - name: Pass if msserver Protocol is not installed Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'msserver Protocol is not installed Backup Check = Passed' ]"
       when: "'False' in mss_bk_result.stdout"
 
-# Backup Required Block end
+# Backup Required Block end - Moved to service-acceptance-backup.yml
     when: 
       - backup_required
 
 # Check ConnectionSpecificSuffix on Primary
-# EXPERIANUK Block
+# EXPERIANUK Block - Moved to service-acceptance-experianuk.yml
   - name: Block for executing when EXPERIANUK
     block:
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check ConnectionSpecificSuffix on Primary Interface
       win_shell: |
         (Get-DNSClient –InterfaceAlias ‘Primary’).ConnectionSpecificSuffix
       register: css_p_result
       check_mode: no
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Failed' ]"
       when: "'uk.experian.local' not in css_p_result.stdout"
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Pass if Check ConnectionSpecificSuffix on Primary Interface
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Passed' ]"
       when: "'uk.experian.local' in css_p_result.stdout"
 
-# EXPERIANUK Block End
+# EXPERIANUK Block End - Moved to service-acceptance-experianuk.yml
     when:
       - ansible_windows_domain == 'uk.experian.local'
 
-# GDC Block
-  - name: Block for executing when EXPERIANUK
+# GDC Block - Moved to service-acceptance-gdc.yml
+  - name: Block for executing when GDC
     block:
 
+# - Moved to service-acceptance-gdc.yml
     - name: Check ConnectionSpecificSuffix on Primary Interface
       win_shell: |
         (Get-DNSClient –InterfaceAlias ‘Primary’).ConnectionSpecificSuffix
       register: css_p_result
       check_mode: no
 
+# - Moved to service-acceptance-gdc.yml
     - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Failed' ]"
       when: "'gdc.local' not in css_p_result.stdout"
 
+# - Moved to service-acceptance-gdc.yml
     - name: Pass if Check ConnectionSpecificSuffix on Primary Interface
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Passed' ]"
       when: "'gdc.local' in css_p_result.stdout"
 
-# GDC Block End
+# GDC Block End - Moved to service-acceptance-gdc.yml
     when:
       - ansible_windows_domain == 'gdc.local'
 
-# IPANIUK Block
-  - name: Block for executing when EXPERIANUK
+# IPANIUK Block - Moved to service-acceptance-ipaniuk.yml
+  - name: Block for executing when IPANIUK
     block:
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Check ConnectionSpecificSuffix on Primary Interface
       win_shell: |
         (Get-DNSClient –InterfaceAlias ‘Primary’).ConnectionSpecificSuffix
       register: css_p_result
       check_mode: no
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Fail if Check ConnectionSpecificSuffix on Primary Interface
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Failed' ]"
       when: "'ipani.uk.experian.com' not in css_p_result.stdout"
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Pass if Check ConnectionSpecificSuffix on Primary Interface
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ConnectionSpecificSuffix Check Primary = Passed' ]"
       when: "'ipani.uk.experian.com' in css_p_result.stdout"
 
-# IPANIUK Block End
+# IPANIUK Block End - Moved to service-acceptance-ipaniuk.yml
     when:
       - ansible_windows_domain == 'ipani.uk.experian.com'
 
-# Check that NETBIOS is disabled
+# Check that NETBIOS is disabled - Moved to service-acceptance-global.yml & service-acceptance-backup.yml
   - name: Check NETBIOS Protocol is disabled
     win_shell: |
       (Get-WmiObject win32_networkadapterconfiguration).TcpipNetbiosOptions
     register: netbios_result
     check_mode: no
 
+# Check that NETBIOS is disabled - Moved to service-acceptance-global.yml
   - name: Fail when NETBIOS is not disabled Primary
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Primary = Failed' ]"
     when: "'2' not in netbios_result.stdout_lines[0]"
 
+# Check that NETBIOS is disabled - Moved to service-acceptance-global.yml
   - name: Pass when NETBIOS is disabled Primary
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Primary = Passed' ]"
     when: "'2' in netbios_result.stdout_lines[0]"
 
-# Backup Required Block
+# Backup Required Block - Moved to service-acceptance-backup.yml
   - name: Block for executing command only when backup
     block:
 
+# - Moved to service-acceptance-backup.yml
     - name: Fail when NETBIOS is not disabled Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Backup = Failed' ]"
       when: "'2' not in netbios_result.stdout_lines[1]"
 
+# - Moved to service-acceptance-backup.yml
     - name: Pass when NETBIOS is disabled Backup
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NETBIOS is disabled Check Backup = Passed' ]"
       when: "'2' in netbios_result.stdout_lines[1]"
 
-# Backup Required Block end
+# Backup Interface has DNS Registration disabled - Moved to service-acceptance-backup.yml
+    - name: Check DNS Registration is disabled Backup
+      win_shell: |
+        (Get-DNSClient –InterfaceAlias ‘Backup’).RegisterThisConnectionsAddress
+      register: dnsr_result
+      check_mode: no
+
+# - Moved to service-acceptance-backup.yml
+    - name: Fail when DNS Registration is not disabled Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface has DNS Registration disabled Check = Failed' ]"
+      when: "'True' in dnsr_result.stdout"
+
+# - Moved to service-acceptance-backup.yml
+    - name: Pass when DNS Registration is disabled Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface has DNS Registration disabled Check = Passed' ]"
+      when: "'False' in dnsr_result.stdout"
+
+# Check that Interface does not have a DNS Server registered Backup - Moved to service-acceptance-backup.yml
+    - name: Check that Interface does not have a DNS Server registered Backup
+      win_shell: |
+        (Get-DNSClientServerAddress –InterfaceAlias ‘Backup’ -AddressFamily IPv4).ServerAddresses
+      register: dnss_result
+      check_mode: no
+
+# - Moved to service-acceptance-backup.yml
+    - name: Fail Interface has a DNS Server registered Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface Doesnt has a DNS Server registered Check = Failed' ]"
+      when: dnss_result.stdout != ""
+
+# - Moved to service-acceptance-backup.yml
+    - name: Pass Interface doesnt have a DNS Server registered Backup
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface Doesnt has a DNS Server registered Check = Passed' ]"
+      when: dnss_result.stdout == ""
+
+# Backup Required Block end - Moved to service-acceptance-backup.yml
     when: 
       - backup_required
 
-# Check that LMHosts is disabled
+# Check that LMHosts is disabled - Moved to service-acceptance-global.yml
   - name: Check LMHosts Protocol is disabled
     win_shell: |
       (Get-WmiObject win32_networkadapterconfiguration).WINSEnableLMHostsLookup
     register: lmhosts_result
     check_mode: no
 
+# Check that LMHosts is disabled - Moved to service-acceptance-global.yml
   - name: Fail when LMHosts is not disabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'LMHosts is disabled Check = Failed' ]"
     when: "'True' in lmhosts_result.stdout"
 
+# Check that LMHosts is disabled - Moved to service-acceptance-global.yml
   - name: Pass when LMHosts is disabled
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'LMHosts is disabled Check = Passed' ]"
     when: "'False' in lmhosts_result.stdout"
 
-# Backup Interface has DNS Registration disabled
-  - name: Check DNS Registration is disabled Backup
-    win_shell: |
-      (Get-DNSClient –InterfaceAlias ‘Backup’).RegisterThisConnectionsAddress
-    register: dnsr_result
-    check_mode: no
-
-  - name: Fail when DNS Registration is not disabled Backup
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface has DNS Registration disabled Check = Failed' ]"
-    when: "'True' in dnsr_result.stdout"
-
-  - name: Pass when DNS Registration is disabled Backup
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface has DNS Registration disabled Check = Passed' ]"
-    when: "'False' in dnsr_result.stdout"
-
-# Check that Interface does not have a DNS Server registered Backup
-  - name: Check that Interface does not have a DNS Server registered Backup
-    win_shell: |
-      (Get-DNSClientServerAddress –InterfaceAlias ‘Backup’ -AddressFamily IPv4).ServerAddresses
-    register: dnss_result
-    check_mode: no
-
-  - name: Fail Interface has a DNS Server registered Backup
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface Doesnt has a DNS Server registered Check = Failed' ]"
-    when: dnss_result.stdout != ""
-
-  - name: Pass Interface doesnt have a DNS Server registered Backup
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Backup Interface Doesnt has a DNS Server registered Check = Passed' ]"
-    when: dnss_result.stdout == ""
-
-# Block for Check IPv4 Binding Order. Check that primary is first if server is 2012
-  - name: Block for executing command only when Windows Server 2012
+# Block for Check IPv4 Binding Order. Check that primary is first if server is 2012 R2 - Moved to service-acceptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
     block:
 
-# Copy nvspbind to server C:\tmp
-
+# Copy nvspbind to server C:\tmp - Moved to service-acceptance-2012R2.yml
     - name: copy nvspbind to server
       win_copy:
         src: "{{ sourcePath }}{{ nvspbind }}"
         dest: C:\temp\
       check_mode: no
 
-# Check IPv4 Binding Order. Check that primary is first
-
+# Check IPv4 Binding Order. Check that primary is first - Moved to service-acceptance-2012R2.yml
     - name: Check IPv4 Binding Order. Check that primary is first
-      win_command: C:\temp\nvspbind.exe /o ms_tcpip
+      #win_command: C:\temp\nvspbind.exe /o ms_tcpip
+      win_command: nvspbind.exe /o ms_tcpip
       args:
         chdir: C:\temp\
       register: ipv4bind_results
       check_mode: no
 
+# - Moved to service-acceptance-2012R2.yml
     - name: Fail on incorrect IPv4 Binding Order
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv4 Binding Order Check = Failed' ]"
       when:  "'   enabled:   Primary' not in ipv4bind_results.stdout_lines[10]"
 
+# - Moved to service-acceptance-2012R2.yml
     - name: Pass on correct IPv4 Binding Order
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'IPv4 Binding Order Check = Passed' ]"
       when:  "'   enabled:   Primary' in ipv4bind_results.stdout_lines[10]"
 
+# - Moved to service-acceptance-2012R2.yml
     - name: remove nvpbind
       win_file:
         path: C:\temp\{{ nvspbind }}
         state: absent
       check_mode: no
 
-# Block End
+# Block End - Moved to service-acceptance-2012R2.yml
     when:
-      - "'2012' in ansible_os_name"
+      - "'2012 R2' in ansible_os_name"
 
 # Check that DNS Servers are correct
-
-# GDC Block
+# GDC Block - Moved to service-acceptance-gdc.yml
   - name: Block for executing when GDC
     block:
 
+# - Moved to service-acceptance-gdc.yml
     - name: Check that DNS Servers are correct
       win_shell: | 
         (Get-DNSClientServerAddress -InterfaceAlias "Primary" -AddressFamily IPv4).ServerAddresses
       register: dnss_results
       check_mode: no
 
+# - Moved to service-acceptance-gdc.yml
     - name: Fail on incorrect DNS Servers GDC
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Failed' ]"
       when:
         - "'10.188.21.1' not in dnss_results.stdout_lines[0]"
         - "'10.188.21.2' not in dnss_results.stdout_lines[1]"
 
+# - Moved to service-acceptance-gdc.yml
     - name: Pass on correct DNS Servers GDC
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Passed' ]"
       when:
         - "'10.188.21.1' in dnss_results.stdout_lines[0]"
         - "'10.188.21.2' in dnss_results.stdout_lines[1]"
 
-# GDC Block End
+# GDC Block End - Moved to service-acceptance-gdc.yml
     when:
       - ansible_windows_domain == 'gdc.local'
 
-# IPANIUK Block
+# IPANIUK Block - Moved to service-acceptance-ipaniuk.yml
   - name: Block for executing when IPANIUK
     block:
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Check that DNS Servers are correct
       win_shell: | 
         (Get-DNSClientServerAddress -InterfaceAlias "Primary" -AddressFamily IPv4).ServerAddresses
       register: dnss_results
       check_mode: no
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Fail on incorrect DNS Servers IPANIUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Failed' ]"
       when:  
         - "'194.60.173.145' not in dnss_results.stdout_lines[0]"
         - "'194.60.173.146' not in dnss_results.stdout_lines[1]"
 
+# - Moved to service-acceptance-ipaniuk.yml
     - name: Pass on correct DNS Servers IPANIUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Passed' ]"
       when:  
         - "'194.60.173.145' in dnss_results.stdout_lines[0]"
         - "'194.60.173.146' in dnss_results.stdout_lines[1]"
 
-# IPANIUK Block End
+# IPANIUK Block End - Moved to service-acceptance-ipaniuk.yml
     when:
       - ansible_windows_domain == 'ipani.uk.experian.com'
 
-# EXPERIANUK Block
+# EXPERIANUK Block - Moved to service-acceptance-experianuk.yml
   - name: Block for executing when EXPERIANUK
     block:
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Check that DNS Servers are correct
       win_shell: | 
         (Get-DNSClientServerAddress -InterfaceAlias "Primary" -AddressFamily IPv4).ServerAddresses
       register: dnss_results
       check_mode: no
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Fail on incorrect DNS Servers EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Failed' ]"
       when:  
         - "'10.215.252.10' not in dnss_results.stdout_lines[0]"
         - "'10.173.251.106' not in dnss_results.stdout_lines[1]"
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Pass on correct DNS Servers EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DNS Servers Check = Passed' ]"
       when:  
         - "'10.215.252.10' in dnss_results.stdout_lines[0]"
         - "'10.173.251.106' in dnss_results.stdout_lines[1]"
 
-# EXPERIANUK Block End
+# EXPERIANUK Block End - Moved to service-acceptance-experianuk.yml
     when:
       - ansible_windows_domain == 'uk.experian.local'
 
-# EXPERIANUK Block
+# EXPERIANUK Block - Moved to service-acceptance-experianuk.yml
   - name: Block for executing when EXPERIANUK
     block:
 
-    - name: 
+# - Moved to service-acceptance-experianuk.yml
+    - name: Get WINSPrimaryServer EXPERIANUK
       win_shell: |
         (Get-WmiObject win32_networkadapterconfiguration).WINSPrimaryServer
       register: wins_p_results
       check_mode: no
 
-    - name: 
+# - Moved to service-acceptance-experianuk.yml
+    - name: Get WINSSecondaryServer EXPERIANUK
       win_shell: |
         (Get-WmiObject win32_networkadapterconfiguration).WINSSecondaryServer
       register: wins_s_results
       check_mode: no
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Fail on incorrect WINS Servers EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'WINS Servers Check = Failed' ]"
       when:
         - wins_p_results.stdout_lines[0] != "10.215.252.12"
         - wins_s_results.stdout_lines[0] != "10.173.243.146"
 
+# - Moved to service-acceptance-experianuk.yml
     - name: Pass on correct DNS Servers EXPERIANUK
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'WINS Servers Check = Passed' ]"
       when:
         - wins_p_results.stdout_lines[0] == "10.215.252.12"
         - wins_s_results.stdout_lines[0] == "10.173.243.146"
 
+# - Moved to service-acceptance-experianuk.yml
     when:
       - ansible_windows_domain == 'uk.experian.local'
 
-#Check C Volume Label, use win_disk_info?
-########################################################################################################
-  - name: 
+# Check C Volume Label - Moved to service-acceptance-global.yml
+  - name: Check C FileSystemLabel
     win_shell: |
       (Get-Volume -Driveletter 'C').FileSystemLabel -eq 'System'
     register: drivec_results
     check_mode: no
 
+# - Moved to service-acceptance-global.yml
   - name: Fail when C drive label is not System
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'C drive label is System Check = Failed' ]"
     when: "'False' in drivec_results.stdout"
 
+# - Moved to service-acceptance-global.yml
   - name: Pass when C drive label is System
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'C drive label is System Check = Passed' ]"
     when: "'True' in drivec_results.stdout"
 
+#######################################################################################################
 #Check Disk 1 is MBR for 2012/2012R2 and all disks GPT for 2016
 #######################################################################################################
 
@@ -1426,7 +1570,7 @@
 
 # Block End
     when:
-      - "'2012' in ansible_os_name"
+      - "'2012 R2' in ansible_os_name"
 
 # Block for Check all disks GPT if server is 2016
   - name: Block for executing command only when Windows Server 2016
@@ -1441,8 +1585,8 @@
       - "'2016' in ansible_os_name"
 
 #######################################################################################################
-
 # Check Disk 1 Driveletter
+#######################################################################################################
   - name: Check Disk 1 Drive Letter
     win_shell: |
       (Get-Partition -DiskNumber 1).DriveLetter
@@ -1457,193 +1601,258 @@
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Disk 1 Drive Letter is Y Check = Failed' ]"
     when: "'Y' not in drive_letter_result.stdout_lines"
 
-# Block for Check Y Volume Label if server is 2012
-  - name: Block for executing command only when Windows Server 2012
+# Block for Check Y Volume Label if server is 2012 R2 - Moved to service-acceptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
     block:
 
+# - Moved to service-acceptance-2012R2.yml
     - name: Check Y drive Label 2012
       win_shell: |
         (Get-Volume -Driveletter 'Y').FileSystemLabel -eq 'GTS-Support-Only'
       register: drivey_results
       check_mode: no
 
+# - Moved to service-acceptance-2012R2.yml
     - name: Fail when Y drive label is not GTS-Support-Only 2012
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is GTS-Support-Only Check = Failed' ]"
       when: "'False' in drivey_results.stdout"
 
+# - Moved to service-acceptance-2012R2.yml
     - name: Pass when Y drive label is not GTS-Support-Only 2012
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is GTS-Support-Only Check = Passed' ]"
       when: "'True' in drivey_results.stdout"
 
-# Block End
+# Block End - Moved to service-acceptance-2012R2.yml
     when:
-      - "'2012' in ansible_os_name"
+      - "'2012 R2' in ansible_os_name"
 
-# Block for Check Y Volume Label if server is 2016
+# Block for Check Y Volume Label if server is 2016 - Moved to service-acceptance-2016.yml
   - name: Block for executing command only when Windows Server 2016
     block:
 
+# - Moved to service-acceptance-2016.yml
     - name: Check Y drive Label 2016
       win_shell: |
         (Get-Volume -Driveletter 'Y').FileSystemLabel -eq 'EITS-Support-Only'
       register: drivey_results
       check_mode: no
 
+# - Moved to service-acceptance-2016.yml
     - name: Fail when Y drive label is not EITS-Support-Only 2016
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is EITS-Support-Only Check = Failed' ]"
       when: "'False' in drivey_results.stdout"
 
+# - Moved to service-acceptance-2016.yml
     - name: Pass when Y drive label is EITS-Support-Only 2016
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Y drive label is EITS-Support-Only Check = Passed' ]"
       when: "'True' in drivey_results.stdout"
 
-# Block End
+# Block End - Moved to service-acceptance-2016.yml
     when:
       - "'2016' in ansible_os_name"
 
-# Check CDROM is Driveletter Z
+# Check CDROM is Driveletter Z - Moved to service-acceptance-global.yml
   - name: Check CD-Rom drive letter
     win_shell: |
       (gwmi win32_cdromdrive).Drive 
     register: cd_result
     check_mode: no
 
+# Check CDROM is Driveletter Z - Moved to service-acceptance-global.yml
   - name: Fail when CD-Rom drive letter is not Z
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CD-Rom drive Z Check = Failed' ]"
     when: "'Z' not in cd_result.stdout"
 
+# Check CDROM is Driveletter Z - Moved to service-acceptance-global.yml
   - name: Pass when CD-Rom drive letter is Z
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'CD-Rom drive Z Check = Passed' ]"
     when: "'Z' in cd_result.stdout"
 
-######################## Check for existence and versions of following software and test if running if applicable ################
-# SAFE - (get-Service -DisplayName "Enstart64").Status -eq "Running"
-# BladeLogic - (get-Service -DisplayName "BMC BladeLogic Server Automation RSCD Agent").Status
-# FireEye - (get-Service -DisplayName "FireEye Endpoint Agent").Status -eq "Running"
-# NetBackup - (get-Service -DisplayName "NetBackup Client Service").Status -eq "Running"
-# VMWare Tools - (get-Service -DisplayName "VMware Tools").Status -eq "Running"
-# McAfee Framework - (get-Service -DisplayName "McAfee Agent Service").Status -eq "Running"
-# McAfee Endpoint Security Platform - Done
-# Tanium - (get-Service -DisplayName "Tanium Client").Status -eq "Running"
-# .NET Framework - Done
-# Powershell - Done
-# Splunk Universal Forwarder - (get-Service -DisplayName "SplunkForwarder Service").Status -eq "Running"
-# Qualys Agent - (get-Service -DisplayName "Qualys Cloud Agent").Status -eq "Running"
-# Dynatrace - WIP - (get-Service -DisplayName "Dynatrace").Status -eq "Running"
-
-#SAFE
+# SAFE Servlet Check - Moved to service-acceptance-global.yml
   - name: Check SAFE Servlet Installed Version
     win_reg_stat:
       path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{E39C38FC-343C-4D3D-8DCA-681C7FF8518A}
       name: DisplayVersion
     register: safe_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when safe_result exists
     block:
 
+#SAFE Servlet Check - Moved to service-acceptance-global.yml
     - name: Pass SAFE Servlet Version Check
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Check = Passed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Version Check = Passed' ]"
       when: safe_result.value == safe_version
 
+#SAFE Servlet Check - Moved to service-acceptance-global.yml
     - name: Fail if SAFE Servlet is not installed
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Check = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Version Check = Failed' ]"
       when: safe_result.value != safe_version
 
-# Block End
+# Check SAFE Service is running - Moved to service-acceptance-global.yml
+    - name: Check SAFE Service is running
+      win_shell: |
+        (get-Service -DisplayName "Enstart64").Status
+      register: safe_service_results
+      check_mode: no
+
+ # Check SAFE Service is running - Moved to service-acceptance-global.yml     
+    - name: Pass SAFE Servlet Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Service Running = Passed' ]"
+      when: "'Running' in safe_service_results.stdout"
+
+# Check SAFE Service is running - Moved to service-acceptance-global.yml
+    - name: Fail SAFE Servlet Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Service Running = Failed' ]"
+      when: "'Running' not in safe_service_results.stdout"
+
+# Block End- Moved to service-acceptance-global.yml
     when:  safe_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when safe_result doesnt exists
     block:
 
+# Block Start - Moved to service-acceptance-global.yml
     - name: Fail if SAFE Servlet is not installed
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Check = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Version Check = Failed' ]"
 
-# Block End
+# Block Start - Moved to service-acceptance-global.yml
+    - name: Fail if SAFE Servlet Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SAFE Servlet Service Running = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: safe_result.exists == false
 
-#BladeLogic
+#BladeLogic - Moved to service-acceptance-global.yml
   - name: Check BladeLogic Installed Version
     win_reg_stat:
       path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{0370E432-D0E3-48B9-AA55-3FC347248361}
       name: DisplayVersion
     register: bl_result
+    check_mode: no
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when bl_result exists
     block:
 
+# Moved to service-acceptance-global.yml
     - name: Pass BladeLogic Version Check
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Client Check = Passed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Version Check = Passed' ]"
       when: bl_result.value == bl_version
 
+# Moved to service-acceptance-global.yml
     - name: Fail if BladeLogic is not installed
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Client Check = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Version Check = Failed' ]"
       when: bl_result.value != bl_version
 
-# Block End
+# Check BladeLogic Service is running - Moved to service-acceptance-global.yml
+    - name: Check BladeLogic Service is running
+      win_shell: |
+        (get-Service -DisplayName "BMC BladeLogic Server Automation RSCD Agent").Status
+      register: bl_service_results
+      check_mode: no
+
+# Check BladeLogic Service is running - Moved to service-acceptance-global.yml
+    - name: Pass BladeLogic Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Service Running = Passed' ]"
+      when: "'Running' in bl_service_results.stdout"
+
+# Check BladeLogic Service is running - Moved to service-acceptance-global.yml
+    - name: Fail BladeLogic Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Service Running = Failed' ]"
+      when: "'Running' not in bl_service_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
     when:  bl_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when bl_result doesnt exists
     block:
 
+# Moved to service-acceptance-global.yml
     - name: Fail if BladeLogic is not installed
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Client Check = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Version Client Check = Failed' ]"
 
-# Block End
+# Moved to service-acceptance-global.yml
+    - name: Fail if BladeLogic Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'BladeLogic Service Running = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: bl_result.exists == false
 
 # FireEye
-# Check FireEye is installed if not a Database server block
+# Check FireEye is installed if not a Database server block - Moved to service-acceptance-global.yml
   - name: Block for executing command only when not Database
     block:
 
-# Gather FireEye Registry version key value
+# Gather FireEye Registry version key value - Moved to service-acceptance-global.yml
     - name: Gather FireEye version from Registry
       win_reg_stat:
         path: HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{D82800D5-27A8-4FAC-9564-3F700157BA2F}
         name: DisplayVersion
       register: fireeye_result
 
-# Internal Block
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
     - name: Block for executing command only when fireeye_result exists
       block:
 
+# - Moved to service-acceptance-global.yml
       - name: Pass FireEye Version Check
-        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Check = Passed' ]"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Version Check = Passed' ]"
         when: fireeye_result.value == fireeye_version
 
+# - Moved to service-acceptance-global.yml
       - name: Fail if FireEye is not installed
-        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Check = Failed' ]"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Version Check = Failed' ]"
         when: fireeye_result.value != fireeye_version
 
-# Block End
+# Check FireEye Service is running - Moved to service-acceptance-global.yml
+      - name: Check FireEye Service is running
+        win_shell: |
+          (get-Service -DisplayName "FireEye Endpoint Agent").Status
+        register: fe_service_results
+        check_mode: no
+
+# - Moved to service-acceptance-global.yml
+      - name: Pass FireEye Service Running
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Service Running = Passed' ]"
+        when: "'Running' in fe_service_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+      - name: Fail FireEye Service not Running
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Service Running = Failed' ]"
+        when: "'Running' not in fe_service_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
       when: fireeye_result.exists == true
 
-# Internal Block
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
     - name: Block for executing command only when fireeye_result doesnt exists
       block:
 
+# - Moved to service-acceptance-global.yml
       - name: Fail if FireEye is not installed
-        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Check = Failed' ]"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Version Check = Failed' ]"
 
-# Block End
+# - Moved to service-acceptance-global.yml
+      - name: Fail FireEye Service not Installed
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'FireEye Service Running = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
       when: fireeye_result.exists == false
 
-# FireEye Block End
+# FireEye Block End - Moved to service-acceptance-global.yml
     when:
       - server_role != 'Database'
+    # when: '"DB" not in ansible_hostname'
 
 # NetBackup
-# Backup Required Block
+# Backup Required Block - Moved to service-acceptance-backup.yml
   - name: Block for executing command only when backup required
     block:
 
-# Gather NetBackup Registry version key value
+# Gather NetBackup Registry version key value - Moved to service-acceptance-backup.yml
     - name: Gather NetBackup version from Registry
       win_reg_stat:
         path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Veritas NetBackup Client
@@ -1651,434 +1860,1655 @@
       register: netbackup_result
 
 # Internal Block
-# Block Start
+# Block Start - Moved to service-acceptance-backup.yml
     - name: Block for executing command only when netbackup_result exists
       block:
 
       - name: Pass NetBackup Version Check
-        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Check = Passed' ]"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Version Check = Passed' ]"
         when: netbackup_result.value == netbackup_version
 
       - name: Fail if NetBackup is not installed
-        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Check = Failed' ]"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Version Check = Failed' ]"
         when: netbackup_result.value != netbackup_version
 
-# Block End
+      - name: Check NetBackup Service is running
+        win_shell: |
+          (get-Service -DisplayName "NetBackup Client Service").Status
+        register: nb_service_results
+        check_mode: no
+
+      - name: Pass NetBackup Service Running
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Service Running = Passed' ]"
+        when: "'Running' in nb_service_results.stdout"
+
+      - name: Fail NetBackup Service not Running
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Service Running = Failed' ]"
+        when: "'Running' not in nb_service_results.stdout"
+
+# Block End - Moved to service-acceptance-backup.yml
       when: netbackup_result.exists == true
 
 # Internal Block
-# Block Start
+# Block Start - Moved to service-acceptance-backup.yml
     - name: Block for executing command only when netbackup_result doesnt exists
       block:
 
       - name: Fail if NetBackup is not installed
-        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Check = Failed' ]"
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Version Check = Failed' ]"
 
-# Block End
+      - name: Fail if NetBackup Service is not installed
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'NetBackup Service Check = Failed' ]"
+
+# Block End - Moved to service-acceptance-backup.yml
       when: netbackup_result.exists == false
 
-# Backup Required Block end
+# Backup Required Block end - Moved to service-acceptance-backup.yml
     when: 
       - backup_required
 
-#VMWare Tools (Only checks if installed not version)
-  - name: Check VMWare Tools Installed
-    win_reg_stat:
-      path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F32C4E7B-2BF8-4788-8408-824C6896E1BB}
-      name: DisplayVersion
-    register: vmtools_result
+#VMWare Tools (Only checks if installed not version) # Only CHeck VM's? - Moved to service-acceptance-g;pbal.yml
+  - name: Block for VM's Only
+    block: 
 
-  - name: Pass VMWare Tools Installed
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Check = Passed' ]"
-    when:  vmtools_result.exists == true
+    - name: Check VMWare Tools Installed
+      win_reg_stat:
+        path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F32C4E7B-2BF8-4788-8408-824C6896E1BB}
+        name: DisplayVersion
+      register: vmtools_result
 
-  - name: Fail if VMWare Tools is not installed
-    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Check = Failed' ]"
-    when: vmtools_result.exists == false
+    - name: Pass VMWare Tools Installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Installed Check = Passed' ]"
+      when:  vmtools_result.exists == true
 
-# McAfee Framework Agent
+    - name: Fail if VMWare Tools is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Installed Check = Failed' ]"
+      when: vmtools_result.exists == false
+
+    - name: Fail if VMWare Tools Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Service Running = Failed' ]"
+      when: vmtools_result.exists == false
+
+# Block to Check if VMWare Tools service is running - Moved to service-acceptance-global.yml
+    - name: Check if VMWare Tools service is running
+      block:
+
+      - name: Check VMWare Tools Service is running
+        win_shell: |
+          (get-Service -DisplayName "VMWare Tools").Status
+        register: vmt_service_results
+        check_mode: no
+
+      - name: Pass VMWare Tools Service Running
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Service Running = Passed' ]"
+        when: "'Running' in vmt_service_results.stdout"
+
+      - name: Fail VMWare Tools Service not Running
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'VMWare Tools Service Running = Failed' ]"
+        when: "'Running' not in vmt_service_results.stdout"
+
+# End Block - Moved to service-acceptance-global.yml
+      when: vmtools_result.exists == true
+
+# End Block - Moved to service-acceptance-global.yml
+    when:
+      - "'VMWare' in ansible_product_name"
+
+# McAfee Framework Agent - Moved to service-acceptance-global.yml
   - name: Check McAfee Framework Agent Installed Version
     win_reg_stat:
       path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6256F19B-18EB-4942-8A7C-5A0A9DABFA35}
       name: DisplayVersion
     register: mcafee_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when mcafee_result exists
     block:
 
+#  - Moved to service-acceptance-global.yml
     - name: Pass McAfee Framework Agent Version Check
-      debug:
-        msg: "Pass McAfee Framework Agent required Version is {{ mcafee_version }} installed version is {{ mcafee_result.value }}"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Check = Passed' ]"
       when: mcafee_result.value == mcafee_version
 
+#  - Moved to service-acceptance-global.yml
     - name: Fail if McAfee Framework Agent is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Check = Failed' ]"
       when: mcafee_result.value != mcafee_version
 
-# Block End
-    when:  mcafee_result.exists == true
+#  - Moved to service-acceptance-global.yml
+    - name: Check McAfee Framework Agent Service is running
+      win_shell: |
+        (get-Service -DisplayName "McAfee Agent Service").Status
+      register: mf_service_results
+      check_mode: no
 
-# Block Start
+#  - Moved to service-acceptance-global.yml
+    - name: Pass McAfee Framework Agent Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Service Running = Passed' ]"
+      when: "'Running' in mf_service_results.stdout"
+
+#  - Moved to service-acceptance-global.yml
+    - name: Fail McAfee Framework Agent Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Service Running = Failed' ]"
+      when: "'Running' not in mf_service_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
+    when: mcafee_result.exists == true
+
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when mcafee_result doesnt exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if McAfee Framework Agent is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Check = Failed' ]"
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Fail if McAfee Framework Agent Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee Framework Agent Service Running = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: mcafee_result.exists == false
 
-# McAfee Agent (Only checks if installed not version)
+# McAfee Agent (Only checks if installed not version) - Moved to service-acceptance-global.yml
   - name: Check McAfee EndPoint Security Platform Installed
     win_reg_stat:
       path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{FF94B30D-A51E-4D68-A353-0667C5655D2E}
       name: DisplayVersion
     register: mcend_result
 
+# - Moved to service-acceptance-global.yml
   - name: Pass McAfee EndPoint Installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee EndPoint Installed Check = Passed' ]"
     when:  mcend_result.exists == true
 
+# - Moved to service-acceptance-global.yml
   - name: Fail if McAfee EndPoint is not installed
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'McAfee EndPoint Installed Check = Failed' ]"
     when: mcend_result.exists == false
 
-# Tanium
+# Tanium - Moved to service-acceptance-global.yml
   - name: Check Tanium Installed Version
     win_reg_stat:
       path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Tanium Client
       name: DisplayVersion
     register: tanium_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when tanium_result exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Pass Tanium Version Check
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Check = Passed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Version Check = Passed' ]"
       when: tanium_result.value == tanium_version
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if Tanium is not installed
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Check = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Vwersion Check = Failed' ]"
       when: tanium_result.value != tanium_version
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Check Tanium Service is running
+      win_shell: |
+        (get-Service -DisplayName "Tanium Client").Status
+      register: t_service_results
+      check_mode: no
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass Tanium Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Service Running = Passed' ]"
+      when: "'Running' in t_service_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail Tanium Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Service Running = Failed' ]"
+      when: "'Running' not in t_service_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
     when:  tanium_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when tanium_result doesnt exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if Tanium is not installed
-      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Check = Failed' ]"
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Version Check = Failed' ]"
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Fail if Tanium Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Tanium Service Check = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: tanium_result.exists == false
 
-# .NET Framework
+# .NET Framework - Moved to service-acceptance-global.yml
   - name: Check .NET Framework Installed Version
     win_reg_stat:
       path: HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full
       name: Release
     register: dotnet_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when dotnet_result exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Pass .NET Framework Version Check
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ '.NET Framework Check = Passed' ]"
       when: dotnet_result.value == dotnet_version
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if .NET Framework is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ '.NET Framework Check = Failed' ]"
       when: dotnet_result.value != dotnet_version
 
-# Block End
+# Block End - Moved to service-acceptance-global.yml
     when:  dotnet_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when dotnet_result doesnt exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if .NET Framework is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ '.NET Framework Check = Failed' ]"
 
-# Block End
+# Block End - Moved to service-acceptance-global.yml
     when: dotnet_result.exists == false
 
-# Powershell
+# Powershell - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
   - name: Check Powershell Installed Version
     win_reg_stat:
       path: HKLM:\SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine
       name: PowerShellVersion
     register: ps_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
   - name: Block for executing command only when ps_result exists
     block:
 
+# - Moved to service-acceptance-2016.yml
     - name: Block for executing command only on 2016 Servers
       block:
 
+# - Moved to service-acceptance-2016.yml
       - name: Pass Powershell Version Check
         set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Passed' ]"
         when: ps_result.value == ps_version_2016
 
+# - Moved to service-acceptance-2016.yml
       - name: Fail if Powershell is not installed
         set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Failed' ]"
         when: ps_result.value != ps_version_2016
 
-# Block End
+# Block End - Moved to service-acceptance-2016.yml
       when: "'2016' in ansible_os_name"
 
-    - name: Block for executing command only when ps_result exists
+# - Moved to service-acceptance-2012R2.yml
+    - name: Block for executing command only on 2012 R2 Servers
       block:
 
+# - Moved to service-acceptance-2012R2.yml
       - name: Pass Powershell Version Check
         set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Passed' ]"
         when: ps_result.value == ps_version_2012
 
+# - Moved to service-acceptance-2012R2.yml
       - name: Fail if Powershell is not installed
         set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Failed' ]"
         when: ps_result.value != ps_version_2012
 
-# Block End
-      when: "'2012' in ansible_os_name"
+# Block End - Moved to service-acceptance-2012R2.yml
+      when: "'2012 R2' in ansible_os_name"
 
-# Block End
+# Block End - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
     when:  ps_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
   - name: Block for executing command only when ps_result doesnt exists
     block:
 
+# - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
     - name: Fail if Powershell is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'PowerShell Check = Failed' ]"
 
-# Block End
+# Block End - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
     when: ps_result.exists == false
 
-# Splunk Universal Forwarder
+# Splunk Universal Forwarder - Moved to service-acceptance-global.yml
   - name: Check Splunk Universal Forwarder Installed Version
     win_reg_stat:
       path: HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{C05A896E-05F4-49B6-A191-FC29B1362B81}
       name: DisplayVersion
     register: splunk_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when splunk_result exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Pass Splunk Universal Forwarder Version Check
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Universal Forwarder Check = Passed' ]"
       when: splunk_result.value == splunk_version
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if Splunk Universal Forwarder is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Universal Forwarder Check = Failed' ]"
       when: splunk_result.value != splunk_version
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Check if Splunk is listeining on port 8089 only if Splunk is installed
+      win_shell: |
+        Get-NetTCPConnection -state Listen –LocalPort 8089
+      register: splunk_port_results
+      check_mode: no
+
+# - Moved to service-acceptance-global.yml
+    - name: Check Splunk Service is running
+      win_shell: |
+        (get-Service -DisplayName "SplunkForwarder Service").Status
+      register: s_service_results
+      check_mode: no
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass Splunk Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Service Running = Passed' ]"
+      when: "'Running' in s_service_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail Splunk Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Service Running = Failed' ]"
+      when: "'Running' not in s_service_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail if Splunk is listening on port 8089
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk is not Listening on port 8089 = Failed' ]"
+      when: "'8089' in splunk_port_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass if Splunk is not listening on port 8089
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk is not Listening on port 8089 = Passed' ]"
+      when: "'8089' not in splunk_port_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
     when:  splunk_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when splunk_result doesnt exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if Splunk Universal Forwarder is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Universal Forwarder Check = Failed' ]"
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Fail if Splunk Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk Service Check = Failed' ]"
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass if Splunk is not Listening on port 8089
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Splunk is not Listening on port 8089 = Passed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: splunk_result.exists == false
 
-# Qualys
+# Qualys  - Moved to service-acceptance-global.yml
   - name: Check Qualys Agent Installed Version
     win_reg_stat:
       path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\QualysAgent
       name: DisplayVersion
     register: qualys_result
 
-# Block Start
+# Block Start  - Moved to service-acceptance-global.yml
   - name: Block for executing command only when qualys_result exists
     block:
 
+#  - Moved to service-acceptance-global.yml
     - name: Pass Qualys Agent Version Check
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Agent Check = Passed' ]"
       when: qualys_result.value == qualys_version
 
+#  - Moved to service-acceptance-global.yml
     - name: Fail if Qualys Agent is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Agent Check = Failed' ]"
       when: qualys_result.value != qualys_version
 
-# Block End
+#  - Moved to service-acceptance-global.yml
+    - name: Check Qualys Service is running
+      win_shell: |
+        (get-Service -DisplayName "Qualys Cloud Agent").Status
+      register: q_service_results
+      check_mode: no
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass Qualys Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Service Running = Passed' ]"
+      when: "'Running' in q_service_results.stdout"
+
+#  - Moved to service-acceptance-global.yml
+    - name: Fail Qualys Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Service Running = Failed' ]"
+      when: "'Running' not in q_service_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
     when:  qualys_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when qualys_result doesnt exists
     block:
 
+#  - Moved to service-acceptance-global.yml
     - name: Fail if Qualys Agent is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Agent Check = Failed' ]"
 
-# Block End
+#  - Moved to service-acceptance-global.yml
+    - name: Fail if Qualys Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Qualys Service Check = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: qualys_result.exists == false
 
-# Dynatrace
+# Dynatrace - Moved to service-acceptance-global.yml
   - name: Check Dynatrace Installed Version
     win_reg_stat:
       path: HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{4B646D96-6C5F-4CEC-8815-5BBC0483BD9A}
       name: DisplayVersion
     register: dyn_result
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when dyn_result exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Pass Dynatrace Agent Version Check
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Check = Passed' ]"
       when: dyn_result.value == dyn_version
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if Dynatrace Agent is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Check = Failed' ]"
       when: dyn_result.value != dyn_version
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Check Dynatrace Service is running
+      win_shell: |
+        (get-Service -DisplayName "Dynatrace").Status
+      register: d_service_results
+      check_mode: no
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass Dynatrace Service Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Service Running = Passed' ]"
+      when: "'Running' in d_service_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail Dynatrace Service not Running
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Service Running = Failed' ]"
+      when: "'Running' not in d_service_results.stdout"
+
+# Block End - Moved to service-acceptance-global.yml
     when:  dyn_result.exists == true
 
-# Block Start
+# Block Start - Moved to service-acceptance-global.yml
   - name: Block for executing command only when dyn_result doesnt exists
     block:
 
+# - Moved to service-acceptance-global.yml
     - name: Fail if Dynatrace Agent is not installed
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Check = Failed' ]"
 
-# Block End
+# - Moved to service-acceptance-global.yml
+    - name: Fail if Dynatrace Agent Service is not installed
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Dynatrace Agent Service Check = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
     when: dyn_result.exists == false
 
 #Check ping to nbu-not-mast.backup.local
-# Backup Required Block
+# Backup Required Block - Moved to service-acceptance-backup.yml
   - name: Block for executing command only when backup required
     block:
 
+# - Moved to service-acceptance-backup.yml
     - name: Check ping to nbu-not-mast.backup.local
       win_shell: |
         Test-Connection -ComputerName nbu-not-mast.backup.local -Count 5 -Quiet
       register: nbu_ping_result
       check_mode: no
 
+# - Moved to service-acceptance-backup.yml
     - name: Pass when nbu-not-mast.backup.local ping test pass
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Ping NBU-NOT-MAST Check = Passed' ]"
       when: "'True' in nbu_ping_result.stdout"
 
+# - Moved to service-acceptance-backup.yml
     - name: Fail when nbu-not-mast.backup.local ping test fails
       set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Ping NBU-NOT-MAST Check = Failed' ]"
       when: "'False' in nbu_ping_result.stdout"
 
-# Backup Required Block end
+# Backup Required Block end - Moved to service-acceptance-backup.yml
     when: 
       - backup_required
 
-# Check if OS is activated
-
+#####################################################################################
+# Check if OS is activated - Move to service-acceptance-global.yml
+#####################################################################################
   - name: Check O/S is activated
     win_shell: |
-      Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'"
-      #Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'" | where licensestatus -eq 1
+      #Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'"
+      Get-CimInstance SoftwareLicensingProduct -Filter "ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f'" | where licensestatus -eq 1
     register: osactivate_result
     check_mode: no
 
-  - name: Debug stdout_lines
-    debug:
-      var: osactivate_result
+# Move to service-acceptance-global.yml
+  - name: Check O/S is activated Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check O/S is activated = Passed' ]"
+    when:
+      #- "'ApplicationID                                  : 55c92734-d682-4d71-983e-d6ec3f' in osactivate_result.stdout_lines"
+      - "'LicenseStatus                                  : 1' in osactivate_result.stdout_lines"
 
-#  - name: Check O/S is activated
-#    debug:
-#      msg: "Pass O/S is activated"
-#    when:
-#      - "'ApplicationID                                  : 55c92734-d682-4d71-983e-d6ec3f' in osactivate_result.stdout_lines"
-#      - "'LicenseStatus                                  : 1' in osactivate_result.stdout_lines"
+# Move to service-acceptance-global.yml
+  - name: Check O/S is activated Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check O/S is activated = Failed' ]"
+    when:
+      #- "'ApplicationID                                  : 55c92734-d682-4d71-983e-d6ec3f' not in osactivate_result.stdout_lines"
+      - "'LicenseStatus                                  : 0' in osactivate_result.stdout_lines"
 
-#  - name: Check O/S is activated
-#    fail:
-#      msg: "Fail O/S is not activated"
-#    when:
-#      - "'ApplicationID                                  : 55c92734-d682-4d71-983e-d6ec3f' not in osactivate_result.stdout_lines"
-#      - "'LicenseStatus                                  : 0' in osactivate_result.stdout_lines"
-
-#check that computer name is 15 characters or less
-
+# Check that computer name is 15 characters or less - Moved to service-acceptance-global.yml
   - name: Check that computer name is 15 characters or less
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Computer name is 15 characters or less = Passed' ]"
     when: ansible_hostname | length < 15
-    
+
+# - Moved to service-acceptance-global.yml
   - name: Fail if computer name is greater than 15 characters
     set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Computer name is 15 characters or less = Failed' ]"
     when: ansible_hostname | length > 15
 
-#Check that computer is in the correct OU. OU=Windows Server 201x Member Servers,OU=Servers,OU=Systems...
-#Check that "Default DSG Member Server 201x Baseline Policy" is being applied.
-#Check in Group Policy Log for EventIDs 5310 and 4016 in last 24 hours and filter on relevant messages
+#Check that computer is in the correct OU. OU=Windows Server 201x Member Servers,OU=Servers,OU=Systems... - Moved to service-acceptance-global.yml
+#Check that "Default DSG Member Server 201x Baseline Policy" is being applied. - Moved to service-acceptance-global.yml
+#Check in Group Policy Log for EventIDs 5310 and 4016 in last 24 hours and filter on relevant messages - Moved to service-acceptance-global.yml
+  - name: Check computer is in the correct OU
+    win_shell: |
+      Get-WinEvent -Path C:\Windows\System32\winevt\Logs\Microsoft-Windows-GroupPolicy%4Operational.evtx | Where-Object {$_.ID -EQ 5310 -and $_.TimeCreated -ge (Get-Date).AddDays(-1)}
+    register: ou_result
+    check_mode: no
 
-# Check SNMP Configuration Settings
+# - Moved to service-acceptance-global.yml
+  - name: Check ou_result contains event id Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Computer is in the correct OU = Passed' ]"
+    when: "'5310' in ou_result.stdout"
 
-#Check that Schannel settings are correct
+# - Moved to service-acceptance-global.yml
+  - name: Check ou_result contains event id Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Computer is in the correct OU = Failed' ]"
+    when: "'5310' not in ou_result.stdout"
 
-#Get Culture
+# Baseline policy check - Moved to service-acceptance-global.yml
+  - name: Check Baseline policy is applied
+    win_shell: |
+      Get-WinEvent -Path C:\Windows\System32\winevt\Logs\Microsoft-Windows-GroupPolicy%4Operational.evtx | Where-Object {$_.ID -EQ 4016 -and $_.TimeCreated -ge (Get-Date).AddDays(-1)}
+    register: bl_result
+    check_mode: no
 
-#Check TimZone
+# - Moved to service-acceptance-global.yml
+  - name: Check bl_result contains event id Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Correct Baseline Policy applied = Passed' ]"
+    when: "'4016' in bl_result.stdout"
 
-#Check to see if LGPO has been applied
+# - Moved to service-acceptance-global.yml
+  - name: Check bl_result contains event id Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Correct Baseline Policy applied = Failed' ]"
+    when: "'4016' not in bl_result.stdout"
 
-# Check for a Windows Backup Local
+# Check SNMP Configuration Settings - Moved to service-acceptance-global.yml
+  - name: Check Insight Reg
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities\
+      name: insight
+    register: insight_results
 
+# - Moved to service-acceptance-global.yml
+  - name: Check Manager Reg
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities\
+      name: manager
+    register: manager_results
+
+# Block Start - Moved to service-acceptance-global.yml
+  - name: Block for executing command only when manager_results & insight_results both exists
+    block:
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass Insight Manaager Insight Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP ValidCommunities Check = Passed' ]"
+      when:
+        - insight_results.value == 4
+        - manager_results.value == 16
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail Insight Manaager Insight Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP ValidCommunities Check = Failed' ]"
+      when:
+        - insight_results.value != 4 or manager_results.value != 16
+
+# Block End - Moved to service-acceptance-global.yml
+    when:  
+      - insight_results.exists == true
+      - manager_results.exists == true
+
+# Block Start - Moved to service-acceptance-global.yml
+  - name: Block for executing command only when insight_results or manager_results doesnt exist
+    block:
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail if insight_results doesnt exists
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SNMP ValidCommunities Check = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
+    when: insight_results.exists == false or manager_results.exists == false
+
+# Check PermittedManagers 1 - Moved to service-acceptance-global.yml
+  - name: Check PermittedManagers 1
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers\
+      name: '1'
+    register: pm_1_results
+
+# Check PermittedManagers 2 - Moved to service-acceptance-global.yml
+  - name: Check PermittedManagers 2
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers\
+      name: '2'
+    register: pm_2_results
+
+# Check PermittedManagers 3 - Moved to service-acceptance-global.yml
+  - name: Check PermittedManagers 3
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers\
+      name: '3'
+    register: pm_3_results
+
+# Check PermittedManagers 4 - Moved to service-acceptance-global.yml
+  - name: Check PermittedManagers 4
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers\
+      name: '4'
+    register: pm_4_results
+
+# Block Start - Moved to service-acceptance-global.yml
+  - name: Block for executing command only when all results exist
+    block:
+
+# - Moved to service-acceptance-global.yml
+    - name: Pass PermittedManagers Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Permitted Managers Check = Passed' ]"
+      when:
+        - "'localhost' in pm_1_results.value"
+        - "'10.215.247.16' in pm_2_results.value"
+        - "'10.221.72.43' in pm_3_results.value"
+        - "'10.221.72.117' in pm_4_results.value"
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail PermittedManagers Check
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Permitted Managers Check = Failed' ]"
+      when: pm_1_results.value != "localhost" or pm_2_results.value != "10.215.247.16" or pm_3_results.value != "10.221.72.43" or pm_4_results.value != "10.221.72.117"
+
+# Block End - Moved to service-acceptance-global.yml
+    when:
+      - pm_1_results.exists == true
+      - pm_2_results.exists == true
+      - pm_3_results.exists == true
+      - pm_4_results.exists == true
+
+# Block Start - Moved to service-acceptance-global.yml
+  - name: Block for executing command only when pm results doesnt exist
+    block:
+
+# - Moved to service-acceptance-global.yml
+    - name: Fail if Permitted Managers results doesnt exists
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Permitted Managers Check = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
+    when: pm_1_results.exists == false or pm_2_results.exists == false or pm_3_results.exists == false or pm_4_results.exists == false
+
+# Check that Schannel settings are correct - Moved to service-acceptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
+    block:
+
+# Copy sChannel to server C:\tmp - Moved to service-acceptance-2012R2.yml
+    - name: copy sChannel File to server
+      win_copy:
+        src: "{{ sourcePath }}{{ dsChannel2012R2 }}"
+        dest: C:\temp\
+      check_mode: no
+
+#  - Moved to service-acceptance-2012R2.yml
+    - name: Export sChannel Reg settings to compare
+      win_shell: |
+          reg export HKLM\System\CurrentControlSet\Control\SecurityProviders\SCHANNEL C:\temp\current-2012R2-schannel.reg /y > c:\temp\hideoutput.txt
+      check_mode: no
+
+# read both and compare - Moved to service-acceptance-2012R2.yml
+    - name: Get desired sChannel results
+      win_shell: |
+        Get-content C:\temp\desired-2012R2-schannel.reg   
+      register: desired_sc_results
+      check_mode: no
+
+# - Moved to service-acceptance-2012R2.yml
+    - name: Get Current sChannel results
+      win_shell: |
+        Get-Content C:\temp\current-2012R2-schannel.reg
+      register: current_sc_results
+      check_mode: no
+
+# - Moved to service-acceptance-2012R2.yml
+    - name: Compare sChannel Results
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare sChannel Results = Passed' ]"
+      when: current_sc_results.stdout == desired_sc_results.stdout
+
+# - Moved to service-acceptance-2012R2.yml
+    - name: Compare sChannel Results
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare sChannel Results = Failed' ]"
+      when: current_sc_results.stdout != desired_sc_results.stdout
+
+# Remove sChannel file - Moved to service-acceptance-2012R2.yml
+    - name: remove sChannel File
+      win_file:
+        path: C:\temp\{{ dsChannel2012R2 }}
+        state: absent
+      check_mode: no
+
+# Remove Current sChannel file - Moved to service-acceptance-2012R2.yml
+    - name: remove sChannel File
+      win_file:
+        path: C:\temp\current-2012R2-schannel.reg
+        state: absent
+      check_mode: no
+
+# Block End - Moved to service-acceptance-2012R2.yml
+    when:
+      - "'2012 R2' in ansible_os_name"
+
+#Check that Schannel settings are correct - Moved to service-acceptance-2016.yml
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+# Copy sChannel to server C:\tmp - Moved to service-acceptance-2016.yml
+    - name: copy sChannel File to server
+      win_copy:
+        src: "{{ sourcePath }}{{ dsChannel2016 }}"
+        dest: C:\temp\
+      check_mode: no
+
+# - Moved to service-acceptance-2016.yml
+    - name: Export sChannel Reg settings to compare
+      win_shell: |
+          reg export HKLM\System\CurrentControlSet\Control\SecurityProviders\SCHANNEL C:\temp\current-2016-schannel.reg /y > c:\temp\hideoutput.txt
+      check_mode: no
+
+# read both and compare - Moved to service-acceptance-2016.yml
+    - name: Get desired sChannel results
+      win_shell: |
+        Get-content C:\temp\desired-2016-schannel.reg   
+      register: desired_sc_results
+      check_mode: no
+
+# - Moved to service-acceptance-2016.yml
+    - name: Get Current sChannel results
+      win_shell: |
+        Get-Content C:\temp\current-2016-schannel.reg   
+      register: current_sc_results
+      check_mode: no
+
+# - Moved to service-acceptance-2016.yml
+    - name: Compare sChannel Results
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare sChannel Results = Passed' ]"
+      when: current_sc_results.stdout == desired_sc_results.stdout
+
+# - Moved to service-acceptance-2016.yml
+    - name: Compare sChannel Results
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare sChannel Results = Failed' ]"
+      when: current_sc_results.stdout != desired_sc_results.stdout
+
+# Remove Desired sChannel file - Moved to service-acceptance-2016.yml
+    - name: remove sChannel File
+      win_file:
+        path: C:\temp\{{ dsChannel2016 }}
+        state: absent
+      check_mode: no
+
+# Remove Current sChannel file - Moved to service-acceptance-2016.yml
+    - name: remove sChannel File
+      win_file:
+        path: C:\temp\current-2016-schannel.reg 
+        state: absent
+      check_mode: no
+
+# Block End - Moved to service-acceptance-2016.yml
+    when:
+      - "'2016' in ansible_os_name"
+
+# Remove hideoutput.txt - Move to service-acceptance2012R2.yml and service-acceptance2016.yml
+  - name: remove hideoutput.txt File
+    win_file:
+      path: C:\temp\hideoutput.txt
+      state: absent
+    check_mode: no
+
+#Get Culture - Moved to service-acceptance-global.yml
+  - name: Check Culture is en-GB
+    win_shell: |
+      (Get-Culture).Name
+    register: culture_result
+    check_mode: no
+
+# - Moved to service-acceptance-global.yml
+  - name: Check culture_result en-GB Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Culture is set to en-GB = Passed' ]"
+    when: "'en-GB' in culture_result.stdout"
+
+# - Moved to service-acceptance-global.yml
+  - name: Check culture_result en-GB Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Culture is set to en-GB = Failed' ]"
+    when: "'en-GB' not in culture_result.stdout"
+
+#Check TimeZone - Moved to service-acceptance-global.yml
+  - name: Check TimeZone is GMT Standard Time
+    win_shell: |
+      [System.TimeZone]::CurrentTimeZone
+    register: timezone_result
+    check_mode: no
+
+# - Moved to service-acceptance-global.yml
+  - name: TimeZone is GMT Standard Time Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'TimeZone is GMT Standard Time = Passed' ]"
+    when: "'GMT Standard Time' in timezone_result.stdout"
+
+# - Moved to service-acceptance-global.yml
+  - name: TimeZone is GMT Standard Time Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'TimeZone is GMT Standard Time = Failed' ]"
+    when: "'GMT Standard Time' not in timezone_result.stdout"
+
+# Check to see if LGPO has been applied 2012 R2 Only - Moved to service-acceptance-2012R2.yml
+  - name: Block for executing command only when Windows Server 2012 R2
+    block:
+
+# Copy expected lgpo file to server C:\temp - Moved to service-acceptance-2012R2.yml
+    - name: Copy expected lgpo file to server C:\temp
+      win_copy:
+        src: "{{ sourcePath }}{{ eGPO2012R2 }}"
+        dest: C:\temp\
+      check_mode: no
+
+# read expected results file - Moved to service-acceptance-2012R2.yml
+    - name: Get expected LGPO results
+      win_shell: |
+        Get-Content -Path C:\temp\2012R2-LocalGPO-Expected-Result.txt –ErrorAction SilentlyContinue  
+      register: expected_lgpo_results
+      check_mode: no
+
+#  - Moved to service-acceptance-2012R2.yml
+    - name: Check LocalGPOResult.txt exists
+      win_shell: |
+        Test-Path C:\Windows\2012R2LocalGPO\LocalGPOResult.txt
+      register: lgpo_txt_results
+      check_mode: no
+
+# Block to execute only when LocalGPOResult.txt exists - Moved to service-acceptance-2012R2.yml
+    - name: Block for executing command only when LocalGPOResult.txt exists
+      block:
+
+# Get LocalGPOResult.txt as it exists - Moved to service-acceptance-2012R2.yml
+      - name: Get Current LGPO results
+        win_shell: |
+          Get-Content -Path C:\Windows\2012R2LocalGPO\LocalGPOResult.txt –ErrorAction SilentlyContinue
+        register: current_lgpo_results
+        check_mode: no
+
+# Compare results - Moved to service-acceptance-2012R2.yml
+      - name: Compare lgpo Results Pass
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare LGPO Results = Passed' ]"
+        when: current_lgpo_results.stdout == expected_lgpo_results.stdout
+
+# - Moved to service-acceptance-2012R2.yml
+      - name: Compare lgpo Results Fail
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare LGPO Results = Failed' ]"
+        when: current_lgpo_results.stdout != expected_lgpo_results.stdout
+
+# Block End - Moved to service-acceptance-2012R2.yml
+      when:
+        - "'True' in lgpo_txt_results.stdout"
+
+# Block to execute only when LocalGPOResult.txt doesnt exist - Moved to service-acceptance-2012R2.yml
+    - name: Block for executing command only when LocalGPOResult.txt doesnt exist
+      block:
+
+# Add Fail LGPO Check to Array when LocalGPOResult.txt doesnt exist - Moved to service-acceptance-2012R2.yml
+      - name: Compare lgpo Results Fail
+        set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Compare LGPO Results = Failed' ]"
+
+# Block End - Moved to service-acceptance-2012R2.yml
+      when:
+        - "'True' not in lgpo_txt_results.stdout"
+
+# Remove Desired lgpo file - Moved to service-acceptance-2012R2.yml
+    - name: remove lgpo expected File
+      win_file:
+        path: C:\temp\{{ eGPO2012R2 }}
+        state: absent
+      check_mode: no
+
+# Block End - Moved to service-acceptance-2012R2.yml
+    when:
+      - "'2012 R2' in ansible_os_name"
+
+##########################################################################################################
+### Check for a Windows Backup Local - Removed as we donrt take a backup as part of the build process! ###
+##########################################################################################################
+#  - name: Check Windows Backup local
+#    win_shell: |
+#      (Get-WBBackupSet | Where-Object {[String]$_.RecoverableItems -eq "Volumes, SystemState, Applications, Files, BareMetalRecovery"})
+#    register: backup_local_results
+#    check_mode: no
+
+#  - name: Check Windows Backup local Pass
+#    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check Windows Backup local = Passed' ]"
+#    when: backup_local_results.rc == 0
+
+#  - name: Check Windows Backup local Fail
+#    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check Windows Backup local = Failed' ]"
+#    when: backup_local_results.rc != 0
+
+########################################################################################
 #Check that TADDM / Service Now is not allowed to log on interactively.
 #Uses accesschk.exe
+  - name: copy accesschk to server
+    win_copy:
+      src: "{{ sourcePath }}{{ accesschk }}"
+      dest: C:\temp\
+    check_mode: no
+
+  - name: Force GPO Update
+    win_shell: C:\Windows\System32\gpupdate.exe /force > c:\temp\hideoutput2.txt
+    args:
+      executable: cmd
+      chdir: C:\Windows\System32\
+    check_mode: no
+
+  - name: Run accesschk.exe to get output reults
+    win_shell: accesschk.exe /accepteula -q -a SeDenyInteractiveLogonRight
+    args:
+      executable: cmd
+      chdir: C:\temp\
+    register: accesschk_results
+    check_mode: no
+
+  - name: Block for executing when IPANIUK
+    block:
+
+    - name: sndipaniuk does not have the SeDenyInteractiveLogonRight right Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndipaniuk has the SeDenyInteractiveLogonRight = Passed' ]"
+      when: "'sndipaniuk' in accesschk_results.stdout"
+
+    - name: sndipaniuk does not have the SeDenyInteractiveLogonRight right Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndipaniuk has the SeDenyInteractiveLogonRight = Failed' ]"
+      when: "'sndipaniuk' not in accesschk_results.stdout"
+
+    when:
+      - ansible_windows_domain == 'ipani.uk.experian.com'
+
+  - name: Block for executing when GDC
+    block:
+
+    - name: sndlgdc does not have the SeDenyInteractiveLogonRight right Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndlgdc does not have the SeDenyInteractiveLogonRight = Passed' ]"
+      when: "'sndlgdc' in accesschk_results.stdout"
+
+    - name: sndlgdc does not have the SeDenyInteractiveLogonRight right Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'sndlgdc does not have the SeDenyInteractiveLogonRight = Failed' ]"
+      when: "'sndlgdc' not in accesschk_results.stdout"
+
+    when:
+      - ansible_windows_domain == 'gdc.local'
+
+  - name: Block for executing when EXPERIANUK
+    block:
+
+    - name: ADMIN UK Server Deny Logon Locally does not have the SeDenyInteractiveLogonRight right Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN UK Server Deny Logon Locally has the SeDenyInteractiveLogonRight = Passed' ]"
+      when: "'ADMIN UK Server Deny Logon Locally' in accesschk_results.stdout"
+
+    - name: ADMIN UK Server Deny Logon Locally does not have the SeDenyInteractiveLogonRight right Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'ADMIN UK Server Deny Logon Locally has the SeDenyInteractiveLogonRight = Failed' ]"
+      when: "'ADMIN UK Server Deny Logon Locally' not in accesschk_results.stdout"
+
+    when:
+      - ansible_windows_domain == 'uk.experian.local'
+
+  - name: remove accesschk
+    win_file:
+      path: C:\temp\{{ accesschk }}
+      state: absent
+    check_mode: no
+
+  - name: remove hideoutput2.txt File
+    win_file:
+      path: C:\temp\hideoutput2.txt
+      state: absent
+    check_mode: no
 
 #Check that backup connection is set to private and primary is set to DomainAuthenticated
+# Check primary connection is set to DomainAuthenticated
+  - name: Get primary connection is set to DomainAuthenticated
+    win_shell: |
+      (Get-NetConnectionProfile -InterfaceAlias "Primary").NetworkCategory
+    register: primary_conn_results
+    check_mode: no
 
-#Ensure that C:\pending_bladelogic_run.txt has been deleted to indicate that this is no longer a "new/build" server
+  - name: Check primary_conn_results results Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check primary connection is set to DomainAuthenticated = Passed' ]"
+    when: "'DomainAuthenticated' in primary_conn_results.stdout"
 
-#Check for certificates in the untrusted certificate store
+  - name: Check primary_conn_results results Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check primary connection is set to DomainAuthenticated = Failed' ]"
+    when: "'DomainAuthenticated' not in primary_conn_results.stdout"
 
-#Check for insecure library loaading
+# Check backup connection is set to private - Moved to service-acceptance-backup.yml
+  - name: Block for executing command only when backups required
+    block:
 
-#Check that Users Group has been removed from c:\ibm\itm
+# Check backup connection is set to private - Moved to service-acceptance-backup.yml
+    - name: Check backup connection is set to private
+      win_shell: |
+        (Get-NetConnectionProfile -InterfaceAlias "Backup").NetworkCategory
+      register: backup_conn_results
+      check_mode: no
 
-#Check that Users Group has been removed from c:\tmp
+# - Moved to service-acceptance-backup.yml
+    - name: Check backup_conn_results results Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check backup connection is set to private = Passed' ]"
+      when: "'Private' in backup_conn_results.stdout"
 
-#Check that Users Group has been removed from c:\temp if it exists
+# - Moved to service-acceptance-backup.yml
+    - name: Check backup_conn_results results Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check backup connection is set to private = Failed' ]"
+      when: "'Private' not in backup_conn_results.stdout"
 
-#Test that DEP is set to AlwaysOn
+# Backup Required Block end - Moved to service-acceptance-backup.yml
+    when: 
+      - backup_required
 
-#Check for hardened path entries needed for MS15-011
+#################################################################################
+########### Check for certificates in the untrusted certificate store ###########
+#################################################################################
 
-#Check that Entrust Certificates exist in the correct stores
+# Check for insecure library loading - Moved to service-acceptance-global.yml
+  - name: Get insecure library loading
+    win_reg_stat:
+      path: HKLM:\System\CurrentControlSet\Control\Session Manager\
+      name: CWDIllegalInDllSearch
+    register: ins_lib_results
 
-#For Windows 2012R2 check that RDP cert is using a SHA256RSA signature algorithm
-#Not supported on 2012 and the default on Server 2016.
+# Check only if insecure library loading reg exists - Moved to service-acceptance-global.yml
+  - name: Check only if insecure library loading reg exists
+    block:
 
-#Windows 2016 Check that Windows Defender Features have been removed amd MultiPath installed
+# - Moved to service-acceptance-global.yml
+    - name: Check for insecure library loading results Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check for insecure library loading = Passed' ]"
+      when: ins_lib_results.value == 2
 
-#Check that SMB1 has been removed
+# - Moved to service-acceptance-global.yml
+    - name: Check for insecure library loading Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check for insecure library loading = Failed' ]"
+      when: ins_lib_results.value != 2
 
-#Check that member servers time sync is set to NT5DS and time service is not disabled
+# Block End - Moved to service-acceptance-global.yml
+    when:
+      - ins_lib_results.exists == True
 
-#Check if server has backups
-# takes a long time if no backup connectivity
+# Fail if insecure library loading reg doesnt exist - Moved to service-acceptance-global.yml
+  - name: Fail if insecure library loading reg doesnt exist
+    block:
 
-#Check that SS000LA exists, is in local administrators and its password expires and is disabled
+# - Moved to service-acceptance-global.yml
+    - name: Check for insecure library loading Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check for insecure library loading = Failed' ]"
 
-#Check that DefaultAccount is disabled and its password does not expire
-#Check that SS000GU is disabled and its password does not expire
+# Block End - Moved to service-acceptance-global.yml
+    when:
+      - ins_lib_results.exists == False
 
-#Check that Windows Media Player is disabled  on 2016
+# Check that Users Group has been removed from c:\tmp - Moved to service-acceptance-global.yml
+  - name: Check if Users has access to C:\tmp export to icaclstmp.txt
+    win_shell: icacls c:\tmp\* /T /C /findsid users > c:\tmp\icaclstmp.txt
+    args:
+      executable: cmd
+    check_mode: no
 
-#Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529)
+# - Moved to service-acceptance-global.yml
+  - name: Read icaclstmp.txt
+    win_shell: |
+      Get-Content -Path "c:\tmp\icaclstmp.txt"
+    register: users_tmp_results
+    check_mode: no
 
-#Check that ServicesPipeTimeout is set to 90 seconds on Server 2016
+# - Moved to service-acceptance-global.yml
+  - name: Pass if Users already removed from C:\tmp
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Users removed from C:\tmp = Passed' ]"
+    when:
+      - "'No files with a matching SID was found' in users_tmp_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+  - name: Fail if Users not removed from C:\tmp
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Users removed from C:\tmp = Failed' ]"
+    when:
+      - "'No files with a matching SID was found' not in users_tmp_results.stdout"
+
+# Remove "c:\tmp\icaclstmp.txt" - Moved to service-acceptance-global.yml
+  - name: remove icaclstmp File
+    win_file:
+      path: c:\tmp\icaclstmp.txt
+      state: absent
+    check_mode: no
+
+# Check that Users Group has been removed from c:\temp - Moved to service-acceptance-global.yml
+  - name: Check if Users has access to C:\temp export to icaclstemp.txt
+    win_shell: icacls c:\temp\* /T /C /findsid users > c:\temp\icaclstemp.txt
+    args:
+      executable: cmd
+    check_mode: no
+
+# - Moved to service-acceptance-global.yml
+  - name: Read icaclstemp.txt
+    win_shell: |
+      Get-Content -Path "c:\temp\icaclstemp.txt"
+    register: users_temp_results
+    check_mode: no
+
+# - Moved to service-acceptance-global.yml
+  - name: Pass if Users already removed from C:\temp
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Users removed from C:\temp = Passed' ]"
+    when:
+      - "'No files with a matching SID was found' in users_temp_results.stdout"
+
+# - Moved to service-acceptance-global.yml
+  - name: Fail if Users not removed from C:\temp
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Users removed from C:\temp = Failed' ]"
+    when:
+      - "'No files with a matching SID was found' not in users_temp_results.stdout"
+
+# Remove "c:\temp\icaclstemp.txt" - Moved to service-acceptance-global.yml
+  - name: remove icaclstemp File
+    win_file:
+      path: c:\temp\icaclstemp.txt
+      state: absent
+    check_mode: no
+
+# Check that DEP is set to Always On - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
+  - name: Export BCDEditOutPut.txt for DEP check
+    win_shell: bcdedit > C:\tmp\BCDEditOutPut.txt
+    args:
+      executable: cmd
+    check_mode: no
+
+# Get content of BCDEditOutPut.txt - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
+  - name: Get content of file
+    win_shell: |
+      Get-Content -Path C:\tmp\BCDEditOutPut.txt
+    register: bcedit_results
+    check_mode: no
+
+# Check DEP Always on - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
+  - name: Pass DEP is set to Always On
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DEP Protection set to AlwaysOn = Passed' ]"
+    when:
+    - "'AlwaysOn' in bcedit_results.stdout"
+
+#  - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
+  - name: Fail DEP is not set to Always On
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DEP Protection set to AlwaysOn = Failed' ]"
+    when:
+    - "'AlwaysOn' not in bcedit_results.stdout"
+
+#Check that bcedit_results settings are correct 2016 - Moved to service-accepatnce-2016.yml
+  - name: Block for executing command only when Windows Server 2016
+    block:
+
+# Check bcedit_results 2016 - Moved to service-accepatnce-2016.yml
+    - name: Pass Bootmenu policy is set to legacy
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Bootmenu policy is set to legacy = Passed' ]"
+      when:
+      - "'Legacy' in bcedit_results.stdout"
+
+# - Moved to service-accepatnce-2016.yml
+    - name: Fail Bootmenu policy is not set to legacy
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Bootmenu policy is set to legacy = Failed' ]"
+      when:
+      - "'Legacy' not in bcedit_results.stdout"
+
+# Block End - Moved to service-accepatnce-2016.yml
+    when:
+      - "'2016' in ansible_os_name"
+
+# Remove C:\tmp\BCDEditOutPut.txt - Moved to service-acceptance-2012R2.yml and service-acceptance-2016.yml
+  - name: remove BCDEditOutPut File
+    win_file:
+      path: C:\tmp\BCDEditOutPut.txt
+      state: absent
+    check_mode: no
+
+# Check for hardened path entries needed for MS15-011 - Moved to service-acceptance-global.yml
+  - name: Get hardened path entries for MS15-011
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths\
+      name: \\*\NETLOGON
+    register: hardening_net_results
+
+# - Moved to service-acceptance-global.yml
+  - name: Get hardened path entries for MS15-011
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths\
+      name: \\*\SYSVOL
+    register: hardening_sys_results
+
+# Check only if hardened path entries for MS15-011 reg exists - Moved to service-acceptance-global.yml
+  - name: Check only if hardened path entries for MS15-011 reg exists
+    block:
+
+# - Moved to service-acceptance-global.yml
+    - name: Check hardened path entries needed for MS15-011 Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check hardened path entries needed for MS15-011 = Passed' ]"
+      when:
+        - '"RequireMutualAuthentication=1, RequireIntegrity=1" in hardening_net_results.value'
+        - '"RequireMutualAuthentication=1, RequireIntegrity=1" in hardening_sys_results.value'
+
+# - Moved to service-acceptance-global.yml
+    - name: Check hardened path entries needed for MS15-011 Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check hardened path entries needed for MS15-011 = Failed' ]"
+      when: ('RequireMutualAuthentication=1, RequireIntegrity=1' not in hardening_sys_results.value) or ('RequireMutualAuthentication=1, RequireIntegrity=1' not in hardening_sys_results.value)
+
+# Block End - Moved to service-acceptance-global.yml
+    when:
+      - hardening_net_results.exists == True
+      - hardening_sys_results.exists == True
+
+# Fail if hardened path entries for MS15-011 doesnt exist - Moved to service-acceptance-global.yml
+  - name: Fail hardened path entries needed for MS15-011 doesnt exist
+    block:
+
+# - Moved to service-acceptance-global.yml
+    - name: Check hardened path entries needed for MS15-011 Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check hardened path entries needed for MS15-011 = Failed' ]"
+
+# Block End - Moved to service-acceptance-global.yml
+    when:
+      - hardening_net_results.exists == False or hardening_sys_results.exists == False
+
+# Get Entrust Certificates exist in the correct stores - Moved to service-acceptance-global.yml
+  - name: Get Entrust Root Certificates
+    win_shell: |
+      gci Cert:\LocalMachine\Root
+    register: root_results
+    check_mode: no
+
+# - Moved to service-acceptance-global.yml
+  - name: Check All relevant Entrust Root Certification Authority Certificates are in the Root store Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'All relevant Entrust Root Certification Authority Certificates are in the Root store = Passed' ]"
+    when:
+      - '"B31EB1B740E36C8402DADC37D44DF5D4674952F9" in root_results.stdout'
+      - '"AE8569D94F4AB1C464AD9B7CFD7840B0E39DAF66" in root_results.stdout'
+
+# - Moved to service-acceptance-global.yml
+  - name: Check All relevant Entrust Root Certification Authority Certificates are in the Root store Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'All relevant Entrust Root Certification Authority Certificates are in the Root store = Failed' ]"
+    when: ('B31EB1B740E36C8402DADC37D44DF5D4674952F9' not in root_results.stdout) or ('AE8569D94F4AB1C464AD9B7CFD7840B0E39DAF66' not in root_results.stdout)
+
+# - Moved to service-acceptance-global.yml
+  - name: Get Entrust CA Certificates
+    win_shell: |
+      gci Cert:\LocalMachine\CA
+    register: ca_results
+    check_mode: no
+
+# - Moved to service-acceptance-global.yml
+  - name: Check All relevant Entrust Intermediate Certification Authority Certificates are in the Intermediate store Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'All relevant Entrust Intermediate Certification Authority Certificates are in the Intermediate store = Passed' ]"
+    when:
+      - '"477DF10752E5ACDB45936824E4BE360251DDB0FC" in ca_results.stdout'
+      - '"CC136695639065FAB47074D28C55314C66077E90" in ca_results.stdout'
+      - '"F21C12F46CDB6B2E16F09F9419CDFF328437B2D7" in ca_results.stdout'
+      - '"9E1A0C35E714B69792D090B2CC4BBA45833C3015" in ca_results.stdout'
+
+# - Moved to service-acceptance-global.yml
+  - name: Check All relevant Entrust Intermediate Certification Authority Certificates are in the Intermediate store Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'All relevant Entrust Intermediate Certification Authority Certificates are in the Intermediate store = Failed' ]"
+    when: ('477DF10752E5ACDB45936824E4BE360251DDB0FC' not in ca_results.stdout) or ('CC136695639065FAB47074D28C55314C66077E90' not in ca_results.stdout) or ('F21C12F46CDB6B2E16F09F9419CDFF328437B2D7' not in ca_results.stdout) or ('9E1A0C35E714B69792D090B2CC4BBA45833C3015' not in ca_results.stdout)
+
+#For Windows 2012R2 check that RDP cert is using a SHA256RSA signature algorithm - Moved to service-acceptance-2012R2.yml
+  - name: Block for 2012 R2
+    block:
+
+# - Moved to service-acceptance-2012R2.yml
+    - name: Get RDP Cert
+      win_shell: |
+        cd 'Cert:\LocalMachine\Remote Desktop'
+        (Get-ChildItem).SignatureAlgorithm.FriendlyName -eq "sha256RSA"
+      register: rdp_results
+      check_mode: no
+
+# - Moved to service-acceptance-2012R2.yml
+    - name: check that RDP cert is using a SHA256RSA signature algorithm Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'check that RDP cert is using a SHA256RSA signature algorithm = Passed' ]"
+      when: '"True" in rdp_results.stdout'
+
+# - Moved to service-acceptance-2012R2.yml
+    - name: check that RDP cert is using a SHA256RSA signature algorithm Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'check that RDP cert is using a SHA256RSA signature algorithm = Failed' ]"
+      when: '"True" not in rdp_results.stdout'
+
+# 2012 R2 Block End - Moved to service-acceptance-2012R2.yml
+    when:
+      - "'2012 R2' in ansible_os_name"
+
+# Windows 2016 Check that Windows Defender Features have been removed amd MultiPath installed - Moved to service-acceptance-2016.yml
+# 2016 Block - Moved to service-acceptance-2016.yml
+  - name: 2016 Block
+    block:
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check Windows Defender Feature
+      win_feature:
+        name: "Windows-Defender-Features"
+        state: absent
+        restart: no
+      register: wdf_results
+
+# - Moved to service-acceptance-2016.yml
+    - name: Windows Defender Feature removed Check Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Defender Feature removed Check = Passed' ]"
+      when: wdf_results.changed == False
+
+# - Moved to service-acceptance-2016.yml
+    - name: Windows Defender Feature removed Check Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows Defender Feature removed Check = Failed' ]"
+      when: wdf_results.changed != False
+
+# 2016 Block End - Moved to service-acceptance-2016.yml
+    when:
+      - "'2016' in ansible_os_name"
+
+# Windows 2016 Check that MultiPath Features have been installed if not a VM - Moved to service-acceptance-2016.yml
+  - name: Not a VM Block 2016
+    block:
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check MPIO if not a VM
+      win_feature:
+        name: "MultiPath-IO"
+        state: present
+        restart: no
+        include_sub_features: yes
+        include_management_tools: yes
+      register: mpio_results
+
+# - Moved to service-acceptance-2016.yml
+    - name: Windows MPIO Feature removed Check Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows MPIO Feature removed Check = Passed' ]"
+      when: mpio_results.changed == False
+
+# - Moved to service-acceptance-2016.yml
+    - name: Windows MPIO Feature removed Check Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows MPIO Feature removed Check = Failed' ]"
+      when: mpio_results.changed != False
+
+# End Block - Moved to service-acceptance-2016.yml
+    when:
+      - ansible_product_name != "VMware7,1"
+      - "'2016' in ansible_os_name"
+
+#Check that SMB1 has been removed - Moved to service-acceptance-global.yml
+  - name: uninstall SMB v1 Feature
+    win_feature:
+      name: "FS-SMB1"
+      state: absent
+      restart: no
+    register: smb_results
+
+# - Moved to service-acceptance-global.yml
+  - name: Windows SMB v1 Feature removed Check Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows SMB v1 Feature removed Check = Passed' ]"
+    when: smb_results.changed == False
+
+# - Moved to service-acceptance-global.yml
+  - name: Windows SMB v1 Feature removed Check Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Windows SMB v1 Feature removed Check = Failed' ]"
+    when: smb_results.changed != False
+
+#Check that time sync is set to NT5DS and time service is not disabled - Moved to service-acceptance-global.yml
+  - name: Check time sync is set to NT5DS
+    win_reg_stat:
+      path: HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters
+      name: Type
+    register: time_sync_results
+
+# - Moved to service-acceptance-global.yml
+  - name: Check time service is not disabled
+    win_reg_stat:
+      path: HKLM:\SYSTEM\CurrentControlSet\Services\W32Time
+      name: Start
+    register: time_service_results
+
+# - Moved to service-acceptance-global.yml
+  - name: Check that time sync is set to NT5DS and time service is not disabled Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check time sync is NT5DS and time service is not disabled = Passed' ]"
+    when:
+      - time_sync_results.value == "NT5DS"
+      - time_service_results.value == 4
+
+#- Moved to service-acceptance-global.yml 
+  - name: Check that time sync is set to NT5DS and time service is not disabled Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check time sync is NT5DS and time service is not disabled = Failed' ]"
+    when: time_sync_results.value != "NT5DS" or time_service_results.value != 4
+
+# Backup Block
+  - name: Backup Block
+    block:
+
+    - name: Check that nbu-not-mast Backup exists
+      win_shell: bplist.exe -S nbu-not-mast.backup.local C:\Windows\System32\drivers\etc\hosts
+      args:
+        executable: cmd
+        chdir: C:\Program Files\VERITAS\NetBackup\bin\
+      register: mast_backup_results
+      ignore_errors: yes
+      check_mode: no
+
+    - name: Debug mast_backup_results
+      debug:
+        var: mast_backup_results
+
+    - name: Check that nbu-not-mast3 Backup exists
+      win_shell: bplist.exe -S nbu-not-mast3.backup.local C:\Windows\System32\drivers\etc\hosts
+      args:
+        executable: cmd
+        chdir: C:\Program Files\VERITAS\NetBackup\bin\
+      register: mast3_backup_results
+      ignore_errors: yes
+      check_mode: no
+
+    - name: Debug mast3_backup_results
+      debug:
+        var: mast3_backup_results
+
+    - name: Check that nbu-not-mast3 Backup exists
+      win_shell: bplist.exe -S nbu-not-mast4.backup.local C:\Windows\System32\drivers\etc\hosts
+      args:
+        executable: cmd
+        chdir: C:\Program Files\VERITAS\NetBackup\bin\
+      register: mast4_backup_results
+      ignore_errors: yes
+      check_mode: no
+
+    - name: Debug mast3_backup_results
+      debug:
+        var: mast4_backup_results
+
+# Backup Block end
+    when: 
+      - backup_required
+
+#Check that SS000LA exists, is in local administrators and its password expires and is disabled 2016 Only
+  - name: Block 2016
+    block:
+
+    - name: Check that SS000LA account exists and has an expiring password
+      win_user:
+        name: SS000LA
+        state: query
+      register: ss000la_results
+      check_mode: no
+
+# Fail if SS000LA account has an expiring password
+    - name: Check SS000LA account has an non-expiring password Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000LA account exists and has an expiring password and is disabled = Failed' ]"
+      when: ss000la_results is undefined or ss000la_results.password_never_expires == true or ss000la_results.account_disabled == false
+
+# Pass if SS000LA account has an expiring password
+    - name: Check SS000LA account has an non-expiring password Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000LA account exists and has an expiring password and is disabled = Passed' ]"
+      when: 
+        - ss000la_results is defined
+        - ss000la_results.password_never_expires == false
+        - ss000la_results.account_disabled == true
+
+# Check that DefaultAccount account exists and has an expiring password
+    - name: Check that DefaultAccount account exists and has an expiring password
+      win_user:
+        name: DefaultAccount
+        state: query
+      register: defaultaccount_results
+      check_mode: no
+
+# Fail if DefaultAccount account has an expiring password
+    - name: Check DefaultAccount account has an non-expiring password Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DefaultAccount account exists, is disabled and has an expiring password = Failed' ]"
+      when: defaultaccount_results is undefined or defaultaccount_results.password_never_expires == true or defaultaccount_results.account_disabled == false
+
+# Pass if DefaultAccount account has an expiring password
+    - name: Check DefaultAccount account has an non-expiring password Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'DefaultAccount account exists, is disabled and has an expiring password = Passed' ]"
+      when: 
+        - defaultaccount_results is defined
+        - defaultaccount_results.password_never_expires == false
+        - defaultaccount_results.account_disabled == true
+
+# Check that SS000GU is disabled and its password does not expire 2016 Only
+    - name: Check that SS000GU account exists, is disabled and has an expiring password
+      win_user:
+        name: SS000GU
+        state: query
+      register: ss000gu_results
+      check_mode: no
+
+# Fail if SS000LA account has an expiring password
+    - name: Check SS000GU account has an non-expiring password Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000GU account exists and has an expiring password and is disabled = Failed' ]"
+      when: ss000gu_results is undefined or ss000gu_results.password_never_expires == false or ss000gu_results.account_disabled == false
+
+# Pass if SS000LA account has an expiring password
+    - name: Check SS000GU account has an non-expiring password Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'SS000GU account exists and has an expiring password and is disabled = Passed' ]"
+      when: 
+        - ss000gu_results is defined
+        - ss000gu_results.password_never_expires == true
+        - ss000gu_results.account_disabled == true
+
+# 2016 Block End
+    when:
+      - "'2016' in ansible_os_name"
+
+# Check that Windows Media Player is disabled on 2016 - Moved to service-acceptance-2016.yml
+  - name: Block 2016
+    block:
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check that Windows Media Player is disabled on 2016
+      win_shell: Dism /online /Get-FeatureInfo /FeatureName:WindowsMediaPlayer
+      args:
+        executable: cmd
+      register: wmp_results
+      check_mode: no
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check that Windows Media Player is disabled on 2016 Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check that Windows Media Player is disabled = Passed' ]"
+      when: '"State : Disabled" in wmp_results.stdout'
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check that Windows Media Player is disabled on 2016 Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check that Windows Media Player is disabled = Failed' ]"
+      when: '"State : Enabled" in wmp_results.stdout'
+
+# 2016 Block End - Moved to service-acceptance-2016.yml
+    when:
+      - "'2016' in ansible_os_name"
+
+#Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529) - Moved to service-acceptance-global.yml
+  - name: Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529)
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Microsoft\Internet Explorer\MAIN\FeatureControl\FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX
+      name: iexplore.exe
+    register: fix_x86_results
+
+# - Moved to service-acceptance-global.yml
+  - name: Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529)
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\WOW6432Node\Microsoft\Internet Explorer\MAIN\FeatureControl\FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX
+      name: iexplore.exe
+    register: fix_x64_results
+
+# - Moved to service-acceptance-global.yml
+  - name: Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529) Pass
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check CVE-2017-8529 Applied = Passed' ]"
+    when:
+      - fix_x86_results.value == 1
+      - fix_x64_results.value == 1
+
+# - Moved to service-acceptance-global.yml
+  - name: Check fix in place for FEATURE_ENABLE_PRINT_INFO_DISCLOSURE_FIX (CVE-2017-8529) Fail
+    set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check CVE-2017-8529 Applied = Failed' ]"
+    when: (fix_x86_results.value != 1) or (fix_x64_results.value != 1)
+
+#Check that ServicesPipeTimeout is set to 90 seconds on Server 2016 - Moved to service-acceptance-2016.yml
+  - name: Block 2016
+    block:
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check that ServicesPipeTimeout is set to 90s
+      win_reg_stat:
+        path:  HKLM:\SYSTEM\CurrentControlSet\Control
+        name: ServicesPipeTimeout
+      register: spt_results
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check that ServicesPipeTimeout is set to 90s Pass
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check that ServicesPipeTimeout is set to 90s = Passed' ]"
+      when: spt_results.value == 90000
+
+# - Moved to service-acceptance-2016.yml
+    - name: Check that ServicesPipeTimeout is set to 90s Fail
+      set_fact: Service_Acceptance_Results="{{Service_Acceptance_Results}} + [ 'Check that ServicesPipeTimeout is set to 90s = Failed' ]"
+      when: spt_results.value != 90000
+
+# 2016 Block End - Moved to service-acceptance-2016.yml
+    when:
+      - "'2016' in ansible_os_name"
 
 # Display Service_Acceptance_Results Array
   - name: Display Results Array
     debug:
-       msg: "{{ Service_Acceptance_Results }}"
+      msg: "{{ Service_Acceptance_Results }}"

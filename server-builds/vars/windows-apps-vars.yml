@@ -46,7 +46,7 @@ cfg_dynatrace_tenanttoken_nonprod: 6DwjEIrZ5jGLlyeI
 
 # Splunk
 src_splunk_path: /resources/BladeLogic/Storage/file_deploy/Windows/Splunk/
-src_splunk_installer: splunkforwarder.msi
+src_splunk_installer: splunkforwarder-7.1.5-fd4da3d4caf1-x64-release.msi
 
 # FireEye
 src_fireeye_path: /resources/Storage/Iaas Automation/Windows/Software/FireEye/25.12.0/
@@ -99,7 +99,7 @@ src_sql_2016_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL
 src_sql_2016_dev_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Dev/
 src_sql_2017_ent_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Ent/
 src_sql_2017_std_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Std/
-src_sql_2017_dev_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2016Dev/
+src_sql_2017_dev_path: /resources/BladeLogic/Storage/file_deploy/Windows/SQL/SQL2017Dev/
 src_sql_2016_ent_zip: "c:\\tmp\\SQL\\SQL_2016_Ent_x64_inc_SP2.zip"
 src_sql_2016_std_zip: "c:\\tmp\\SQL\\SQL_2016_Std_x64_inc_SP2.zip"
 src_sql_2016_dev_zip: "c:\\tmp\\SQL\\SQL_2016_Dev_x64_inc_SP2.zip"
